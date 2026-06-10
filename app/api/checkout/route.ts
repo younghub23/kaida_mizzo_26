@@ -2,7 +2,20 @@ import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
 
-export async function POST() {
+const VALID_PRICE_IDS = [
+  process.env.STRIPE_STARTER_PRICE_ID,
+  process.env.STRIPE_PRICE_ID,
+  process.env.STRIPE_PRO_PRICE_ID,
+  process.env.STRIPE_AGENCY_PRICE_ID,
+].filter(Boolean)
+
+export async function POST(request: Request) {
+  const { priceId } = await request.json()
+
+  if (!priceId || !VALID_PRICE_IDS.includes(priceId)) {
+    return NextResponse.json({ error: 'Invalid price' }, { status: 400 })
+  }
+
   const supabase = await createClient()
   const {
     data: { user },
@@ -14,7 +27,7 @@ export async function POST() {
 
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
-    line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
+    line_items: [{ price: priceId, quantity: 1 }],
     customer_email: user.email,
     client_reference_id: user.id,
     subscription_data: {
