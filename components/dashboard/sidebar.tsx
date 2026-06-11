@@ -10,6 +10,8 @@ import {
   CreditCard,
   User,
   LogOut,
+  Link2,
+  Info,
 } from 'lucide-react'
 import { logout } from '@/app/actions/auth'
 import { Button } from '@/components/ui/button'
@@ -20,8 +22,10 @@ const NAV_LINKS = [
   { href: '/social', label: 'Social', icon: Share2 },
   { href: '/email', label: 'Email', icon: Mail },
   { href: '/ai', label: 'AI Tools', icon: Sparkles },
+  { href: '/social', label: 'LinkedIn', icon: Link2 },
   { href: '/billing', label: 'Billing', icon: CreditCard },
   { href: '/profile', label: 'Profile', icon: User },
+  { href: '/about', label: 'About', icon: Info },
 ]
 
 export function Sidebar({ businessName }: { businessName: string }) {
@@ -40,7 +44,7 @@ export function Sidebar({ businessName }: { businessName: string }) {
 
             return (
               <Link
-                key={link.href}
+                key={link.label}
                 href={link.href}
                 className={cn(
                   'flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm font-medium hover:bg-muted',
