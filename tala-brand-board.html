@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tala Brand Board</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Poppins:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F6E9A8;
+    --terracotta:#D98B5F;
+    --sand:#E3CBA0;
+    --stone:#C9C2B4;
+    --espresso:#3A2E22;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:'Poppins',sans-serif;
+    background:var(--stone);
+    color:var(--espresso);
+    padding:40px;
+  }
+  .board{
+    max-width:1000px;
+    margin:0 auto;
+    background:#fff;
+    border-radius:24px;
+    overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,.15);
+  }
+  .hero{
+    background:var(--cream);
+    padding:60px 40px;
+    text-align:center;
+  }
+  .logo{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:96px;
+    line-height:0.95;
+    color:var(--terracotta);
+    letter-spacing:2px;
+  }
+  .tagline{
+    font-family:'Poppins',sans-serif;
+    font-weight:300;
+    font-style:italic;
+    font-size:22px;
+    color:var(--espresso);
+    margin-top:10px;
+  }
+  .section{
+    padding:40px;
+    border-top:1px solid #eee;
+  }
+  .section h2{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    font-size:28px;
+    color:var(--terracotta);
+    margin-bottom:20px;
+  }
+  .swatches{
+    display:flex;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  .swatch{
+    flex:1;
+    min-width:140px;
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+  }
+  .swatch .color{
+    height:100px;
+  }
+  .swatch .label{
+    background:#fff;
+    padding:10px 14px;
+    font-size:13px;
+  }
+  .swatch .label b{
+    display:block;
+    font-family:'Baloo 2',sans-serif;
+    font-size:15px;
+  }
+  .type-row{
+    display:flex;
+    gap:40px;
+    flex-wrap:wrap;
+    align-items:flex-end;
+    margin-top:10px;
+  }
+  .type-sample{
+    flex:1;
+    min-width:260px;
+  }
+  .type-sample .name{
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:2px;
+    color:#999;
+    margin-bottom:8px;
+  }
+  .display-font{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:48px;
+    color:var(--espresso);
+  }
+  .body-font{
+    font-family:'Poppins',sans-serif;
+    font-weight:400;
+    font-size:18px;
+    line-height:1.6;
+    color:var(--espresso);
+  }
+  .accent-italic{
+    font-family:'Poppins',sans-serif;
+    font-weight:300;
+    font-style:italic;
+    font-size:24px;
+    color:var(--terracotta);
+  }
+  .grid-3{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:16px;
+  }
+  .card{
+    background:var(--sand);
+    border-radius:14px;
+    padding:24px;
+    text-align:center;
+  }
+  .card .word{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:34px;
+    color:#fff;
+    -webkit-text-stroke:2px var(--terracotta);
+    color:var(--cream);
+  }
+</style>
+</head>
+<body>
+<div class="board">
+
+  <div class="hero">
+    <div class="logo">TALA</div>
+    <div class="tagline">grow your brand, beautifully</div>
+  </div>
+
+  <div class="section">
+    <h2>Color Palette</h2>
+    <div class="swatches">
+      <div class="swatch">
+        <div class="color" style="background:#F6E9A8"></div>
+        <div class="label"><b>Sunshine Cream</b>#F6E9A8</div>
+      </div>
+      <div class="swatch">
+        <div class="color" style="background:#D98B5F"></div>
+        <div class="label"><b>Terracotta</b>#D98B5F</div>
+      </div>
+      <div class="swatch">
+        <div class="color" style="background:#E3CBA0"></div>
+        <div class="label"><b>Warm Sand</b>#E3CBA0</div>
+      </div>
+      <div class="swatch">
+        <div class="color" style="background:#C9C2B4"></div>
+        <div class="label"><b>Stone</b>#C9C2B4</div>
+      </div>
+      <div class="swatch">
+        <div class="color" style="background:#3A2E22"></div>
+        <div class="label" style="color:#fff;background:#3A2E22"><b style="color:#fff">Espresso</b>#3A2E22</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Typography</h2>
+    <div class="type-row">
+      <div class="type-sample">
+        <div class="name">Display — Baloo 2 Bold/ExtraBold</div>
+        <div class="display-font">Tala</div>
+        <div class="display-font" style="font-size:32px;margin-top:6px;">Aa Bb Cc 123</div>
+      </div>
+      <div class="type-sample">
+        <div class="name">Body — Poppins Regular</div>
+        <div class="body-font">
+          Tala helps small businesses schedule social posts, send email &amp; SMS campaigns,
+          generate AI captions, and track results — all in one beachy, friendly dashboard.
+        </div>
+        <div class="accent-italic" style="margin-top:14px;">marketing made simple</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Lockup Examples</h2>
+    <div class="grid-3">
+      <div class="card"><div class="word">TALA</div></div>
+      <div class="card" style="background:var(--terracotta)"><div class="word" style="color:var(--cream);-webkit-text-stroke:0">TALA</div></div>
+      <div class="card" style="background:var(--cream)"><div class="word" style="color:var(--terracotta);-webkit-text-stroke:0">TALA</div></div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
