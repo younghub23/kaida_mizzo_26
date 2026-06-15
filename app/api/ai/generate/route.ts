@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { openai } from '@/lib/openai'
+import { logError } from '@/lib/log'
 
 type GenerateType = 'social' | 'email_subject' | 'email_body'
 
@@ -23,6 +24,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid prompt or type' }, { status: 400 })
     }
 
+    if (!process.env.OPENAI_API_KEY) {
+      logError('ai/generate', 'OPENAI_API_KEY is not set')
+      return NextResponse.json({ error: 'AI service is not configured' }, { status: 500 })
+    }
+
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       response_format: { type: 'json_object' },
@@ -35,20 +41,20 @@ export async function POST(req: NextRequest) {
     const content = completion.choices[0]?.message?.content
 
     if (!content) {
-      console.error('[ai/generate] No content in OpenAI response', JSON.stringify(completion))
+      logError('ai/generate', 'No content in OpenAI response', undefined, { completion })
       return NextResponse.json({ error: 'No response from AI' }, { status: 500 })
     }
 
     const parsed = JSON.parse(content) as { options?: string[] }
 
     if (!parsed.options || !Array.isArray(parsed.options) || parsed.options.length !== 3) {
-      console.error('[ai/generate] Unexpected response shape', content)
+      logError('ai/generate', 'Unexpected response shape', undefined, { content })
       return NextResponse.json({ error: 'Unexpected AI response format' }, { status: 500 })
     }
 
     return NextResponse.json({ options: parsed.options })
   } catch (err) {
-    console.error('[ai/generate] Failed to generate content:', err)
+    logError('ai/generate', 'Failed to generate content', err)
     return NextResponse.json({ error: 'Failed to generate content' }, { status: 500 })
   }
 }
