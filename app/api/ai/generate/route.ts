@@ -35,17 +35,20 @@ export async function POST(req: NextRequest) {
     const content = completion.choices[0]?.message?.content
 
     if (!content) {
+      console.error('[ai/generate] No content in OpenAI response', JSON.stringify(completion))
       return NextResponse.json({ error: 'No response from AI' }, { status: 500 })
     }
 
     const parsed = JSON.parse(content) as { options?: string[] }
 
     if (!parsed.options || !Array.isArray(parsed.options) || parsed.options.length !== 3) {
+      console.error('[ai/generate] Unexpected response shape', content)
       return NextResponse.json({ error: 'Unexpected AI response format' }, { status: 500 })
     }
 
     return NextResponse.json({ options: parsed.options })
-  } catch {
+  } catch (err) {
+    console.error('[ai/generate] Failed to generate content:', err)
     return NextResponse.json({ error: 'Failed to generate content' }, { status: 500 })
   }
 }
