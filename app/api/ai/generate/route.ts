@@ -14,6 +14,11 @@ const SYSTEM_PROMPTS: Record<GenerateType, string> = {
     'You are an email marketing expert. Generate 3 distinct short email body options (2-4 sentences each) for a small business campaign. Return as JSON array of 3 strings.',
 }
 
+function stripCodeFence(text: string): string {
+  const match = text.trim().match(/^```(?:json)?\s*([\s\S]*?)\s*```$/)
+  return match ? match[1] : text
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { prompt, type } = (await req.json()) as {
@@ -45,7 +50,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No response from AI' }, { status: 500 })
     }
 
-    const parsed = JSON.parse(content) as { options?: string[] }
+    const parsed = JSON.parse(stripCodeFence(content)) as { options?: string[] }
 
     if (!parsed.options || !Array.isArray(parsed.options) || parsed.options.length !== 3) {
       logError('ai/generate', 'Unexpected response shape', undefined, { content })
