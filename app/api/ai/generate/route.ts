@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { OpenAI } from 'openai'
-import { openai } from '@/lib/openai'
+import Anthropic from '@anthropic-ai/sdk'
+import { anthropic } from '@/lib/anthropic'
 import { logError } from '@/lib/log'
 
 type GenerateType = 'social' | 'email_subject' | 'email_body'
@@ -25,24 +25,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid prompt or type' }, { status: 400 })
     }
 
-    if (!process.env.OPENAI_API_KEY) {
-      logError('ai/generate', 'OPENAI_API_KEY is not set')
+    if (!process.env.ANTHROPIC_API_KEY) {
+      logError('ai/generate', 'ANTHROPIC_API_KEY is not set')
       return NextResponse.json({ error: 'AI service is not configured' }, { status: 500 })
     }
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: `${SYSTEM_PROMPTS[type]} Respond with a JSON object: { "options": string[] }.` },
-        { role: 'user', content: prompt },
-      ],
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 1024,
+      system: `${SYSTEM_PROMPTS[type]} Respond with only a JSON object: { "options": string[] }. Do not include any other text.`,
+      messages: [{ role: 'user', content: prompt }],
     })
 
-    const content = completion.choices[0]?.message?.content
+    const block = message.content[0]
+    const content = block?.type === 'text' ? block.text : undefined
 
     if (!content) {
-      logError('ai/generate', 'No content in OpenAI response', undefined, { completion })
+      logError('ai/generate', 'No content in Anthropic response', undefined, { message })
       return NextResponse.json({ error: 'No response from AI' }, { status: 500 })
     }
 
@@ -57,7 +56,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     logError('ai/generate', 'Failed to generate content', err)
 
-    if (err instanceof OpenAI.APIError && err.status === 429) {
+    if (err instanceof Anthropic.APIError && err.status === 429) {
       return NextResponse.json(
         { error: 'The AI assistant is temporarily unavailable due to high demand. Please try again in a few minutes.' },
         { status: 503 }

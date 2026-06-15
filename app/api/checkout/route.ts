@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
+import { logError } from '@/lib/log'
 
 const VALID_PRICE_IDS = [
   process.env.STRIPE_STARTER_PRICE_ID,
@@ -25,17 +26,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const session = await stripe.checkout.sessions.create({
-    mode: 'subscription',
-    line_items: [{ price: priceId, quantity: 1 }],
-    customer_email: user.email,
-    client_reference_id: user.id,
-    subscription_data: {
-      trial_period_days: 7,
-    },
-    success_url: 'http://localhost:3000/dashboard?success=true',
-    cancel_url: 'http://localhost:3000/billing',
-  })
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      line_items: [{ price: priceId, quantity: 1 }],
+      customer_email: user.email,
+      client_reference_id: user.id,
+      subscription_data: {
+        trial_period_days: 7,
+      },
+      success_url: 'http://localhost:3000/dashboard?success=true',
+      cancel_url: 'http://localhost:3000/billing',
+    })
 
-  return NextResponse.json({ url: session.url })
+    return NextResponse.json({ url: session.url })
+  } catch (err) {
+    logError('checkout', 'Failed to create checkout session', err, { priceId, userId: user.id })
+    return NextResponse.json({ error: 'Failed to start checkout' }, { status: 500 })
+  }
 }

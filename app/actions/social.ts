@@ -17,6 +17,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { logError } from '@/lib/log'
 
 export type ScheduledPost = {
   id: string
@@ -70,6 +71,7 @@ export async function schedulePost(
   })
 
   if (error) {
+    logError('social/schedulePost', 'Failed to insert scheduled post', error, { userId: user.id })
     return { error: error.message, success: false }
   }
 
@@ -96,6 +98,7 @@ export async function getPosts(): Promise<ScheduledPost[]> {
     .order('scheduled_at', { ascending: true })
 
   if (error || !data) {
+    if (error) logError('social/getPosts', 'Failed to fetch scheduled posts', error, { userId: user.id })
     return []
   }
 
@@ -120,6 +123,7 @@ export async function deletePost(id: string): Promise<SocialActionState> {
     .eq('user_id', user.id)
 
   if (error) {
+    logError('social/deletePost', 'Failed to delete scheduled post', error, { userId: user.id, postId: id })
     return { error: error.message, success: false }
   }
 
