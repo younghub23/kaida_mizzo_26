@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { OpenAI } from 'openai'
 import { openai } from '@/lib/openai'
 import { logError } from '@/lib/log'
 
@@ -55,6 +56,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ options: parsed.options })
   } catch (err) {
     logError('ai/generate', 'Failed to generate content', err)
+
+    if (err instanceof OpenAI.APIError && err.status === 429) {
+      return NextResponse.json(
+        { error: 'The AI assistant is temporarily unavailable due to high demand. Please try again in a few minutes.' },
+        { status: 503 }
+      )
+    }
+
     return NextResponse.json({ error: 'Failed to generate content' }, { status: 500 })
   }
 }
