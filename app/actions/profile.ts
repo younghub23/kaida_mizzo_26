@@ -4,6 +4,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { logError } from '@/lib/log'
 
 export type ProfileState = {
   error: string | null
@@ -38,6 +39,7 @@ export async function updateProfile(
     .eq('id', user.id)
 
   if (error) {
+    logError('profile/updateProfile', 'Failed to update profile', error, { userId: user.id })
     return { error: error.message, success: false }
   }
 
