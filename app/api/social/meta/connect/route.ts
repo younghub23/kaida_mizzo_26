@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { logError } from '@/lib/log'
 
 const SCOPES = [
-  'pages_manage_posts',
+  'pages_show_list',
+  'pages_read_engagement',
   'instagram_basic',
   'instagram_content_publish',
 ].join(',')
