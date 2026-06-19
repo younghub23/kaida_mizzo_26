@@ -74,7 +74,7 @@ export default function AuthForm({ initialMode = 'login' }: Props) {
         return
       }
     }
-    router.push('/dashboard')
+    router.push(mode === 'signup' ? '/plan' : '/dashboard')
   }
 
   async function handleForgotPassword(e: React.MouseEvent) {

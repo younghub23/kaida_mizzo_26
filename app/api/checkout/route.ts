@@ -35,8 +35,8 @@ export async function POST(request: Request) {
       subscription_data: {
         trial_period_days: 7,
       },
-      success_url: 'http://localhost:3000/dashboard?success=true',
-      cancel_url: 'http://localhost:3000/billing',
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/plan`,
     })
 
     return NextResponse.json({ url: session.url })
