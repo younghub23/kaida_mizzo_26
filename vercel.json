@@ -1,0 +1,9 @@
+{
+  "crons": [
+    {
+      "path": "/api/social/publish-due",
+      "schedule": "*/5 * * * *",
+      "_note": "This project deploys to Cloudflare Workers via OpenNext. Use a Cloudflare Cron Trigger in wrangler.jsonc instead of this Vercel cron."
+    }
+  ]
+}

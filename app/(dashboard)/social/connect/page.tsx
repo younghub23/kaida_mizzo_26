@@ -1,8 +1,10 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, CheckCircle2 } from 'lucide-react'
 import {
   Card,
   CardHeader,
@@ -11,6 +13,12 @@ import {
   CardFooter,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { createClient } from '@/lib/supabase/client'
+
+type SocialAccount = {
+  platform: string
+  account_name: string
+}
 
 const PLATFORMS = [
   {
@@ -40,6 +48,64 @@ const PLATFORMS = [
 ]
 
 export default function ConnectAccountsPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const [accounts, setAccounts] = useState<SocialAccount[]>([])
+
+  useEffect(() => {
+    const success = searchParams.get('success')
+    const error = searchParams.get('error')
+
+    if (success) {
+      toast.success('Account connected successfully!')
+      router.replace('/social/connect')
+    } else if (error) {
+      const messages: Record<string, string> = {
+        oauth_denied: 'Connection was denied.',
+        config: 'App not configured. Please contact support.',
+        token: 'Failed to retrieve access token.',
+        long_token: 'Failed to retrieve long-lived token.',
+        no_pages: 'No Facebook Pages found. Make sure you manage at least one Page.',
+        unexpected: 'An unexpected error occurred.',
+      }
+      toast.error(messages[error] ?? 'Connection failed.')
+      router.replace('/social/connect')
+    }
+  }, [searchParams, router])
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return
+      supabase
+        .from('social_accounts')
+        .select('platform, account_name')
+        .eq('user_id', user.id)
+        .then(({ data }) => {
+          if (data) setAccounts(data)
+        })
+    })
+  }, [])
+
+  function getConnectedAccount(platformId: string) {
+    return accounts.find((a) => a.platform === platformId)
+  }
+
+  function handleConnect(platformId: string) {
+    const routes: Record<string, string> = {
+      facebook: '/api/social/meta/connect',
+      instagram: '/api/social/meta/connect',
+      linkedin: '/api/social/linkedin/connect',
+      tiktok: '/api/social/tiktok/connect',
+    }
+    const route = routes[platformId]
+    if (route) {
+      window.location.href = route
+    } else {
+      toast('Coming soon')
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6 p-6">
       <div>
@@ -54,29 +120,38 @@ export default function ConnectAccountsPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {PLATFORMS.map((platform) => (
-          <Card key={platform.id}>
-            <CardHeader>
-              <span
-                className="flex size-9 items-center justify-center rounded-full text-sm font-bold text-white"
-                style={{ backgroundColor: platform.color }}
-              >
-                {platform.label[0]}
-              </span>
-              <CardTitle>{platform.label}</CardTitle>
-              <CardDescription>{platform.description}</CardDescription>
-            </CardHeader>
-            <CardFooter>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => toast('Coming soon')}
-              >
-                Connect
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
+        {PLATFORMS.map((platform) => {
+          const connected = getConnectedAccount(platform.id)
+          return (
+            <Card key={platform.id}>
+              <CardHeader>
+                <span
+                  className="flex size-9 items-center justify-center rounded-full text-sm font-bold text-white"
+                  style={{ backgroundColor: platform.color }}
+                >
+                  {platform.label[0]}
+                </span>
+                <CardTitle>{platform.label}</CardTitle>
+                <CardDescription>{platform.description}</CardDescription>
+                {connected && (
+                  <p className="flex items-center gap-1.5 text-xs text-green-600 font-medium pt-1">
+                    <CheckCircle2 className="size-3.5" />
+                    Connected as {connected.account_name}
+                  </p>
+                )}
+              </CardHeader>
+              <CardFooter>
+                <Button
+                  variant={connected ? 'secondary' : 'outline'}
+                  className="w-full"
+                  onClick={() => handleConnect(platform.id)}
+                >
+                  {connected ? 'Reconnect' : 'Connect'}
+                </Button>
+              </CardFooter>
+            </Card>
+          )
+        })}
       </div>
     </div>
   )
