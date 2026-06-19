@@ -8,7 +8,7 @@ export default async function PlanPage() {
 
   if (!user) redirect('/login')
 
-  // Creators bypass this page entirely — business-only flow
+  // Creators bypass this page — business-only flow
   if (user.user_metadata?.account_type === 'creator') {
     redirect('/dashboard')
   }
@@ -16,54 +16,27 @@ export default async function PlanPage() {
   const plans = [
     {
       name: 'Starter',
+      price: '$29/mo',
       priceId: process.env.STRIPE_STARTER_PRICE_ID!,
-      bullets: [
-        '$29 / month',
-        '3 channels',
-        '2,500 email contacts',
-        'Analytics',
-        '7-day free trial',
-      ],
+      features: ['3 channels', '2,500 email contacts', 'Analytics'],
     },
     {
       name: 'Growth',
+      price: '$99/mo',
       priceId: process.env.STRIPE_PRICE_ID!,
-      bullets: [
-        '$99 / month',
-        '5 channels',
-        '10,000 email contacts',
-        'AI Tier 1',
-        'Analytics',
-        '7-day free trial',
-      ],
+      features: ['5 channels', '10k email contacts', 'AI Tier 1', 'Analytics'],
     },
     {
       name: 'Pro',
+      price: '$299/mo',
       priceId: process.env.STRIPE_PRO_PRICE_ID!,
-      bullets: [
-        '$299 / month',
-        '10 channels',
-        'Google Ads',
-        '50,000 contacts',
-        'AI Tier 1 & 2',
-        'Analytics',
-        'Creator marketplace',
-        '7-day free trial',
-      ],
+      features: ['10 channels', 'Google Ads', '50k contacts', 'AI Tier 1 & 2', 'Analytics', 'Creator marketplace'],
     },
     {
       name: 'Agency',
+      price: '$599/mo',
       priceId: process.env.STRIPE_AGENCY_PRICE_ID!,
-      bullets: [
-        '$599 / month',
-        'Everything in Pro +',
-        'Unlimited channels',
-        'Client workspaces',
-        'Multi-account accessibility',
-        'White label',
-        'Priority support',
-        '7-day free trial',
-      ],
+      features: ['Everything in Pro', 'Unlimited channels', 'Client workspaces', 'Multi-account accessibility', 'White label', 'Priority support'],
     },
   ]
 
