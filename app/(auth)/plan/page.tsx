@@ -43,7 +43,7 @@ export default async function PlanPage() {
       bullets: [
         '$299 / month',
         '10 channels',
-        'Google',
+        'Google Ads',
         '50,000 contacts',
         'AI Tier 1 & 2',
         'Analytics',
