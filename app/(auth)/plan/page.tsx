@@ -42,7 +42,8 @@ export default async function PlanPage() {
       priceId: process.env.STRIPE_PRO_PRICE_ID!,
       bullets: [
         '$299 / month',
-        '10 channels + Google',
+        '10 channels',
+        'Google',
         '50,000 contacts',
         'AI Tier 1 & 2',
         'Analytics',
@@ -55,11 +56,8 @@ export default async function PlanPage() {
       priceId: process.env.STRIPE_AGENCY_PRICE_ID!,
       bullets: [
         '$599 / month',
-        'Unlimited channels + Google',
-        '50,000 contacts',
-        'AI Tier 1 & 2',
-        'Analytics',
-        'Creator marketplace',
+        'Everything in Pro +',
+        'Unlimited channels',
         'Client workspaces',
         'Multi-account accessibility',
         'White label',
