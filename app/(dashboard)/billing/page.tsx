@@ -12,26 +12,47 @@ const PLANS = [
   {
     name: 'Starter',
     price: '$29/mo',
-    description: '3 social profiles, email (2,500 contacts), basic analytics',
+    features: [
+      '3 channels',
+      'Analytics',
+      '2,500 email contacts',
+    ],
     priceId: process.env.STRIPE_STARTER_PRICE_ID!,
   },
   {
     name: 'Growth',
     price: '$99/mo',
-    description: '10 social profiles, email & SMS (10K contacts), all AI tools',
+    features: [
+      '5 channels',
+      'AI Tier 1',
+      '10,000 email contacts',
+      'Analytics',
+    ],
     priceId: process.env.STRIPE_PRICE_ID!,
   },
   {
     name: 'Pro',
     price: '$299/mo',
-    description:
-      'Unlimited social, email & SMS (50K contacts), Brand Identity Builder, Creator Marketplace',
+    features: [
+      '10 social + Google',
+      '50,000 contacts',
+      'AI Tier 1 & 2',
+      'Analytics',
+      'Creator Marketplace',
+    ],
     priceId: process.env.STRIPE_PRO_PRICE_ID!,
   },
   {
     name: 'Agency',
     price: '$599/mo',
-    description: 'Everything in Pro + client workspaces, white-label, priority support',
+    features: [
+      'Everything in Pro',
+      'Unlimited social channels',
+      'Client workspaces',
+      'Multi-account accessibility',
+      'White label',
+      'Priority support',
+    ],
     priceId: process.env.STRIPE_AGENCY_PRICE_ID!,
   },
 ]
@@ -47,10 +68,15 @@ export default function BillingPage() {
               <CardDescription>{plan.price}</CardDescription>
             </CardHeader>
             <CardContent className="flex-1">
-              <p className="text-sm text-muted-foreground">{plan.description}</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                7-day free trial. Cancel anytime.
-              </p>
+              <ul className="flex flex-col gap-1.5">
+                {plan.features.map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <span className="mt-0.5 text-foreground">✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-4 text-xs text-muted-foreground">7-day free trial. Cancel anytime.</p>
             </CardContent>
             <CardFooter>
               <UpgradeButton priceId={plan.priceId} />
