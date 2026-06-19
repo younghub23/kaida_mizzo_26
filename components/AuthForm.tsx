@@ -32,7 +32,7 @@ export default function AuthForm({ initialMode = 'login' }: Props) {
     if (!email) return 'Email is required.'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Enter a valid email address.'
     if (!password) return 'Password is required.'
-    if (password.length < 8) return 'Password must be at least 8 characters.'
+    if (mode === 'signup' && password.length < 8) return 'Password must be at least 8 characters.'
     if (showBusinessName && !businessName) return 'Business name is required.'
     return null
   }
@@ -85,7 +85,9 @@ export default function AuthForm({ initialMode = 'login' }: Props) {
     }
     setError(null)
     const supabase = createClient()
-    const { error: err } = await supabase.auth.resetPasswordForEmail(email)
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/reset-password`,
+    })
     if (err) {
       logError('auth', 'password reset failed', err)
       setError(err.message)
