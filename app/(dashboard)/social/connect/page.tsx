@@ -92,8 +92,15 @@ export default function ConnectAccountsPage() {
   }
 
   function handleConnect(platformId: string) {
-    if (platformId === 'facebook' || platformId === 'instagram') {
-      window.location.href = '/api/social/meta/connect'
+    const routes: Record<string, string> = {
+      facebook: '/api/social/meta/connect',
+      instagram: '/api/social/meta/connect',
+      linkedin: '/api/social/linkedin/connect',
+      tiktok: '/api/social/tiktok/connect',
+    }
+    const route = routes[platformId]
+    if (route) {
+      window.location.href = route
     } else {
       toast('Coming soon')
     }

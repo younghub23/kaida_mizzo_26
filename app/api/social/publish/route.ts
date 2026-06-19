@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   const platforms: string[] = post.platforms ?? []
   const results: Record<string, 'published' | 'failed'> = {}
 
-  for (const platform of ['facebook', 'instagram'] as const) {
+  for (const platform of ['facebook', 'instagram', 'linkedin', 'tiktok'] as const) {
     if (!platforms.includes(platform)) continue
 
     const { data: account, error: acctErr } = await admin
@@ -46,7 +46,6 @@ export async function POST(req: NextRequest) {
 
     try {
       if (platform === 'facebook') {
-        // Get page ID first
         const meRes = await fetch(`${GRAPH}/me/accounts?access_token=${account.access_token}`)
         const meData = (await meRes.json()) as { data?: Array<{ id: string }> }
         const pageId = meData.data?.[0]?.id
@@ -75,7 +74,6 @@ export async function POST(req: NextRequest) {
           results[platform] = 'published'
         }
       } else if (platform === 'instagram') {
-        // Get IG user ID
         const igMeRes = await fetch(`${GRAPH}/me?fields=id&access_token=${account.access_token}`)
         const igMe = (await igMeRes.json()) as { id?: string }
 
@@ -85,7 +83,6 @@ export async function POST(req: NextRequest) {
           continue
         }
 
-        // Create media container
         const containerRes = await fetch(`${GRAPH}/${igMe.id}/media`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -103,7 +100,6 @@ export async function POST(req: NextRequest) {
           continue
         }
 
-        // Publish the container
         const publishRes = await fetch(`${GRAPH}/${igMe.id}/media_publish`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -116,6 +112,72 @@ export async function POST(req: NextRequest) {
 
         if (!publishData.id) {
           logError('social/publish', 'Instagram publish failed', undefined, { publishData, postId })
+          results[platform] = 'failed'
+        } else {
+          results[platform] = 'published'
+        }
+      } else if (platform === 'linkedin') {
+        // Get LinkedIn user URN
+        const profileRes = await fetch('https://api.linkedin.com/v2/userinfo', {
+          headers: { Authorization: `Bearer ${account.access_token}` },
+        })
+        const profile = (await profileRes.json()) as { sub?: string }
+
+        if (!profile.sub) {
+          logError('social/publish', 'No LinkedIn user ID', undefined, { postId })
+          results[platform] = 'failed'
+          continue
+        }
+
+        const postRes = await fetch('https://api.linkedin.com/v2/posts', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${account.access_token}`,
+            'Content-Type': 'application/json',
+            'X-Restli-Protocol-Version': '2.0.0',
+          },
+          body: JSON.stringify({
+            author: `urn:li:person:${profile.sub}`,
+            commentary: post.content,
+            visibility: 'PUBLIC',
+            distribution: { feedDistribution: 'MAIN_FEED' },
+            lifecycleState: 'PUBLISHED',
+          }),
+        })
+
+        if (!postRes.ok) {
+          const errBody = await postRes.text()
+          logError('social/publish', 'LinkedIn publish failed', undefined, { errBody, postId })
+          results[platform] = 'failed'
+        } else {
+          results[platform] = 'published'
+        }
+      } else if (platform === 'tiktok') {
+        // TikTok Content Posting API — initialize a direct post
+        const initRes = await fetch('https://open.tiktokapis.com/v2/post/publish/content/init/', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${account.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            post_info: {
+              title: post.content?.slice(0, 150) ?? '',
+              privacy_level: 'SELF_ONLY',
+            },
+            source_info: {
+              source: 'PULL_FROM_URL',
+              video_url: post.image_url ?? '',
+            },
+          }),
+        })
+        const initData = (await initRes.json()) as {
+          data?: { publish_id?: string }
+          error?: { code?: string; message?: string }
+        }
+
+        if (!initData.data?.publish_id) {
+          logError('social/publish', 'TikTok publish failed', undefined, { initData, postId })
           results[platform] = 'failed'
         } else {
           results[platform] = 'published'
