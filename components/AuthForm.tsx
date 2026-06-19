@@ -77,6 +77,24 @@ export default function AuthForm({ initialMode = 'login' }: Props) {
     router.push('/dashboard')
   }
 
+  async function handleGoogle() {
+    setError(null)
+    setResetSent(false)
+    setLoading(true)
+    const supabase = createClient()
+    const { error: err } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+      },
+    })
+    if (err) {
+      logError('auth', 'google sign in failed', err)
+      setError(err.message)
+      setLoading(false)
+    }
+  }
+
   async function handleForgotPassword(e: React.MouseEvent) {
     e.preventDefault()
     if (!email) {
@@ -126,6 +144,9 @@ export default function AuthForm({ initialMode = 'login' }: Props) {
         .tala-submit:hover:not(:disabled) {
           background: ${ACCENT};
           color: ${BG};
+        }
+        .tala-google:hover:not(:disabled) {
+          background: ${ACCENT}0F;
         }
         .tala-toggle-link:hover {
           opacity: 0.75;
@@ -295,6 +316,79 @@ export default function AuthForm({ initialMode = 'login' }: Props) {
                 : mode === 'login'
                 ? 'Sign in'
                 : 'Create account'}
+            </button>
+
+            {/* Divider */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                margin: '2px 0',
+              }}
+            >
+              <span style={{ flex: 1, height: '1px', background: ACCENT, opacity: 0.4 }} />
+              <span
+                style={{
+                  fontFamily: 'var(--font-fredoka)',
+                  fontSize: '12px',
+                  letterSpacing: '0.2em',
+                  textTransform: 'uppercase',
+                  color: ACCENT,
+                  opacity: 0.75,
+                }}
+              >
+                or
+              </span>
+              <span style={{ flex: 1, height: '1px', background: ACCENT, opacity: 0.4 }} />
+            </div>
+
+            {/* Google */}
+            <button
+              type="button"
+              onClick={handleGoogle}
+              disabled={loading}
+              className="tala-google"
+              style={{
+                width: '100%',
+                padding: '15px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '12px',
+                background: 'transparent',
+                border: `1.4px solid ${ACCENT}`,
+                borderRadius: '2px',
+                color: ACCENT,
+                fontFamily: 'var(--font-fredoka)',
+                fontWeight: 500,
+                fontSize: '14px',
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                transition: 'all 0.2s',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.6 : 1,
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                <path
+                  fill="#4285F4"
+                  d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"
+                />
+              </svg>
+              Continue with Google
             </button>
           </form>
 
