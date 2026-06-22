@@ -1,29 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { logError } from '@/lib/log'
 
-// Stores a Google (GA4) connection on social_accounts. Uses the real columns:
-// access_token, refresh_token, token_expires_at, username, platform_user_id
-// (left null here — the GA4 property is resolved lazily by the provider, or
-// could be set via a property-picker later).
+// Stores a Google (GA4) connection on social_accounts. Uses the authenticated
+// user's own session (RLS policy "Users manage own social accounts") to write
+// the row — no service-role/admin client needed.
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const code = searchParams.get('code')
   const error = searchParams.get('error')
-
-  // TEMP diagnostic: record each step to public.oauth_debug so we can see
-  // exactly where the connect fails. Safe (no tokens stored). Remove later.
-  const debugAdmin = createAdminClient()
-  const debug = async (step: string, detail: Record<string, unknown>) => {
-    try {
-      await debugAdmin.from('oauth_debug').insert({ provider: 'google', step, detail })
-    } catch {
-      // never let debugging break the flow
-    }
-  }
-
-  await debug('entry', { hasCode: Boolean(code), hasError: Boolean(error), error })
 
   if (error || !code) {
     logError('social/google/callback', 'OAuth error or missing code', undefined, { error })
@@ -33,12 +18,6 @@ export async function GET(req: NextRequest) {
   const clientId = process.env.GOOGLE_CLIENT_ID
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET
   const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/api/social/google/callback`
-
-  await debug('config', {
-    hasClientId: Boolean(clientId),
-    hasClientSecret: Boolean(clientSecret),
-    redirectUri,
-  })
 
   if (!clientId || !clientSecret) {
     logError('social/google/callback', 'GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is not set')
@@ -66,16 +45,12 @@ export async function GET(req: NextRequest) {
       error_description?: string
     }
 
-    await debug('token', {
-      status: tokenRes.status,
-      googleError: tokenData.error ?? null,
-      googleErrorDescription: tokenData.error_description ?? null,
-      hasAccessToken: Boolean(tokenData.access_token),
-      hasRefreshToken: Boolean(tokenData.refresh_token),
-    })
-
     if (!tokenData.access_token) {
-      logError('social/google/callback', 'Failed to get access token', undefined, { tokenData })
+      logError('social/google/callback', 'Failed to get access token', undefined, {
+        status: tokenRes.status,
+        error: tokenData.error,
+        description: tokenData.error_description,
+      })
       return NextResponse.redirect(new URL('/socials/connect?error=token', req.url))
     }
 
@@ -98,8 +73,6 @@ export async function GET(req: NextRequest) {
       error: authErr,
     } = await supabase.auth.getUser()
 
-    await debug('auth', { hasUser: Boolean(user), authError: authErr?.message ?? null })
-
     if (authErr || !user) {
       logError('social/google/callback', 'User not authenticated', authErr)
       return NextResponse.redirect(new URL('/login', req.url))
@@ -109,8 +82,7 @@ export async function GET(req: NextRequest) {
       ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
       : null
 
-    const admin = createAdminClient()
-    const { error: dbErr } = await admin.from('social_accounts').upsert(
+    const { error: dbErr } = await supabase.from('social_accounts').upsert(
       {
         user_id: user.id,
         platform: 'google',
@@ -122,17 +94,13 @@ export async function GET(req: NextRequest) {
       { onConflict: 'user_id,platform' }
     )
 
-    await debug('upsert', { dbError: dbErr?.message ?? null })
-
     if (dbErr) {
       logError('social/google/callback', 'Failed to save Google account', dbErr)
       return NextResponse.redirect(new URL('/socials/connect?error=unexpected', req.url))
     }
 
-    await debug('success', { username })
     return NextResponse.redirect(new URL('/socials/connect?success=1', req.url))
   } catch (err) {
-    await debug('exception', { message: err instanceof Error ? err.message : String(err) })
     logError('social/google/callback', 'Unexpected error during OAuth callback', err)
     return NextResponse.redirect(new URL('/socials/connect?error=unexpected', req.url))
   }

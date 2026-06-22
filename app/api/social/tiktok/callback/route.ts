@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { logError } from '@/lib/log'
 
 export async function GET(req: NextRequest) {
@@ -68,8 +67,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(new URL('/login', req.url))
     }
 
-    const admin = createAdminClient()
-    const { error: dbErr } = await admin.from('social_accounts').upsert(
+    const { error: dbErr } = await supabase.from('social_accounts').upsert(
       {
         user_id: user.id,
         platform: 'tiktok',
