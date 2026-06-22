@@ -75,7 +75,7 @@ export async function schedulePost(
     return { error: error.message, success: false }
   }
 
-  revalidatePath('/social')
+  revalidatePath('/socials')
 
   return { error: null, success: true }
 }
@@ -127,7 +127,7 @@ export async function deletePost(id: string): Promise<SocialActionState> {
     return { error: error.message, success: false }
   }
 
-  revalidatePath('/social')
+  revalidatePath('/socials')
 
   return { error: null, success: true }
 }

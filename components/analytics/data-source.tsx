@@ -52,7 +52,7 @@ export function DemoBanner({
           <p>
             <span className="font-semibold">No connected accounts yet.</span>{' '}
             Connect a social account to start seeing your analytics —{' '}
-            <Link href="/social/connect" className="font-medium underline underline-offset-2">
+            <Link href="/socials/connect" className="font-medium underline underline-offset-2">
               connect now
             </Link>
             .
@@ -96,7 +96,7 @@ export function EmptyState({
         </div>
         <p className="max-w-sm text-sm text-muted-foreground">{message}</p>
         <Button asChild variant="outline" size="sm">
-          <Link href="/social/connect">Connect an account</Link>
+          <Link href="/socials/connect">Connect an account</Link>
         </Button>
       </CardContent>
     </Card>

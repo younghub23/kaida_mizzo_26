@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
 
   if (error || !code) {
     logError('social/linkedin/callback', 'OAuth error or missing code', undefined, { error })
-    return NextResponse.redirect(new URL('/social/connect?error=oauth_denied', req.url))
+    return NextResponse.redirect(new URL('/socials/connect?error=oauth_denied', req.url))
   }
 
   const clientId = process.env.LINKEDIN_CLIENT_ID
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
   if (!clientId || !clientSecret) {
     logError('social/linkedin/callback', 'LinkedIn credentials not set')
-    return NextResponse.redirect(new URL('/social/connect?error=config', req.url))
+    return NextResponse.redirect(new URL('/socials/connect?error=config', req.url))
   }
 
   try {
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 
     if (!tokenData.access_token) {
       logError('social/linkedin/callback', 'Failed to get access token', undefined, { tokenData })
-      return NextResponse.redirect(new URL('/social/connect?error=token', req.url))
+      return NextResponse.redirect(new URL('/socials/connect?error=token', req.url))
     }
 
     const accessToken = tokenData.access_token
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
 
     if (!profile.sub) {
       logError('social/linkedin/callback', 'Failed to get LinkedIn profile', undefined, { profile })
-      return NextResponse.redirect(new URL('/social/connect?error=profile', req.url))
+      return NextResponse.redirect(new URL('/socials/connect?error=profile', req.url))
     }
 
     const supabase = await createClient()
@@ -79,9 +79,9 @@ export async function GET(req: NextRequest) {
       logError('social/linkedin/callback', 'Failed to save LinkedIn account', dbErr)
     }
 
-    return NextResponse.redirect(new URL('/social/connect?success=1', req.url))
+    return NextResponse.redirect(new URL('/socials/connect?success=1', req.url))
   } catch (err) {
     logError('social/linkedin/callback', 'Unexpected error', err)
-    return NextResponse.redirect(new URL('/social/connect?error=unexpected', req.url))
+    return NextResponse.redirect(new URL('/socials/connect?error=unexpected', req.url))
   }
 }

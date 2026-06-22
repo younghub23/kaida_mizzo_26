@@ -176,10 +176,10 @@ export default function SocialPage() {
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Social Media</h1>
+          <h1 className="text-2xl font-semibold">Socials</h1>
           <p className="text-sm text-muted-foreground">Plan, schedule, and publish your posts</p>
         </div>
-        <Link href="/social/connect">
+        <Link href="/socials/connect">
           <Button variant="outline" className="gap-2">
             <Link2 className="size-4" />
             Connect Accounts
