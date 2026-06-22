@@ -409,6 +409,32 @@ export function getCoreMetrics(network: Network): Kpi[] {
   })
 }
 
+/**
+ * Aggregate per-network KPI sets into an "All networks" set. Used by the server
+ * loader when at least one network has LIVE data, so the All view reflects the
+ * real numbers (sum additive metrics, average the engagement rate).
+ */
+export function aggregateKpis(perNetwork: Kpi[][]): Kpi[] {
+  return (Object.keys(BASE_KPIS) as MetricKey[]).map((key) => {
+    const spec = BASE_KPIS[key]
+    const vals = perNetwork
+      .map((set) => set.find((k) => k.key === key))
+      .filter((k): k is Kpi => Boolean(k))
+    const count = vals.length || 1
+    const value = spec.additive
+      ? vals.reduce((s, k) => s + k.value, 0)
+      : vals.reduce((s, k) => s + k.value, 0) / count
+    const deltaPct = vals.reduce((s, k) => s + k.deltaPct, 0) / count
+    return {
+      key,
+      label: spec.label,
+      value: Math.round(value * 10) / 10,
+      format: spec.format,
+      deltaPct: Math.round(deltaPct * 10) / 10,
+    }
+  })
+}
+
 /** 1b. Daily engagement + reach trend (last 30 days), filtered by network. */
 export function getTrend(network: Network): TrendPoint[] {
   const labels = lastNDateLabels(30)

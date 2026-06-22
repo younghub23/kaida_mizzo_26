@@ -1,22 +1,36 @@
 import { TrendingUp, TrendingDown, Activity } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardDescription, CardTitle } from '@/components/ui/card'
-import { Section } from '@/components/analytics/data-source'
+import { Section, EmptyState } from '@/components/analytics/data-source'
 import { LineChart } from '@/components/analytics/charts'
-import { getCoreMetrics, getTrend, type Network } from '@/app/(dashboard)/analytics/mock-data'
-import { formatCompact, formatPercent, formatDelta } from '@/lib/analytics/format'
+import { getTrend, type Network, type Kpi } from '@/app/(dashboard)/analytics/mock-data'
+import { formatCompact, formatPercent, formatDelta, sourceSuffix, type SectionSource } from '@/lib/analytics/format'
+import { ALLOW_MOCK_ANALYTICS } from '@/lib/analytics/config'
 import { cn } from '@/lib/utils'
 
-export function CorePerformance({ network }: { network: Network }) {
-  const kpis = getCoreMetrics(network)
+export function CorePerformance({
+  network,
+  kpis,
+  source,
+}: {
+  network: Network
+  kpis: Kpi[]
+  source: SectionSource
+}) {
+  // KPI cards are live-where-connected; the trend chart is still mock-only, so
+  // it only renders where mock data is permitted (dev / preview).
   const trend = getTrend(network)
 
   return (
     <Section
       title="Core performance"
       icon={Activity}
-      source="Meta / LinkedIn / TikTok / Google APIs (mock)"
+      source={`Meta / LinkedIn / TikTok / Google APIs ${sourceSuffix(source)}`}
       description="Unified KPIs across every connected account — one view instead of toggling each native dashboard."
     >
+      {source === 'empty' || kpis.length === 0 ? (
+        <EmptyState message="Connect an account to see your unified performance metrics." />
+      ) : (
+      <>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((kpi) => {
           const up = kpi.deltaPct >= 0
@@ -45,21 +59,25 @@ export function CorePerformance({ network }: { network: Network }) {
         })}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Engagement &amp; reach</CardTitle>
-          <CardDescription>Last 30 days</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <LineChart
-            labels={trend.map((p) => p.label)}
-            series={[
-              { label: 'Engagement', color: 'var(--chart-3)', values: trend.map((p) => p.engagement) },
-              { label: 'Reach', color: 'var(--chart-1)', values: trend.map((p) => p.reach) },
-            ]}
-          />
-        </CardContent>
-      </Card>
+      {ALLOW_MOCK_ANALYTICS && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Engagement &amp; reach</CardTitle>
+            <CardDescription>Last 30 days · time series (mock)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <LineChart
+              labels={trend.map((p) => p.label)}
+              series={[
+                { label: 'Engagement', color: 'var(--chart-3)', values: trend.map((p) => p.engagement) },
+                { label: 'Reach', color: 'var(--chart-1)', values: trend.map((p) => p.reach) },
+              ]}
+            />
+          </CardContent>
+        </Card>
+      )}
+      </>
+      )}
     </Section>
   )
 }
