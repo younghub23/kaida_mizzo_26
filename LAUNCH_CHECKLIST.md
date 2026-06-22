@@ -20,6 +20,21 @@ Things to do/verify before opening Tala up to real users.
       (Supabase, Anthropic, Stripe, social, Resend keys).
 - [ ] Smoke-test the full signup → dashboard flow on production.
 
+## Legal (Terms & Privacy)
+The `/terms` and `/privacy` pages exist in the app (linked from the auth screens).
+The content is a starting template — finalize it before launch.
+- [ ] Have a lawyer review the Terms of Service and Privacy Policy.
+- [ ] Replace the placeholders: company legal name, governing law / jurisdiction
+      (Terms §14), and contact emails (`support@tala.com`, `privacy@tala.com`).
+- [ ] Confirm the Privacy Policy's subprocessor list matches what you actually use
+      (Supabase, Cloudflare, Stripe, Anthropic, Resend, connected social platforms).
+- [ ] Add the `/terms` and `/privacy` URLs to **Stripe** → Public business
+      information (so they appear on Checkout, the portal, and receipts).
+- [ ] Add the Privacy Policy URL anywhere required by third parties — Google OAuth
+      consent screen and the Meta / LinkedIn / TikTok app reviews.
+- [ ] Make sure both pages are reachable in production
+      (`https://kaida1.ycatesting.com/terms` and `/privacy`).
+
 ## Payments / Stripe (go live)
 Stripe **test/sandbox and live mode are separate** — products, prices, portal
 config, API keys, and webhooks must all be recreated in live mode.
