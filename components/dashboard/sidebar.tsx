@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
+  CalendarDays,
   Share2,
   Mail,
   Sparkles,
@@ -20,6 +21,7 @@ import { cn } from '@/lib/utils'
 
 const NAV_LINKS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/calendar', label: 'Calendar', icon: CalendarDays },
   { href: '/social', label: 'Social', icon: Share2 },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/email', label: 'Email', icon: Mail },
