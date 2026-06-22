@@ -1,67 +1,96 @@
 # Analytics — data integration status
 
-The `/analytics` page is **integration-ready with mock fallback**. Every section
-pulls **live data when the customer has connected that account** and the
-platform provider succeeds; otherwise it falls back to **mock** data and the
-section's "Source:" badge shows `(mock)`.
+The `/analytics` page pulls **live data when an account is connected** and a
+provider succeeds. Otherwise:
+
+- **Development / preview** → falls back to **mock** data (so we can build & demo).
+- **Production (live site)** → shows **real data only**; sections with no
+  connected source render an empty "connect an account" state — never fake
+  numbers.
+
+This is controlled by `lib/analytics/config.ts` (`ALLOW_MOCK_ANALYTICS`):
+mock is on when `NODE_ENV !== 'production'`, overridable with
+`NEXT_PUBLIC_ANALYTICS_ALLOW_MOCK` (`'true'`/`'false'`).
 
 ## How data flows
 
 ```
 page.tsx (server)
   └─ loadAnalytics()                         lib/analytics/load.ts
-        ├─ seed every network with mock      app/(dashboard)/analytics/mock-data.ts
+        ├─ baseline: mock (dev) / empty (prod)
         ├─ read connected accounts           social_accounts (Supabase, RLS)
-        ├─ fetchMetaPlatformAnalytics()      lib/analytics/providers/meta.ts
-        └─ recompute "All" aggregate if live aggregateKpis()
+        ├─ dispatch to per-network provider  lib/analytics/providers/*
+        └─ recompute "All" aggregate if live
   └─ <AnalyticsDashboard data=… />           client filter selects per network
 ```
 
-- The page never breaks on a data-source failure — any error falls back to mock
-  (see the try/catch in `load.ts` and per-call guards in `providers/meta.ts`).
-- To swap a section to real data, add a provider and overlay it in `load.ts`.
-  The UI components don't change.
+Providers never throw — any failure returns `null` and the loader keeps the
+baseline. The page cannot break because a fetch failed.
 
-## What's live today
+## Provider status
 
-| Section | Instagram / Facebook | LinkedIn / TikTok / Google |
+| Network | Provider | Status |
 | --- | --- | --- |
-| Core KPI cards | **live** (Meta Graph API) | mock |
-| Post performance / Top content | **live** (recent media/posts) | mock |
-| Trend chart | mock | mock |
-| Audience, Best-time, Competitors, ROI, Listening | mock | mock |
+| Instagram / Facebook | `providers/meta.ts` | **Implemented** — KPIs + posts from the Graph API. Needs Meta App Review for insights scopes (below). |
+| Google (GA4) | `providers/google.ts` | **Implemented** — KPIs from the GA4 Data API. Connect flow built; needs a Google OAuth app + App Verification. |
+| LinkedIn | `providers/linkedin.ts` | **Scaffolded** — wired up but inactive until org scopes are granted. Falls back today (intended). |
+| TikTok | `providers/tiktok.ts` | **Scaffolded** — wired up but inactive until analytics scopes are granted. Falls back today (intended). |
 
-KPI cards override only the metrics the API returns; unmapped metrics keep their
-mock value, so cards stay complete.
+Each network section's "Source:" badge shows `(live)`, `(mock)`,
+`(live + mock)`, or `(not connected)` so the real state is always visible.
 
-## To make Meta data actually flow in production
+Sections still mock-only (no provider yet): trend chart, audience demographics,
+best-time (Claude), competitor benchmark, ROI/UTM, social listening. In
+production these render empty states until a provider is added.
 
-1. **Add the scopes** (already added to `app/api/social/meta/connect/route.ts`):
-   - Instagram: `instagram_basic`, `instagram_manage_insights`
-   - Facebook: `pages_read_engagement`, `read_insights`
-2. **Meta App Review** — these are advanced permissions and must be approved by
-   Meta before they work for non-test users.
-3. **Re-consent** — accounts connected before the scope change must reconnect.
-4. **Verify Graph API field/metric names** against the current API version
-   (`v19.0` here). Metric names (`page_impressions`, `reach`, `follower_count`,
-   media `insights.metric(reach)`, etc.) drift between versions; confirm during
-   rollout. Unverified metrics simply fall back to the mock value.
+## Database
 
-## Extending to other networks
+`social_accounts` columns used: `platform`, `platform_user_id`, `access_token`,
+`refresh_token`, `token_expires_at`, `username`.
 
-Add a provider under `lib/analytics/providers/` (mirror `meta.ts`: return
-`{ kpis, posts } | null`, never throw) and overlay it in `load.ts`:
+Two migrations were applied:
+- `add_google_to_social_accounts_platform_check` — allow `platform = 'google'`.
+- `social_accounts_unique_user_platform` — unique `(user_id, platform)` so the
+  callbacks' `upsert(onConflict: 'user_id,platform')` works (it previously had
+  no matching constraint).
 
-- **LinkedIn** — Marketing Developer Platform; organization share statistics +
-  follower statistics. Token already stored on `social_accounts`.
-- **TikTok** — Display/Business API video + audience analytics.
-- **Google** — Google Analytics 4 Data API (for ROI/UTM) + Business Profile.
+The connect callbacks were also fixed to write `username`/`platform_user_id`
+(the real columns) instead of a non-existent `account_name`.
 
-## Notes / future work
+## To make each platform actually go live
 
-- Trend, audience demographics, best-time (Claude model), competitor
-  benchmarking, ROI/UTM, and social listening are still mock. Audience and
-  trend are reachable from the Meta APIs with more work; competitors and
-  listening require third-party providers.
-- Consider caching live results in a table (e.g. `analytics_snapshots`) and
-  refreshing on a schedule instead of fetching on every page load.
+### Meta (Instagram + Facebook)
+1. Scopes are set in `app/api/social/meta/connect/route.ts`
+   (`read_insights`, `instagram_manage_insights`).
+2. Submit for **Meta App Review** (advanced permissions).
+3. Existing connections must **reconnect** to grant the new scopes.
+4. Verify Graph API metric names against the current version (`v19.0`).
+
+### Google (GA4)
+1. Create an OAuth client (Google Cloud Console), enable the **Google Analytics
+   Admin API** and **Google Analytics Data API**.
+2. Set `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`; authorized redirect URI:
+   `<NEXT_PUBLIC_APP_URL>/api/social/google/callback`.
+3. Submit for **Google OAuth verification** (sensitive `analytics.readonly`
+   scope).
+4. The provider uses the first accessible GA4 property; to target a specific
+   one, store its id (`properties/123`) in `social_accounts.platform_user_id`
+   (a property-picker UI would set this).
+
+### LinkedIn (later)
+Add org scopes `r_organization_social` (+ `rw_organization_admin`) to
+`app/api/social/linkedin/connect/route.ts` and apply for LinkedIn Marketing
+Developer Platform access. The provider then activates automatically.
+
+### TikTok (later)
+Add scopes `user.info.stats` and `video.list` to
+`app/api/social/tiktok/connect/route.ts`. Note tokens expire in ~24h — the
+`refresh_token` is stored; add refresh handling like the Google provider.
+
+## Future work
+
+- Live providers for the remaining mock-only sections (trend, audience, ROI…).
+- Cache live results (e.g. an `analytics_snapshots` table) and refresh on a
+  schedule rather than fetching on every page load.
+- A GA4 property-picker and a token-refresh writer that persists refreshed
+  tokens back to `social_accounts`.

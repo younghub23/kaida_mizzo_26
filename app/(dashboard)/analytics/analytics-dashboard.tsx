@@ -39,7 +39,10 @@ export function AnalyticsDashboard({
 
   return (
     <div className="flex flex-col gap-8">
-      <DemoBanner livePlatforms={data.livePlatforms.map((p) => NETWORK_LABEL[p])} />
+      <DemoBanner
+        livePlatforms={data.livePlatforms.map((p) => NETWORK_LABEL[p])}
+        allowMock={data.allowMock}
+      />
 
       {/* Section 6 — cross-network filter that drives every section below. */}
       <Tabs value={network} onValueChange={(v) => setNetwork(v as Network)}>

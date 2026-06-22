@@ -68,7 +68,8 @@ export async function GET(req: NextRequest) {
       {
         user_id: user.id,
         platform: 'linkedin',
-        account_name: profile.name ?? 'LinkedIn User',
+        username: profile.name ?? 'LinkedIn User',
+        platform_user_id: profile.sub,
         access_token: accessToken,
       },
       { onConflict: 'user_id,platform' }

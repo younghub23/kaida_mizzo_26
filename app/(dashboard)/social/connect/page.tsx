@@ -17,7 +17,7 @@ import { createClient } from '@/lib/supabase/client'
 
 type SocialAccount = {
   platform: string
-  account_name: string
+  username: string
 }
 
 const PLATFORMS = [
@@ -44,6 +44,12 @@ const PLATFORMS = [
     label: 'TikTok',
     color: '#000000',
     description: 'Schedule and publish short-form videos to your TikTok business account.',
+  },
+  {
+    id: 'google',
+    label: 'Google',
+    color: '#4285F4',
+    description: 'Connect Google Analytics 4 to track traffic, conversions, and revenue on your Analytics dashboard.',
   },
 ]
 
@@ -79,7 +85,7 @@ export default function ConnectAccountsPage() {
       if (!user) return
       supabase
         .from('social_accounts')
-        .select('platform, account_name')
+        .select('platform, username')
         .eq('user_id', user.id)
         .then(({ data }) => {
           if (data) setAccounts(data)
@@ -97,6 +103,7 @@ export default function ConnectAccountsPage() {
       instagram: '/api/social/meta/connect',
       linkedin: '/api/social/linkedin/connect',
       tiktok: '/api/social/tiktok/connect',
+      google: '/api/social/google/connect',
     }
     const route = routes[platformId]
     if (route) {
@@ -136,7 +143,7 @@ export default function ConnectAccountsPage() {
                 {connected && (
                   <p className="flex items-center gap-1.5 text-xs text-green-600 font-medium pt-1">
                     <CheckCircle2 className="size-3.5" />
-                    Connected as {connected.account_name}
+                    Connected as {connected.username}
                   </p>
                 )}
               </CardHeader>

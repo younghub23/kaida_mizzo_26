@@ -20,11 +20,15 @@ export function formatDelta(deltaPct: number): string {
   return `${sign}${deltaPct.toFixed(1)}%`
 }
 
-/** Where a section's data came from this load. Drives the "(live/mock)" badge. */
-export type SectionSource = 'live' | 'mock' | 'mixed'
+/**
+ * Where a section's data came from this load. Drives the source badge.
+ * `empty` = production with no connected source (no mock shown).
+ */
+export type SectionSource = 'live' | 'mock' | 'mixed' | 'empty'
 
 export function sourceSuffix(source: SectionSource): string {
   if (source === 'live') return '(live)'
   if (source === 'mixed') return '(live + mock)'
+  if (source === 'empty') return '(not connected)'
   return '(mock)'
 }

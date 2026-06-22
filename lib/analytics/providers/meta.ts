@@ -24,17 +24,18 @@
 
 import { logError } from '@/lib/log'
 import {
-  getCoreMetrics,
-  getPostPerformance,
-  type Kpi,
   type MetricKey,
   type PostRow,
   type PostFormat,
 } from '@/app/(dashboard)/analytics/mock-data'
+import {
+  overlayKpis,
+  rate,
+  type PlatformAnalytics,
+  type ConnectedAccount,
+} from '@/lib/analytics/providers/util'
 
 const GRAPH = 'https://graph.facebook.com/v19.0'
-
-export type PlatformAnalytics = { kpis: Kpi[]; posts: PostRow[] }
 
 type InsightsResponse = { data?: { name: string; values?: { value: number }[] }[] }
 
@@ -55,18 +56,6 @@ function sumMetric(insights: InsightsResponse, name: string): number | undefined
   const metric = insights.data?.find((m) => m.name === name)
   if (!metric?.values?.length) return undefined
   return metric.values.reduce((s, v) => s + (v.value ?? 0), 0)
-}
-
-/**
- * Start from the mock KPI baseline for the platform and override ONLY the
- * metrics the API actually returned, so the card set stays complete while
- * surfacing as much live data as possible. deltaPct stays mock (we don't
- * compute period-over-period here yet).
- */
-function buildKpis(platform: 'instagram' | 'facebook', live: Partial<Record<MetricKey, number>>): Kpi[] {
-  return getCoreMetrics(platform).map((k) =>
-    live[k.key] !== undefined ? { ...k, value: Math.round(live[k.key]! * 10) / 10 } : k
-  )
 }
 
 function igFormat(mediaType?: string): PostFormat {
@@ -128,7 +117,7 @@ async function fetchInstagram(token: string): Promise<PlatformAnalytics | null> 
         likes,
         comments,
         shares: 0, // IG does not expose share counts via the Graph API
-        engagementRate: Math.round(((likes + comments) / views) * 1000) / 10,
+        engagementRate: rate(likes + comments, views),
       }
     })
 
@@ -142,10 +131,10 @@ async function fetchInstagram(token: string): Promise<PlatformAnalytics | null> 
     if (posts.length) {
       live.likes = likes
       live.comments = comments
-      if (reach) live.engagementRate = ((likes + comments) / reach) * 100
+      if (reach) live.engagementRate = rate(likes + comments, reach)
     }
 
-    return { kpis: buildKpis('instagram', live), posts: posts.length ? posts : getPostPerformance('instagram') }
+    return { kpis: overlayKpis('instagram', live), posts: posts.length ? posts : null }
   } catch (err) {
     logError('analytics/meta', 'Instagram live fetch failed; using mock', err)
     return null
@@ -194,7 +183,7 @@ async function fetchFacebook(token: string): Promise<PlatformAnalytics | null> {
         likes,
         comments,
         shares,
-        engagementRate: Math.round(((likes + comments + shares) / views) * 1000) / 10,
+        engagementRate: rate(likes + comments + shares, views),
       }
     })
 
@@ -211,21 +200,18 @@ async function fetchFacebook(token: string): Promise<PlatformAnalytics | null> {
       live.comments = posts.reduce((s, p) => s + p.comments, 0)
       live.shares = posts.reduce((s, p) => s + p.shares, 0)
     }
-    if (engagements !== undefined && reach) live.engagementRate = (engagements / reach) * 100
+    if (engagements !== undefined && reach) live.engagementRate = rate(engagements, reach)
 
-    return { kpis: buildKpis('facebook', live), posts: posts.length ? posts : getPostPerformance('facebook') }
+    return { kpis: overlayKpis('facebook', live), posts: posts.length ? posts : null }
   } catch (err) {
     logError('analytics/meta', 'Facebook live fetch failed; using mock', err)
     return null
   }
 }
 
-/** Public entry point. Returns null on any failure so the caller falls back to mock. */
-export function fetchMetaPlatformAnalytics(args: {
-  platform: 'instagram' | 'facebook'
-  accessToken: string
-}): Promise<PlatformAnalytics | null> {
-  return args.platform === 'instagram'
-    ? fetchInstagram(args.accessToken)
-    : fetchFacebook(args.accessToken)
+/** Provider entry point. Returns null on any failure so the caller falls back to mock. */
+export function fetchMeta(account: ConnectedAccount): Promise<PlatformAnalytics | null> {
+  return account.platform === 'instagram'
+    ? fetchInstagram(account.access_token)
+    : fetchFacebook(account.access_token)
 }

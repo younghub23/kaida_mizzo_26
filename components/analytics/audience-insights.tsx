@@ -1,8 +1,10 @@
 import { Users } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Section } from '@/components/analytics/data-source'
+import { Section, EmptyState } from '@/components/analytics/data-source'
 import { BarRow, ColumnChart } from '@/components/analytics/charts'
 import { getAudience, type Network } from '@/app/(dashboard)/analytics/mock-data'
+import { sourceSuffix } from '@/lib/analytics/format'
+import { ALLOW_MOCK_ANALYTICS } from '@/lib/analytics/config'
 import { cn } from '@/lib/utils'
 
 export function AudienceInsights({ network }: { network: Network }) {
@@ -14,9 +16,13 @@ export function AudienceInsights({ network }: { network: Network }) {
     <Section
       title="Audience insights"
       icon={Users}
-      source="Meta / LinkedIn / TikTok audience APIs (mock)"
+      source={`Meta / LinkedIn / TikTok audience APIs ${sourceSuffix(ALLOW_MOCK_ANALYTICS ? 'mock' : 'empty')}`}
       description="Who you're reaching — location, age, gender, active hours, and follower growth over time."
     >
+      {!ALLOW_MOCK_ANALYTICS ? (
+        <EmptyState message="Audience demographics will appear once an account with audience insights is connected." />
+      ) : (
+      <>
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
@@ -63,6 +69,8 @@ export function AudienceInsights({ network }: { network: Network }) {
           </CardContent>
         </Card>
       </div>
+      </>
+      )}
     </Section>
   )
 }

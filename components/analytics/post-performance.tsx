@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-import { Section } from '@/components/analytics/data-source'
+import { Section, EmptyState } from '@/components/analytics/data-source'
 import { type PostRow } from '@/app/(dashboard)/analytics/mock-data'
 import { formatCompact, formatPercent, sourceSuffix, type SectionSource } from '@/lib/analytics/format'
 import { NETWORK_LABEL } from '@/components/analytics/network-meta'
@@ -52,6 +52,9 @@ export function PostPerformance({ posts: input, source }: { posts: PostRow[]; so
       source={`scheduled_posts + per-network insights ${sourceSuffix(source)}`}
       description="Per-post metrics across formats and captions. The post list is already in Supabase — engagement numbers join in from each network's API."
     >
+      {source === 'empty' ? (
+        <EmptyState message="Connect an account to see how individual posts performed." />
+      ) : (
       <Card>
         <CardContent className="px-0">
           <Table>
@@ -91,6 +94,7 @@ export function PostPerformance({ posts: input, source }: { posts: PostRow[]; so
           </Table>
         </CardContent>
       </Card>
+      )}
     </Section>
   )
 }

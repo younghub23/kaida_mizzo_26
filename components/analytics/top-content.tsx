@@ -1,7 +1,7 @@
 import { Trophy, Heart, MessageCircle, Share2, Eye } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Section } from '@/components/analytics/data-source'
+import { Section, EmptyState } from '@/components/analytics/data-source'
 import { type PostRow } from '@/app/(dashboard)/analytics/mock-data'
 import { formatCompact, formatPercent, sourceSuffix, type SectionSource } from '@/lib/analytics/format'
 import { NETWORK_LABEL } from '@/components/analytics/network-meta'
@@ -16,7 +16,9 @@ export function TopContent({ posts, source }: { posts: PostRow[]; source: Sectio
       source={`scheduled_posts + per-network insights ${sourceSuffix(source)}`}
       description="Your highest-engagement posts — surfacing which formats, captions, and times performed best."
     >
-      {top.length === 0 ? (
+      {source === 'empty' ? (
+        <EmptyState message="Connect an account to surface your best-performing posts." />
+      ) : top.length === 0 ? (
         <Card>
           <CardContent className="py-6 text-center text-sm text-muted-foreground">
             No posts for this network yet.

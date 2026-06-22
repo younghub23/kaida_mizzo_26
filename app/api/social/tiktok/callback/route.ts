@@ -73,7 +73,8 @@ export async function GET(req: NextRequest) {
       {
         user_id: user.id,
         platform: 'tiktok',
-        account_name: displayName,
+        username: displayName,
+        platform_user_id: openId,
         access_token: accessToken,
       },
       { onConflict: 'user_id,platform' }

@@ -3,9 +3,10 @@ import { Ear, Lock, Smile, Meh, Frown } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Section } from '@/components/analytics/data-source'
+import { Section, EmptyState } from '@/components/analytics/data-source'
 import { getSocialListening, type Network, type Mention } from '@/app/(dashboard)/analytics/mock-data'
 import { formatCompact, formatDelta } from '@/lib/analytics/format'
+import { ALLOW_MOCK_ANALYTICS } from '@/lib/analytics/config'
 import { PLAN_LABELS, PLAN_FEATURES } from '@/lib/analytics/plan'
 import { cn } from '@/lib/utils'
 
@@ -22,7 +23,7 @@ export function SocialListening({ network, unlocked }: { network: Network; unloc
     <Section
       title="Social listening &amp; sentiment"
       icon={Ear}
-      source="Listening provider + Claude sentiment (mock)"
+      source={`Listening provider + Claude sentiment ${unlocked && !ALLOW_MOCK_ANALYTICS ? '(not connected)' : '(mock)'}`}
       description="Brand-mention monitoring and sentiment across the web."
       action={
         <Badge variant={unlocked ? 'secondary' : 'outline'}>
@@ -36,6 +37,11 @@ export function SocialListening({ network, unlocked }: { network: Network; unloc
 }
 
 function UnlockedListening({ network }: { network: Network }) {
+  // No live listening provider yet, so real data only exists as mock in dev.
+  if (!ALLOW_MOCK_ANALYTICS) {
+    return <EmptyState message="Social listening requires a brand-monitoring integration (not connected yet)." />
+  }
+
   // Only fetched once we've confirmed the plan allows it.
   const data = getSocialListening(network)
   const up = data.deltaPct >= 0
