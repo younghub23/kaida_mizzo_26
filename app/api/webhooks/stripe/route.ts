@@ -3,6 +3,24 @@ import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { logError } from '@/lib/log'
+import type { PlanTier } from '@/lib/analytics/plan'
+
+// Map a Stripe price ID to the plan tier it represents. Unknown/active prices
+// fall back to 'growth' so a paid customer is never left on a free tier.
+function tierFromPriceId(priceId: string | undefined): PlanTier {
+  if (!priceId) return 'growth'
+  const map: Record<string, PlanTier> = {
+    [process.env.STRIPE_STARTER_PRICE_ID || '__no_starter']: 'starter',
+    [process.env.STRIPE_PRICE_ID || '__no_growth']: 'growth',
+    [process.env.STRIPE_PRO_PRICE_ID || '__no_pro']: 'pro',
+    [process.env.STRIPE_AGENCY_PRICE_ID || '__no_agency']: 'agency',
+  }
+  return map[priceId] ?? 'growth'
+}
+
+function priceIdFromSubscription(subscription: Stripe.Subscription): string | undefined {
+  return subscription.items.data[0]?.price.id
+}
 
 export async function POST(req: NextRequest) {
   const body = await req.text()
@@ -34,10 +52,23 @@ export async function POST(req: NextRequest) {
         const userId = session.client_reference_id
 
         if (userId) {
+          // Resolve the purchased tier from the subscription's price.
+          let plan: PlanTier = 'growth'
+          if (session.subscription) {
+            try {
+              const subscription = await stripe.subscriptions.retrieve(
+                session.subscription as string
+              )
+              plan = tierFromPriceId(priceIdFromSubscription(subscription))
+            } catch (err) {
+              logError('webhooks/stripe', 'Failed to resolve tier on checkout completed', err, { userId })
+            }
+          }
+
           const { error } = await supabase
             .from('profiles')
             .update({
-              plan: 'growth',
+              plan,
               stripe_customer_id: session.customer as string,
             })
             .eq('id', userId)
@@ -47,17 +78,21 @@ export async function POST(req: NextRequest) {
         break
       }
 
+      case 'customer.subscription.created':
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription
         const isActive =
           subscription.status === 'active' || subscription.status === 'trialing'
+        const plan: PlanTier | 'free' = isActive
+          ? tierFromPriceId(priceIdFromSubscription(subscription))
+          : 'free'
 
         const { error } = await supabase
           .from('profiles')
-          .update({ plan: isActive ? 'growth' : 'free' })
+          .update({ plan })
           .eq('stripe_customer_id', subscription.customer as string)
 
-        if (error) logError('webhooks/stripe', 'Failed to update profile on subscription updated', error, { customerId: subscription.customer })
+        if (error) logError('webhooks/stripe', 'Failed to update profile on subscription change', error, { customerId: subscription.customer })
         break
       }
 
