@@ -41,6 +41,9 @@ export function BillingSection({
   const isPastDue = plan === 'past_due'
   const currentTier = PAID_TIERS.includes(plan) ? plan : null
   const currentPlan = plans.find((p) => p.tier === currentTier)
+  // Existing subscribers change plans through the Stripe portal (correct
+  // proration, no duplicate subscription). New subscribers go through Checkout.
+  const isSubscriber = currentTier !== null || isPastDue
 
   async function handleCheckout(option: PlanOption) {
     setCheckoutTier(option.tier)
@@ -133,7 +136,9 @@ export function BillingSection({
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {plans.map((option) => {
           const isCurrent = option.tier === currentTier
-          const loading = checkoutTier === option.tier
+          const loading = isSubscriber
+            ? openingPortal
+            : checkoutTier === option.tier
           return (
             <Card
               key={option.tier}
@@ -164,13 +169,17 @@ export function BillingSection({
                   variant={isCurrent ? 'secondary' : 'outline'}
                   className="w-full"
                   disabled={isCurrent || loading}
-                  onClick={() => handleCheckout(option)}
+                  onClick={() =>
+                    isSubscriber ? handleManage() : handleCheckout(option)
+                  }
                 >
                   {isCurrent
                     ? 'Current Plan'
                     : loading
-                      ? 'Redirecting…'
-                      : currentTier
+                      ? isSubscriber
+                        ? 'Opening…'
+                        : 'Redirecting…'
+                      : isSubscriber
                         ? 'Switch plan'
                         : 'Choose plan'}
                 </Button>
