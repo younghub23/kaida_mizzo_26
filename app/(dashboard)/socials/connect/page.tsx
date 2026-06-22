@@ -20,7 +20,15 @@ type SocialAccount = {
   username: string
 }
 
-const PLATFORMS = [
+type Platform = {
+  id: string
+  label: string
+  color: string
+  description: string
+  comingSoon?: boolean
+}
+
+const PLATFORMS: Platform[] = [
   {
     id: 'facebook',
     label: 'Facebook',
@@ -50,6 +58,27 @@ const PLATFORMS = [
     label: 'Google',
     color: '#4285F4',
     description: 'Connect Google Analytics 4 to track traffic, conversions, and revenue on your Analytics dashboard.',
+  },
+  {
+    id: 'snapchat',
+    label: 'Snapchat',
+    color: '#C9A800',
+    description: 'Share Snaps and Stories and track reach with your Snapchat audience.',
+    comingSoon: true,
+  },
+  {
+    id: 'x',
+    label: 'X',
+    color: '#000000',
+    description: 'Post and track engagement on X (formerly Twitter).',
+    comingSoon: true,
+  },
+  {
+    id: 'other',
+    label: 'Other',
+    color: '#6B7280',
+    description: 'YouTube, Pinterest, Threads, Reddit, Bluesky, and Google Business Profile — more platforms coming soon.',
+    comingSoon: true,
   },
 ]
 
@@ -151,9 +180,10 @@ export default function ConnectAccountsPage() {
                 <Button
                   variant={connected ? 'secondary' : 'outline'}
                   className="w-full"
+                  disabled={platform.comingSoon}
                   onClick={() => handleConnect(platform.id)}
                 >
-                  {connected ? 'Reconnect' : 'Connect'}
+                  {platform.comingSoon ? 'Coming soon' : connected ? 'Reconnect' : 'Connect'}
                 </Button>
               </CardFooter>
             </Card>
