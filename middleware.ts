@@ -27,7 +27,11 @@ export async function middleware(request: NextRequest) {
     !user &&
     !request.nextUrl.pathname.startsWith('/login') &&
     !request.nextUrl.pathname.startsWith('/signup') &&
-    !request.nextUrl.pathname.startsWith('/auth')
+    !request.nextUrl.pathname.startsWith('/auth') &&
+    // Cron-driven publishing endpoints authenticate via CRON_SECRET, not a
+    // user session, so they must not be redirected to /login.
+    !request.nextUrl.pathname.startsWith('/api/social/publish-due') &&
+    !request.nextUrl.pathname.startsWith('/api/social/publish')
   ) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'

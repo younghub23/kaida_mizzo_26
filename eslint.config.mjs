@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Cloudflare Worker entrypoint — imports a build-time-only file.
+    "worker.ts",
   ]),
 ]);
 
