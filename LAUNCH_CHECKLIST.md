@@ -35,6 +35,34 @@ The content is a starting template — finalize it before launch.
 - [ ] Make sure both pages are reachable in production
       (`https://kaida1.ycatesting.com/terms` and `/privacy`).
 
+## Social / Analytics integrations — set up API keys when the site is fully designed
+> ⚠️ REMINDER (requested): once the website design is finalized, set up the API
+> credentials for each platform below so the Analytics page and posting pull
+> live data. Each connect flow stores a token in the `social_accounts` table;
+> until a platform's keys + connect route exist, its card shows "Coming soon"
+> and Analytics shows mock (dev) / empty (prod).
+
+Already wired (just need credentials + platform approval):
+- [ ] **Meta (Facebook + Instagram)** — `META_APP_ID`, `META_APP_SECRET`. Submit
+      `read_insights` + `instagram_manage_insights` for Meta App Review, then reconnect.
+- [ ] **Google (GA4)** — `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`. Publish the
+      OAuth consent screen (sensitive `analytics.readonly` scope). Tag already
+      installed via `NEXT_PUBLIC_GA_MEASUREMENT_ID`.
+- [ ] **LinkedIn** — `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`. Add org scopes
+      (`r_organization_social`, `rw_organization_admin`) + Marketing Developer Platform access.
+- [ ] **TikTok** — `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`. Add `user.info.stats`
+      + `video.list` scopes; add token refresh.
+
+Not built yet — need a connect/callback route + provider + keys (cards show "Coming soon"):
+- [ ] **Snapchat** — Snap Marketing API (Snap Kit / Marketing API credentials).
+- [ ] **X (Twitter)** — X API v2 OAuth 2.0 app (`X_CLIENT_ID`/`X_CLIENT_SECRET`); note API tier/pricing.
+- [ ] **YouTube** — YouTube Data API (reuses Google OAuth; add the `youtube.readonly` scope).
+- [ ] **Pinterest** — Pinterest API for business (`PINTEREST_APP_ID`/`PINTEREST_APP_SECRET`).
+- [ ] **Other to consider** — Threads, Reddit, Bluesky, Google Business Profile.
+
+When ready, ping me and I'll scaffold each connect route + analytics provider
+(same pattern as `lib/analytics/providers/*` and `app/api/social/*`).
+
 ## Payments / Stripe (go live)
 Stripe **test/sandbox and live mode are separate** — products, prices, portal
 config, API keys, and webhooks must all be recreated in live mode.
