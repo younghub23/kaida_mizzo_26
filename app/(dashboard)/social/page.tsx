@@ -144,8 +144,12 @@ export default function SocialPage() {
     )
   }
 
+  // Build a timezone-correct ISO instant from the user's chosen local date/time.
+  // This runs in the browser, so it uses the user's own timezone. (The server
+  // runs in UTC on Cloudflare and would otherwise misread a naive datetime,
+  // publishing the post at the wrong real-world time.)
   const scheduledAt = date
-    ? `${date}T${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`
+    ? new Date(`${date}T${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`).toISOString()
     : ''
 
   const weekDays = getWeekDays(weekOffset)
