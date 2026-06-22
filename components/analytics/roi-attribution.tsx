@@ -10,9 +10,10 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Section } from '@/components/analytics/data-source'
+import { Section, EmptyState } from '@/components/analytics/data-source'
 import { getRoiAttribution, type Network } from '@/app/(dashboard)/analytics/mock-data'
-import { formatCompact, formatCurrency } from '@/lib/analytics/format'
+import { formatCompact, formatCurrency, sourceSuffix } from '@/lib/analytics/format'
+import { ALLOW_MOCK_ANALYTICS } from '@/lib/analytics/config'
 import { NETWORK_LABEL } from '@/components/analytics/network-meta'
 
 export function RoiAttribution({ network }: { network: Network }) {
@@ -30,9 +31,12 @@ export function RoiAttribution({ network }: { network: Network }) {
     <Section
       title="ROI &amp; conversion attribution"
       icon={DollarSign}
-      source="UTM via GA4 + Stripe (mock)"
+      source={`UTM via GA4 + Stripe ${sourceSuffix(ALLOW_MOCK_ANALYTICS ? 'mock' : 'empty')}`}
       description="UTM-tagged clicks, conversions, and revenue attributed back to the post that drove them."
     >
+      {!ALLOW_MOCK_ANALYTICS ? (
+        <EmptyState message="Revenue attribution appears once Google Analytics and UTM tracking are connected." />
+      ) : (
       <Card>
         <CardContent className="px-0">
           <Table>
@@ -84,6 +88,7 @@ export function RoiAttribution({ network }: { network: Network }) {
           </Table>
         </CardContent>
       </Card>
+      )}
     </Section>
   )
 }

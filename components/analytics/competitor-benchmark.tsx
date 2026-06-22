@@ -9,10 +9,11 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Section } from '@/components/analytics/data-source'
+import { Section, EmptyState } from '@/components/analytics/data-source'
 import { BarRow } from '@/components/analytics/charts'
 import { getCompetitors, type Network } from '@/app/(dashboard)/analytics/mock-data'
-import { formatPercent } from '@/lib/analytics/format'
+import { formatPercent, sourceSuffix } from '@/lib/analytics/format'
+import { ALLOW_MOCK_ANALYTICS } from '@/lib/analytics/config'
 import { cn } from '@/lib/utils'
 
 export function CompetitorBenchmark({ network }: { network: Network }) {
@@ -23,9 +24,12 @@ export function CompetitorBenchmark({ network }: { network: Network }) {
     <Section
       title="Competitor benchmark"
       icon={Swords}
-      source="Competitive intel provider (mock)"
+      source={`Competitive intel provider ${sourceSuffix(ALLOW_MOCK_ANALYTICS ? 'mock' : 'empty')}`}
       description="How your engagement and follower growth stack up against rivals, plus share of voice."
     >
+      {!ALLOW_MOCK_ANALYTICS ? (
+        <EmptyState message="Competitor benchmarking requires a competitive-intelligence integration (not connected yet)." />
+      ) : (
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
@@ -77,6 +81,7 @@ export function CompetitorBenchmark({ network }: { network: Network }) {
           </CardContent>
         </Card>
       </div>
+      )}
     </Section>
   )
 }

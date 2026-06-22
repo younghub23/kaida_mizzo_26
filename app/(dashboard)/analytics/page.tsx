@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
 import { AnalyticsDashboard } from './analytics-dashboard'
+import { loadAnalytics } from '@/lib/analytics/load'
 import { getCurrentPlan, canUseSocialListening, PLAN_LABELS } from '@/lib/analytics/plan'
 
 export default async function AnalyticsPage() {
@@ -19,6 +20,9 @@ export default async function AnalyticsPage() {
   const plan = getCurrentPlan()
   const socialListeningUnlocked = canUseSocialListening(plan)
 
+  // Live-where-connected, mock-otherwise. Reads social_accounts tokens.
+  const data = await loadAnalytics()
+
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -31,7 +35,7 @@ export default async function AnalyticsPage() {
         <Badge variant="secondary">{PLAN_LABELS[plan]} plan</Badge>
       </div>
 
-      <AnalyticsDashboard socialListeningUnlocked={socialListeningUnlocked} />
+      <AnalyticsDashboard data={data} socialListeningUnlocked={socialListeningUnlocked} />
     </div>
   )
 }

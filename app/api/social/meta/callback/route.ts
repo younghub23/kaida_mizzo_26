@@ -98,7 +98,8 @@ export async function GET(req: NextRequest) {
         {
           user_id: user.id,
           platform: 'facebook',
-          account_name: page.name,
+          username: page.name,
+          platform_user_id: page.id,
           access_token: page.access_token,
         },
         { onConflict: 'user_id,platform' }
@@ -126,7 +127,8 @@ export async function GET(req: NextRequest) {
           {
             user_id: user.id,
             platform: 'instagram',
-            account_name: igName,
+            username: igName,
+            platform_user_id: igId,
             access_token: page.access_token,
           },
           { onConflict: 'user_id,platform' }
