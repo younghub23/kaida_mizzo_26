@@ -483,6 +483,26 @@ export default function AuthForm({ initialMode = 'login' }: Props) {
                 {mode === 'login' ? 'Sign Up.' : 'Log In.'}
               </button>
             </span>
+            <div
+              style={{
+                marginTop: '10px',
+                display: 'flex',
+                gap: '14px',
+                fontFamily: 'var(--font-fredoka)',
+                fontStyle: 'normal',
+                fontSize: '11px',
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                opacity: 0.8,
+              }}
+            >
+              <a href="/terms" style={{ color: ACCENT, textDecoration: 'none' }}>
+                Terms
+              </a>
+              <a href="/privacy" style={{ color: ACCENT, textDecoration: 'none' }}>
+                Privacy
+              </a>
+            </div>
           </div>
         </div>
       </div>
