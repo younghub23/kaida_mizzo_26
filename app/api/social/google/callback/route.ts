@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 
   if (error || !code) {
     logError('social/google/callback', 'OAuth error or missing code', undefined, { error })
-    return NextResponse.redirect(new URL('/social/connect?error=oauth_denied', req.url))
+    return NextResponse.redirect(new URL('/socials/connect?error=oauth_denied', req.url))
   }
 
   const clientId = process.env.GOOGLE_CLIENT_ID
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 
   if (!clientId || !clientSecret) {
     logError('social/google/callback', 'GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is not set')
-    return NextResponse.redirect(new URL('/social/connect?error=config', req.url))
+    return NextResponse.redirect(new URL('/socials/connect?error=config', req.url))
   }
 
   try {
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
 
     if (!tokenData.access_token) {
       logError('social/google/callback', 'Failed to get access token', undefined, { tokenData })
-      return NextResponse.redirect(new URL('/social/connect?error=token', req.url))
+      return NextResponse.redirect(new URL('/socials/connect?error=token', req.url))
     }
 
     // Fetch the account email for a friendly display name.
@@ -94,12 +94,12 @@ export async function GET(req: NextRequest) {
 
     if (dbErr) {
       logError('social/google/callback', 'Failed to save Google account', dbErr)
-      return NextResponse.redirect(new URL('/social/connect?error=unexpected', req.url))
+      return NextResponse.redirect(new URL('/socials/connect?error=unexpected', req.url))
     }
 
-    return NextResponse.redirect(new URL('/social/connect?success=1', req.url))
+    return NextResponse.redirect(new URL('/socials/connect?success=1', req.url))
   } catch (err) {
     logError('social/google/callback', 'Unexpected error during OAuth callback', err)
-    return NextResponse.redirect(new URL('/social/connect?error=unexpected', req.url))
+    return NextResponse.redirect(new URL('/socials/connect?error=unexpected', req.url))
   }
 }
