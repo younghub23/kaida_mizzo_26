@@ -33,7 +33,7 @@ export function PasswordForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Change password</CardTitle>
+        <CardTitle className="text-base">Change Password</CardTitle>
         <CardDescription>
           Enter your current password, then choose a new one (at least 8
           characters).

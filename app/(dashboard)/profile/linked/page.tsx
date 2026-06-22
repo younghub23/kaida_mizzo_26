@@ -43,7 +43,7 @@ export default async function LinkedAccountsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Linked accounts</h1>
+        <h1 className="text-2xl font-semibold">Linked Accounts</h1>
         <p className="text-sm text-muted-foreground">
           Social profiles and sign-in methods connected to Tala.
         </p>
@@ -51,7 +51,7 @@ export default async function LinkedAccountsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Social accounts</CardTitle>
+          <CardTitle className="text-base">Social Accounts</CardTitle>
           <CardDescription>
             Connect channels to schedule and publish from Tala.
           </CardDescription>
@@ -63,7 +63,7 @@ export default async function LinkedAccountsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Sign-in methods</CardTitle>
+          <CardTitle className="text-base">Sign-In Methods</CardTitle>
           <CardDescription>How you sign in to your Tala account.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col divide-y">

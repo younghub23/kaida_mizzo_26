@@ -26,37 +26,37 @@ const PLAN_LABEL: Record<string, string> = {
 const SECTIONS = [
   {
     href: '/profile/brand',
-    label: 'Brand info',
+    label: 'Brand Info',
     description: 'What we know about your brand — powers AI and your marketplace profile.',
     icon: IdCard,
   },
   {
     href: '/profile/wallet',
-    label: 'Wallet & subscriptions',
+    label: 'Wallet & Subscriptions',
     description: 'Plan, payment method, billing address, and invoices.',
     icon: Wallet,
   },
   {
     href: '/profile/security',
-    label: 'Security & sign-in',
+    label: 'Security & Sign-In',
     description: 'Account email, sign-in activity, and 2-step verification.',
     icon: ShieldCheck,
   },
   {
     href: '/profile/password',
-    label: 'Tala password',
+    label: 'Tala Password',
     description: 'Change the password you use to sign in.',
     icon: KeyRound,
   },
   {
     href: '/profile/linked',
-    label: 'Linked accounts',
+    label: 'Linked Accounts',
     description: 'Social and sign-in accounts connected to Tala.',
     icon: Link2,
   },
   {
     href: '/profile/privacy',
-    label: 'Data & privacy',
+    label: 'Data & Privacy',
     description: 'Export your data or delete your account.',
     icon: SlidersHorizontal,
   },

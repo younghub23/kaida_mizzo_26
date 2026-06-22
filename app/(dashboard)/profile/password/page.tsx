@@ -15,7 +15,7 @@ export default async function PasswordPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Tala password</h1>
+        <h1 className="text-2xl font-semibold">Tala Password</h1>
         <p className="text-sm text-muted-foreground">
           The password you use to sign in to Tala.
         </p>

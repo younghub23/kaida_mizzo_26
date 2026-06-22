@@ -101,7 +101,6 @@ export const BRAND_TYPES = [
   'Creator / Influencer',
   'Nonprofit',
   'Agency',
-  'Other',
 ]
 
 export const TEAM_SIZES = ['Just me', '2–10', '11–50', '51–200', '200+']

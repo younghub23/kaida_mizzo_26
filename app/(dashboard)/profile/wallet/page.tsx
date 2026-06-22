@@ -163,7 +163,7 @@ export default async function WalletPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Wallet &amp; subscriptions</h1>
+        <h1 className="text-2xl font-semibold">Wallet &amp; Subscriptions</h1>
         <p className="text-sm text-muted-foreground">
           Your plan, payment method, and billing history.
         </p>
@@ -180,7 +180,7 @@ export default async function WalletPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <CreditCard className="size-4" />
-              Payment method
+              Payment Method
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -205,7 +205,7 @@ export default async function WalletPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <MapPin className="size-4" />
-              Billing address
+              Billing Address
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -238,7 +238,7 @@ export default async function WalletPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Receipt className="size-4" />
-            Payment history
+            Payment History
           </CardTitle>
           <CardDescription>Your recent invoices and receipts.</CardDescription>
         </CardHeader>

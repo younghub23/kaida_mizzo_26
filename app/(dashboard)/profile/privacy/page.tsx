@@ -22,7 +22,7 @@ export default async function PrivacyPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Data &amp; privacy</h1>
+        <h1 className="text-2xl font-semibold">Data &amp; Privacy</h1>
         <p className="text-sm text-muted-foreground">
           Control your data and your account.
         </p>
@@ -30,7 +30,7 @@ export default async function PrivacyPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Export your data</CardTitle>
+          <CardTitle className="text-base">Export Your Data</CardTitle>
           <CardDescription>
             Download a copy of your profile, brand info, and connected accounts
             as JSON.
@@ -43,7 +43,7 @@ export default async function PrivacyPage() {
 
       <Card className="border-destructive/30">
         <CardHeader>
-          <CardTitle className="text-base text-destructive">Danger zone</CardTitle>
+          <CardTitle className="text-base text-destructive">Danger Zone</CardTitle>
           <CardDescription>
             Permanently delete your account and all associated data. This cannot
             be undone.

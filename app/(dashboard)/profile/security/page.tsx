@@ -41,7 +41,7 @@ export default async function SecurityPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Security &amp; sign-in</h1>
+        <h1 className="text-2xl font-semibold">Security &amp; Sign-In</h1>
         <p className="text-sm text-muted-foreground">
           Keep your account secure and manage how you sign in.
         </p>
@@ -49,7 +49,7 @@ export default async function SecurityPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">How you sign in to Tala</CardTitle>
+          <CardTitle className="text-base">How You Sign In to Tala</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col divide-y">
           <div className="flex items-center gap-4 py-3">
@@ -91,7 +91,7 @@ export default async function SecurityPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <ShieldCheck className="size-4" />
-            2-step verification
+            2-Step Verification
             <Badge variant="outline">Coming soon</Badge>
           </CardTitle>
           <CardDescription>
@@ -103,7 +103,7 @@ export default async function SecurityPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Active sessions</CardTitle>
+          <CardTitle className="text-base">Active Sessions</CardTitle>
           <CardDescription>
             Signed out somewhere you don&apos;t recognize? Sign out of every
             device to be safe — you&apos;ll need to sign in again.

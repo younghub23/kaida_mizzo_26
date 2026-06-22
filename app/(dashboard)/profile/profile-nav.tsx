@@ -15,12 +15,12 @@ import { cn } from '@/lib/utils'
 
 const SETTINGS_LINKS = [
   { href: '/profile', label: 'Home', icon: Home },
-  { href: '/profile/brand', label: 'Brand info', icon: IdCard },
-  { href: '/profile/wallet', label: 'Wallet & subscriptions', icon: Wallet },
-  { href: '/profile/security', label: 'Security & sign-in', icon: ShieldCheck },
-  { href: '/profile/password', label: 'Tala password', icon: KeyRound },
-  { href: '/profile/linked', label: 'Linked accounts', icon: Link2 },
-  { href: '/profile/privacy', label: 'Data & privacy', icon: SlidersHorizontal },
+  { href: '/profile/brand', label: 'Brand Info', icon: IdCard },
+  { href: '/profile/wallet', label: 'Wallet & Subscriptions', icon: Wallet },
+  { href: '/profile/security', label: 'Security & Sign-In', icon: ShieldCheck },
+  { href: '/profile/password', label: 'Tala Password', icon: KeyRound },
+  { href: '/profile/linked', label: 'Linked Accounts', icon: Link2 },
+  { href: '/profile/privacy', label: 'Data & Privacy', icon: SlidersHorizontal },
 ]
 
 export function ProfileNav() {

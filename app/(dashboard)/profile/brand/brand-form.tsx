@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { Sparkles, Store } from 'lucide-react'
+import { Sparkles, Store, Loader2 } from 'lucide-react'
 import {
   Card,
   CardHeader,
@@ -41,41 +41,128 @@ const INDUSTRIES = [
   'Beauty',
   'Real Estate',
   'Tech',
-  'Other',
 ]
 
 const selectClass =
   'h-9 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30'
 
+const OTHER = '__other__'
+
+// Single-select with an "Other…" escape hatch that reveals a free-text input.
+function SelectWithOther({
+  id,
+  value,
+  options,
+  placeholder,
+  onChange,
+}: {
+  id?: string
+  value: string
+  options: string[]
+  placeholder: string
+  onChange: (value: string) => void
+}) {
+  const [other, setOther] = useState(value !== '' && !options.includes(value))
+
+  return (
+    <div className="flex flex-col gap-2">
+      <select
+        id={id}
+        className={selectClass}
+        value={other ? OTHER : value}
+        onChange={(e) => {
+          if (e.target.value === OTHER) {
+            setOther(true)
+            onChange('')
+          } else {
+            setOther(false)
+            onChange(e.target.value)
+          }
+        }}
+      >
+        <option value="">{placeholder}</option>
+        {options.map((item) => (
+          <option key={item} value={item}>
+            {item}
+          </option>
+        ))}
+        <option value={OTHER}>Other…</option>
+      </select>
+      {other && (
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Type your own"
+          autoFocus
+        />
+      )}
+    </div>
+  )
+}
+
+// Multi-select chips with the ability to add custom values.
 function ChipGroup({
   options,
   selected,
   onToggle,
+  onAdd,
 }: {
   options: string[]
   selected: string[]
   onToggle: (value: string) => void
+  onAdd: (value: string) => void
 }) {
+  const [draft, setDraft] = useState('')
+  const custom = selected.filter((s) => !options.includes(s))
+  const all = [...options, ...custom]
+
+  function commit() {
+    const v = draft.trim()
+    if (v) {
+      onAdd(v)
+      setDraft('')
+    }
+  }
+
   return (
-    <div className="flex flex-wrap gap-2">
-      {options.map((option) => {
-        const active = selected.includes(option)
-        return (
-          <button
-            key={option}
-            type="button"
-            onClick={() => onToggle(option)}
-            className={cn(
-              'rounded-full border px-3 py-1 text-sm transition-colors',
-              active
-                ? 'border-primary bg-primary text-primary-foreground'
-                : 'border-input text-muted-foreground hover:bg-muted'
-            )}
-          >
-            {option}
-          </button>
-        )
-      })}
+    <div className="flex flex-col gap-2.5">
+      <div className="flex flex-wrap gap-2">
+        {all.map((option) => {
+          const active = selected.includes(option)
+          return (
+            <button
+              key={option}
+              type="button"
+              onClick={() => onToggle(option)}
+              className={cn(
+                'rounded-full border px-3 py-1 text-sm transition-colors',
+                active
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-input text-muted-foreground hover:bg-muted'
+              )}
+            >
+              {option}
+            </button>
+          )
+        })}
+      </div>
+      <div className="flex gap-2">
+        <Input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              commit()
+            }
+          }}
+          placeholder="Add your own"
+          className="max-w-xs"
+        />
+        <Button type="button" variant="outline" size="sm" onClick={commit}>
+          Add
+        </Button>
+      </div>
     </div>
   )
 }
@@ -140,6 +227,17 @@ export function BrandForm({
     })
   }
 
+  function addToArray(key: ArrayKey, value: string) {
+    const v = value.trim()
+    if (!v) return
+    setBrand((prev) => {
+      if (prev[key].includes(v)) return prev
+      const next = { ...prev }
+      next[key] = [...prev[key], v]
+      return next
+    })
+  }
+
   async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -151,6 +249,7 @@ export function BrandForm({
       const data = await res.json()
       if (res.ok && data.url) {
         setLogoUrl(data.url)
+        toast.success('Logo uploaded')
       } else {
         toast.error(data.error ?? 'Failed to upload logo')
       }
@@ -158,6 +257,8 @@ export function BrandForm({
       toast.error('Failed to upload logo')
     } finally {
       setUploading(false)
+      // Reset so re-selecting the same file fires onChange again.
+      e.target.value = ''
     }
   }
 
@@ -181,7 +282,7 @@ export function BrandForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Brand info</h1>
+        <h1 className="text-2xl font-semibold">Brand Info</h1>
         <p className="text-sm text-muted-foreground">
           Tell us about your brand. The more we know, the better Tala can market
           for you.
@@ -211,6 +312,65 @@ export function BrandForm({
           <CardDescription>Your business identity and branding.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
+          <Field
+            label="Logo"
+            hint="Square images look best — this becomes your marketplace profile picture."
+          >
+            <div className="flex items-center gap-4">
+              <div className="relative size-24 shrink-0 overflow-hidden rounded-full bg-muted ring-1 ring-foreground/10">
+                {logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={logoUrl}
+                    alt="Brand logo"
+                    className="size-full object-cover"
+                  />
+                ) : (
+                  <span className="flex size-full items-center justify-center">
+                    <Store className="size-7 text-muted-foreground" />
+                  </span>
+                )}
+                {uploading && (
+                  <span className="absolute inset-0 flex items-center justify-center bg-background/60">
+                    <Loader2 className="size-5 animate-spin" />
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-col items-start gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoChange}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={uploading}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {uploading
+                    ? 'Uploading…'
+                    : logoUrl
+                      ? 'Change photo'
+                      : 'Upload photo'}
+                </Button>
+                {logoUrl && !uploading && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setLogoUrl('')}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
+            </div>
+          </Field>
+
           <Field label="Business name" htmlFor="businessName">
             <Input
               id="businessName"
@@ -220,63 +380,25 @@ export function BrandForm({
             />
           </Field>
 
-          <Field label="Logo">
-            <div className="flex items-center gap-3">
-              {logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={logoUrl}
-                  alt="Logo preview"
-                  className="size-16 rounded-lg object-cover ring-1 ring-foreground/10"
-                />
-              ) : (
-                <span className="flex size-16 items-center justify-center rounded-lg bg-muted">
-                  <Store className="size-6 text-muted-foreground" />
-                </span>
-              )}
-              <Input
-                id="logo"
-                type="file"
-                accept="image/*"
-                ref={fileInputRef}
-                onChange={handleLogoChange}
-                disabled={uploading}
-                className="max-w-xs"
-              />
-            </div>
-          </Field>
-
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Industry" htmlFor="industry">
-              <select
+              <SelectWithOther
                 id="industry"
                 value={industry}
-                onChange={(e) => setIndustry(e.target.value)}
-                className={selectClass}
-              >
-                <option value="">Select an industry</option>
-                {INDUSTRIES.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
+                options={INDUSTRIES}
+                placeholder="Select an industry"
+                onChange={setIndustry}
+              />
             </Field>
 
             <Field label="Brand type" htmlFor="brandType">
-              <select
+              <SelectWithOther
                 id="brandType"
                 value={brand.brandType}
-                onChange={(e) => setField('brandType', e.target.value)}
-                className={selectClass}
-              >
-                <option value="">Select a type</option>
-                {BRAND_TYPES.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
+                options={BRAND_TYPES}
+                placeholder="Select a type"
+                onChange={(v) => setField('brandType', v)}
+              />
             </Field>
           </div>
 
@@ -319,19 +441,13 @@ export function BrandForm({
               />
             </Field>
             <Field label="Team size" htmlFor="teamSize">
-              <select
+              <SelectWithOther
                 id="teamSize"
                 value={brand.teamSize}
-                onChange={(e) => setField('teamSize', e.target.value)}
-                className={selectClass}
-              >
-                <option value="">Select</option>
-                {TEAM_SIZES.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
+                options={TEAM_SIZES}
+                placeholder="Select"
+                onChange={(v) => setField('teamSize', v)}
+              />
             </Field>
           </div>
         </CardContent>
@@ -349,6 +465,7 @@ export function BrandForm({
               options={AGE_RANGES}
               selected={brand.targetAgeRanges}
               onToggle={(v) => toggleArray('targetAgeRanges', v)}
+              onAdd={(v) => addToArray('targetAgeRanges', v)}
             />
           </Field>
           <Field label="Target genders">
@@ -356,6 +473,7 @@ export function BrandForm({
               options={GENDERS}
               selected={brand.targetGenders}
               onToggle={(v) => toggleArray('targetGenders', v)}
+              onAdd={(v) => addToArray('targetGenders', v)}
             />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -382,7 +500,7 @@ export function BrandForm({
       {/* Positioning */}
       <Card>
         <CardHeader>
-          <CardTitle>Positioning &amp; goals</CardTitle>
+          <CardTitle>Positioning &amp; Goals</CardTitle>
           <CardDescription>How your brand sounds and what success looks like.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -391,6 +509,7 @@ export function BrandForm({
               options={BRAND_VOICES}
               selected={brand.brandVoice}
               onToggle={(v) => toggleArray('brandVoice', v)}
+              onAdd={(v) => addToArray('brandVoice', v)}
             />
           </Field>
           <Field label="Brand values">
@@ -398,6 +517,7 @@ export function BrandForm({
               options={BRAND_VALUES}
               selected={brand.brandValues}
               onToggle={(v) => toggleArray('brandValues', v)}
+              onAdd={(v) => addToArray('brandValues', v)}
             />
           </Field>
           <Field label="Primary goals">
@@ -405,6 +525,7 @@ export function BrandForm({
               options={PRIMARY_GOALS}
               selected={brand.primaryGoals}
               onToggle={(v) => toggleArray('primaryGoals', v)}
+              onAdd={(v) => addToArray('primaryGoals', v)}
             />
           </Field>
           <Field label="Preferred platforms">
@@ -412,6 +533,7 @@ export function BrandForm({
               options={PLATFORMS}
               selected={brand.preferredPlatforms}
               onToggle={(v) => toggleArray('preferredPlatforms', v)}
+              onAdd={(v) => addToArray('preferredPlatforms', v)}
             />
           </Field>
           <Field label="Content topics" htmlFor="contentTopics" hint="Comma-separated themes you post about.">

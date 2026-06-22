@@ -83,7 +83,7 @@ export function BillingSection({
   return (
     <section className="flex flex-col gap-4">
       <div>
-        <h2 className="text-lg font-semibold">Your plan</h2>
+        <h2 className="text-lg font-semibold">Your Plan</h2>
         <p className="text-sm text-muted-foreground">
           Change your subscription tier or manage billing.
         </p>
@@ -94,7 +94,7 @@ export function BillingSection({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-col gap-1.5">
               <CardTitle className="flex items-center gap-2">
-                Current plan
+                Current Plan
                 {currentPlan ? (
                   <Badge>{currentPlan.name}</Badge>
                 ) : isPastDue ? (
@@ -167,7 +167,7 @@ export function BillingSection({
                   onClick={() => handleCheckout(option)}
                 >
                   {isCurrent
-                    ? 'Current plan'
+                    ? 'Current Plan'
                     : loading
                       ? 'Redirecting…'
                       : currentTier
