@@ -3,6 +3,14 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { logError } from '@/lib/log'
 
 export async function GET(req: NextRequest) {
+  // When CRON_SECRET is configured, require it. The Cloudflare cron trigger
+  // (worker.ts) sends it as a Bearer token. Without it set, the endpoint stays
+  // open — set CRON_SECRET in production to lock it down.
+  const cronSecret = process.env.CRON_SECRET
+  if (cronSecret && req.headers.get('authorization') !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const admin = createAdminClient()
 
   const { data: posts, error } = await admin
@@ -23,7 +31,10 @@ export async function GET(req: NextRequest) {
     try {
       const res = await fetch(`${baseUrl}/api/social/publish`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(cronSecret ? { Authorization: `Bearer ${cronSecret}` } : {}),
+        },
         body: JSON.stringify({ postId: post.id }),
       })
       results.push({ id: post.id, ok: res.ok })

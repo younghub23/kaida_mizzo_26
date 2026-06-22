@@ -40,16 +40,15 @@ export function canUseAi(plan: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// SOURCE: Stripe subscription tier (mock).
+// SOURCE: profiles.plan (real — populated by the Stripe webhook).
 //
-// The plan tier is NOT yet persisted on `profiles` or a `subscriptions` table,
-// so this returns a single, switchable mock value. Flip MOCK_PLAN below to test
-// the gating (e.g. set it to 'pro' to unlock Social Listening). When a real
-// subscription record exists, replace the body of getCurrentPlan() with a
-// lookup — the call sites won't need to change.
+// `profiles.plan` can be 'free' | 'starter' | 'growth' | 'pro' | 'agency' |
+// 'past_due'. Anything that isn't a paid analytics tier (free, past_due, null,
+// unknown) maps down to the most restricted tier, 'starter', so gating fails
+// closed. Kept PURE — this module is imported by client components, so the DB
+// read happens in the server page that calls it.
 // ---------------------------------------------------------------------------
-const MOCK_PLAN: PlanTier = 'starter'
-
-export function getCurrentPlan(): PlanTier {
-  return MOCK_PLAN
+export function normalizePlan(value: string | null | undefined): PlanTier {
+  if (value === 'growth' || value === 'pro' || value === 'agency') return value
+  return 'starter'
 }

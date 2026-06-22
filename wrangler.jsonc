@@ -1,9 +1,14 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "kaidamizzo26",
-  "main": ".open-next/worker.js",
+  "main": "worker.ts",
   "compatibility_date": "2026-06-11",
   "compatibility_flags": ["nodejs_compat"],
+  "triggers": {
+    // Run the scheduled-post publisher every 5 minutes. Invokes the
+    // `scheduled` handler in worker.ts -> GET /api/social/publish-due.
+    "crons": ["*/5 * * * *"]
+  },
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"

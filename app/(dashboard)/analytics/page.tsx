@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
 import { AnalyticsDashboard } from './analytics-dashboard'
 import { loadAnalytics } from '@/lib/analytics/load'
-import { getCurrentPlan, canUseSocialListening, PLAN_LABELS } from '@/lib/analytics/plan'
+import { normalizePlan, canUseSocialListening, PLAN_LABELS } from '@/lib/analytics/plan'
 
 export default async function AnalyticsPage() {
   // Mirror the other dashboard pages: server-side auth guard.
@@ -16,8 +16,13 @@ export default async function AnalyticsPage() {
     redirect('/login')
   }
 
-  // SOURCE: subscription tier (mock) — see lib/analytics/plan.ts.
-  const plan = getCurrentPlan()
+  // SOURCE: profiles.plan (real — populated by the Stripe webhook).
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('plan')
+    .eq('id', user.id)
+    .single()
+  const plan = normalizePlan(profile?.plan)
   const socialListeningUnlocked = canUseSocialListening(plan)
 
   // Live-where-connected, mock-otherwise. Reads social_accounts tokens.
