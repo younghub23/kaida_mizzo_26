@@ -31,6 +31,14 @@ export function canUseSocialListening(plan: PlanTier): boolean {
   return PLAN_FEATURES.socialListening.tiers.includes(plan)
 }
 
+// AI assistant is available on Growth, Pro, and Agency (not the free default
+// or Starter). Used to gate AI features and brand-context injection.
+const AI_TIERS: PlanTier[] = ['growth', 'pro', 'agency']
+
+export function canUseAi(plan: string): boolean {
+  return AI_TIERS.includes(plan as PlanTier)
+}
+
 // ---------------------------------------------------------------------------
 // SOURCE: Stripe subscription tier (mock).
 //

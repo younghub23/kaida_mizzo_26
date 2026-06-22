@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { anthropic } from '@/lib/anthropic'
+import { createClient } from '@/lib/supabase/server'
+import { canUseAi } from '@/lib/analytics/plan'
+import { parseBrandProfile, buildBrandContext } from '@/lib/brand'
 import { logError } from '@/lib/log'
 
 type GenerateType = 'social' | 'email_subject' | 'email_body'
@@ -35,10 +38,35 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'AI service is not configured' }, { status: 500 })
     }
 
+    // Inject the user's brand profile as context — only on AI-enabled plans
+    // (Growth/Pro/Agency). See lib/analytics/plan.ts and lib/brand.ts.
+    let brandContext = ''
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, industry, brand_profile, plan')
+        .eq('id', user.id)
+        .single()
+      if (profile && canUseAi(profile.plan ?? 'free')) {
+        const context = buildBrandContext(
+          profile.full_name ?? '',
+          profile.industry ?? '',
+          parseBrandProfile(profile.brand_profile)
+        )
+        if (context) {
+          brandContext = `\n\nBrand context for this business (tailor the output to it):\n${context}`
+        }
+      }
+    }
+
     const message = await anthropic.messages.create({
       model: 'claude-haiku-4-5',
       max_tokens: 1024,
-      system: `${SYSTEM_PROMPTS[type]} Respond with only a JSON object: { "options": string[] }. Do not include any other text.`,
+      system: `${SYSTEM_PROMPTS[type]} Respond with only a JSON object: { "options": string[] }. Do not include any other text.${brandContext}`,
       messages: [{ role: 'user', content: prompt }],
     })
 

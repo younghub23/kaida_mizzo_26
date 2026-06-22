@@ -1,54 +1,68 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import {
+  IdCard,
+  Wallet,
+  ShieldCheck,
+  KeyRound,
+  Link2,
+  SlidersHorizontal,
+  ChevronRight,
+} from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
-import { ProfileForm } from './profile-form'
-import { BillingSection, type PlanOption } from './billing-section'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { parseBrandProfile, brandCompleteness } from '@/lib/brand'
 
-// SOURCE: profiles.plan / profiles.stripe_customer_id (set by the Stripe
-// webhook at app/api/webhooks/stripe/route.ts). priceIds come from env.
-const PLANS: PlanOption[] = [
+const PLAN_LABEL: Record<string, string> = {
+  free: 'Free',
+  starter: 'Starter',
+  growth: 'Growth',
+  pro: 'Pro',
+  agency: 'Agency',
+  past_due: 'Past due',
+}
+
+const SECTIONS = [
   {
-    name: 'Starter',
-    tier: 'starter',
-    price: '$29/mo',
-    features: ['3 channels', 'Analytics', '2,500 email contacts'],
-    priceId: process.env.STRIPE_STARTER_PRICE_ID ?? '',
+    href: '/profile/brand',
+    label: 'Brand info',
+    description: 'What we know about your brand — powers AI and your marketplace profile.',
+    icon: IdCard,
   },
   {
-    name: 'Growth',
-    tier: 'growth',
-    price: '$99/mo',
-    features: ['5 channels', 'AI Tier 1', '10,000 email contacts', 'Analytics'],
-    priceId: process.env.STRIPE_PRICE_ID ?? '',
+    href: '/profile/wallet',
+    label: 'Wallet & subscriptions',
+    description: 'Plan, payment method, billing address, and invoices.',
+    icon: Wallet,
   },
   {
-    name: 'Pro',
-    tier: 'pro',
-    price: '$299/mo',
-    features: [
-      '10 social + Google',
-      '50,000 contacts',
-      'AI Tier 1 & 2',
-      'Analytics',
-      'Creator Marketplace',
-    ],
-    priceId: process.env.STRIPE_PRO_PRICE_ID ?? '',
+    href: '/profile/security',
+    label: 'Security & sign-in',
+    description: 'Account email, sign-in activity, and 2-step verification.',
+    icon: ShieldCheck,
   },
   {
-    name: 'Agency',
-    tier: 'agency',
-    price: '$599/mo',
-    features: [
-      'Everything in Pro',
-      'Unlimited social channels',
-      'Client workspaces',
-      'White label',
-      'Priority support',
-    ],
-    priceId: process.env.STRIPE_AGENCY_PRICE_ID ?? '',
+    href: '/profile/password',
+    label: 'Tala password',
+    description: 'Change the password you use to sign in.',
+    icon: KeyRound,
+  },
+  {
+    href: '/profile/linked',
+    label: 'Linked accounts',
+    description: 'Social and sign-in accounts connected to Tala.',
+    icon: Link2,
+  },
+  {
+    href: '/profile/privacy',
+    label: 'Data & privacy',
+    description: 'Export your data or delete your account.',
+    icon: SlidersHorizontal,
   },
 ]
 
-export default async function ProfilePage() {
+export default async function ProfileHomePage() {
   const supabase = await createClient()
   const {
     data: { user },
@@ -60,38 +74,99 @@ export default async function ProfilePage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, avatar_url, industry, plan, stripe_customer_id')
+    .select('full_name, plan, brand_profile')
     .eq('id', user.id)
     .single()
 
+  const { count: linkedCount } = await supabase
+    .from('social_accounts')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+
+  const plan = profile?.plan ?? 'free'
+  const completeness = brandCompleteness(parseBrandProfile(profile?.brand_profile))
+  const name = profile?.full_name || 'there'
+
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 p-6">
+    <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-2xl font-semibold">Profile</h1>
+        <h1 className="text-2xl font-semibold">Welcome, {name}</h1>
         <p className="text-sm text-muted-foreground">
-          Manage your business profile and subscription.
+          Manage your brand, subscription, and account settings.
         </p>
       </div>
 
-      <section className="flex flex-col gap-4">
-        <div>
-          <h2 className="text-lg font-semibold">Account</h2>
-          <p className="text-sm text-muted-foreground">
-            Your business details and branding.
-          </p>
-        </div>
-        <ProfileForm
-          fullName={profile?.full_name ?? ''}
-          avatarUrl={profile?.avatar_url ?? ''}
-          industry={profile?.industry ?? ''}
-        />
-      </section>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Card>
+          <CardContent className="flex flex-col gap-1 p-5">
+            <span className="text-xs uppercase tracking-wide text-muted-foreground">
+              Current plan
+            </span>
+            <Badge
+              variant={plan === 'past_due' ? 'destructive' : 'secondary'}
+              className="w-fit"
+            >
+              {PLAN_LABEL[plan] ?? plan}
+            </Badge>
+          </CardContent>
+        </Card>
 
-      <BillingSection
-        plan={profile?.plan ?? 'free'}
-        hasCustomer={Boolean(profile?.stripe_customer_id)}
-        plans={PLANS}
-      />
+        <Card>
+          <CardContent className="flex flex-col gap-2 p-5">
+            <span className="text-xs uppercase tracking-wide text-muted-foreground">
+              Brand profile
+            </span>
+            <div className="flex items-center gap-2">
+              <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-primary"
+                  style={{ width: `${completeness}%` }}
+                />
+              </div>
+              <span className="text-sm font-medium">{completeness}%</span>
+            </div>
+            <Link href="/profile/brand" className="text-xs text-primary hover:underline">
+              {completeness < 100 ? 'Complete your profile' : 'View brand info'}
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="flex flex-col gap-1 p-5">
+            <span className="text-xs uppercase tracking-wide text-muted-foreground">
+              Linked accounts
+            </span>
+            <span className="text-2xl font-semibold">{linkedCount ?? 0}</span>
+            <Link href="/profile/linked" className="text-xs text-primary hover:underline">
+              Manage accounts
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        {SECTIONS.map((section) => {
+          const Icon = section.icon
+          return (
+            <Link key={section.href} href={section.href}>
+              <Card className="transition-colors hover:bg-muted/50">
+                <CardContent className="flex items-center gap-4 p-4">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted">
+                    <Icon className="size-5" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">{section.label}</p>
+                    <p className="truncate text-sm text-muted-foreground">
+                      {section.description}
+                    </p>
+                  </div>
+                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+                </CardContent>
+              </Card>
+            </Link>
+          )
+        })}
+      </div>
     </div>
   )
 }

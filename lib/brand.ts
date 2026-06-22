@@ -30,6 +30,15 @@ export type BrandProfile = {
   brandColors: string
 }
 
+// Payload submitted by the Brand info form: the first-class profile columns
+// plus the JSONB brand questionnaire.
+export type BrandFormData = {
+  businessName: string
+  industry: string
+  avatarUrl: string
+  brand: BrandProfile
+}
+
 export const EMPTY_BRAND_PROFILE: BrandProfile = {
   tagline: '',
   description: '',

@@ -83,9 +83,9 @@ export function BillingSection({
   return (
     <section className="flex flex-col gap-4">
       <div>
-        <h2 className="text-lg font-semibold">Subscription &amp; Billing</h2>
+        <h2 className="text-lg font-semibold">Your plan</h2>
         <p className="text-sm text-muted-foreground">
-          Manage your plan, payment method, and invoices.
+          Change your subscription tier or manage billing.
         </p>
       </div>
 
