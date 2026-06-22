@@ -58,7 +58,7 @@ export default function ConnectAccountsPage() {
 
     if (success) {
       toast.success('Account connected successfully!')
-      router.replace('/social/connect')
+      router.replace('/socials/connect')
     } else if (error) {
       const messages: Record<string, string> = {
         oauth_denied: 'Connection was denied.',
@@ -69,7 +69,7 @@ export default function ConnectAccountsPage() {
         unexpected: 'An unexpected error occurred.',
       }
       toast.error(messages[error] ?? 'Connection failed.')
-      router.replace('/social/connect')
+      router.replace('/socials/connect')
     }
   }, [searchParams, router])
 
@@ -109,9 +109,9 @@ export default function ConnectAccountsPage() {
   return (
     <div className="flex flex-col gap-6 p-6">
       <div>
-        <Link href="/social" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+        <Link href="/socials" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="size-4" />
-          Back to Social
+          Back to Socials
         </Link>
         <h1 className="mt-2 text-2xl font-semibold">Connect Your Accounts</h1>
         <p className="text-sm text-muted-foreground">

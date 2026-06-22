@@ -6,12 +6,9 @@ import {
   LayoutDashboard,
   CalendarDays,
   Share2,
-  Mail,
   Sparkles,
-  CreditCard,
   User,
   LogOut,
-  Link2,
   Info,
   BarChart3,
 } from 'lucide-react'
@@ -22,12 +19,9 @@ import { cn } from '@/lib/utils'
 const NAV_LINKS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/calendar', label: 'Calendar', icon: CalendarDays },
-  { href: '/social', label: 'Social', icon: Share2 },
+  { href: '/socials', label: 'Socials', icon: Share2 },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/email', label: 'Email', icon: Mail },
   { href: '/ai', label: 'AI Tools', icon: Sparkles },
-  { href: '/social', label: 'LinkedIn', icon: Link2 },
-  { href: '/billing', label: 'Billing', icon: CreditCard },
   { href: '/profile', label: 'Profile', icon: User },
   { href: '/about', label: 'About', icon: Info },
 ]

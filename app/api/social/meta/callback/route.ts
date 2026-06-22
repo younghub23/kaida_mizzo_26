@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 
   if (error || !code) {
     logError('social/meta/callback', 'OAuth error or missing code', undefined, { error })
-    return NextResponse.redirect(new URL('/social/connect?error=oauth_denied', req.url))
+    return NextResponse.redirect(new URL('/socials/connect?error=oauth_denied', req.url))
   }
 
   const appId = process.env.META_APP_ID
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
 
   if (!appId || !appSecret) {
     logError('social/meta/callback', 'META_APP_ID or META_APP_SECRET is not set')
-    return NextResponse.redirect(new URL('/social/connect?error=config', req.url))
+    return NextResponse.redirect(new URL('/socials/connect?error=config', req.url))
   }
 
   try {
@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
 
     if (!tokenData.access_token) {
       logError('social/meta/callback', 'Failed to get access token', undefined, { tokenData })
-      return NextResponse.redirect(new URL('/social/connect?error=token', req.url))
+      return NextResponse.redirect(new URL('/socials/connect?error=token', req.url))
     }
 
     // Exchange for long-lived token
@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
 
     if (!longLivedData.access_token) {
       logError('social/meta/callback', 'Failed to get long-lived token', undefined, { longLivedData })
-      return NextResponse.redirect(new URL('/social/connect?error=long_token', req.url))
+      return NextResponse.redirect(new URL('/socials/connect?error=long_token', req.url))
     }
 
     const longLivedToken = longLivedData.access_token
@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
 
     if (!pagesData.data?.length) {
       logError('social/meta/callback', 'No Facebook pages found', undefined, { pagesData })
-      return NextResponse.redirect(new URL('/social/connect?error=no_pages', req.url))
+      return NextResponse.redirect(new URL('/socials/connect?error=no_pages', req.url))
     }
 
     const supabase = await createClient()
@@ -140,9 +140,9 @@ export async function GET(req: NextRequest) {
       break
     }
 
-    return NextResponse.redirect(new URL('/social/connect?success=1', req.url))
+    return NextResponse.redirect(new URL('/socials/connect?success=1', req.url))
   } catch (err) {
     logError('social/meta/callback', 'Unexpected error during OAuth callback', err)
-    return NextResponse.redirect(new URL('/social/connect?error=unexpected', req.url))
+    return NextResponse.redirect(new URL('/socials/connect?error=unexpected', req.url))
   }
 }

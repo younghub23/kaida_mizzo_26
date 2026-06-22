@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
 
   if (error || !code) {
     logError('social/tiktok/callback', 'OAuth error or missing code', undefined, { error })
-    return NextResponse.redirect(new URL('/social/connect?error=oauth_denied', req.url))
+    return NextResponse.redirect(new URL('/socials/connect?error=oauth_denied', req.url))
   }
 
   const clientKey = process.env.TIKTOK_CLIENT_KEY
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
   if (!clientKey || !clientSecret) {
     logError('social/tiktok/callback', 'TikTok credentials not set')
-    return NextResponse.redirect(new URL('/social/connect?error=config', req.url))
+    return NextResponse.redirect(new URL('/socials/connect?error=config', req.url))
   }
 
   try {
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
 
     if (!accessToken || !openId) {
       logError('social/tiktok/callback', 'Failed to get TikTok access token', undefined, { tokenData })
-      return NextResponse.redirect(new URL('/social/connect?error=token', req.url))
+      return NextResponse.redirect(new URL('/socials/connect?error=token', req.url))
     }
 
     // Get user info
@@ -83,9 +83,9 @@ export async function GET(req: NextRequest) {
       logError('social/tiktok/callback', 'Failed to save TikTok account', dbErr)
     }
 
-    return NextResponse.redirect(new URL('/social/connect?success=1', req.url))
+    return NextResponse.redirect(new URL('/socials/connect?success=1', req.url))
   } catch (err) {
     logError('social/tiktok/callback', 'Unexpected error', err)
-    return NextResponse.redirect(new URL('/social/connect?error=unexpected', req.url))
+    return NextResponse.redirect(new URL('/socials/connect?error=unexpected', req.url))
   }
 }
