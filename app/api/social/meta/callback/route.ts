@@ -21,7 +21,6 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { logError } from '@/lib/log'
 
 const GRAPH = 'https://graph.facebook.com/v19.0'
@@ -90,11 +89,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(new URL('/login', req.url))
     }
 
-    const admin = createAdminClient()
-
     for (const page of pagesData.data) {
       // Upsert Facebook page token
-      const { error: fbErr } = await admin.from('social_accounts').upsert(
+      const { error: fbErr } = await supabase.from('social_accounts').upsert(
         {
           user_id: user.id,
           platform: 'facebook',
@@ -123,7 +120,7 @@ export async function GET(req: NextRequest) {
         const igInfo = (await igInfoRes.json()) as { name?: string; username?: string }
         const igName = igInfo.name ?? igInfo.username ?? page.name
 
-        const { error: igErr } = await admin.from('social_accounts').upsert(
+        const { error: igErr } = await supabase.from('social_accounts').upsert(
           {
             user_id: user.id,
             platform: 'instagram',
