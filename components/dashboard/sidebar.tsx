@@ -12,6 +12,7 @@ import {
   LogOut,
   Link2,
   Info,
+  BarChart3,
 } from 'lucide-react'
 import { logout } from '@/app/actions/auth'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,7 @@ import { cn } from '@/lib/utils'
 const NAV_LINKS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/social', label: 'Social', icon: Share2 },
+  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/email', label: 'Email', icon: Mail },
   { href: '/ai', label: 'AI Tools', icon: Sparkles },
   { href: '/social', label: 'LinkedIn', icon: Link2 },

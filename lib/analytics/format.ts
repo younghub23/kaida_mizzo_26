@@ -1,0 +1,21 @@
+// Small presentation helpers for analytics numbers. Pure + deterministic so
+// they are safe to call during both server and client render.
+
+export function formatCompact(value: number): string {
+  if (Math.abs(value) >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`
+  if (Math.abs(value) >= 1_000) return `${(value / 1_000).toFixed(1)}K`
+  return `${value}`
+}
+
+export function formatPercent(value: number, digits = 1): string {
+  return `${value.toFixed(digits)}%`
+}
+
+export function formatCurrency(value: number): string {
+  return `$${value.toLocaleString('en-US')}`
+}
+
+export function formatDelta(deltaPct: number): string {
+  const sign = deltaPct > 0 ? '+' : ''
+  return `${sign}${deltaPct.toFixed(1)}%`
+}
