@@ -6,6 +6,12 @@ const SCOPES = [
   'pages_read_engagement',
   'instagram_basic',
   'instagram_content_publish',
+  // Analytics: required to read insights for the /analytics dashboard. These
+  // need Meta App Review before they work in production, and accounts that
+  // connected before this change must re-consent. See
+  // app/(dashboard)/analytics/INTEGRATION.md.
+  'read_insights',
+  'instagram_manage_insights',
 ].join(',')
 
 export async function GET() {

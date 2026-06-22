@@ -13,8 +13,8 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Section } from '@/components/analytics/data-source'
-import { getPostPerformance, type Network, type PostRow } from '@/app/(dashboard)/analytics/mock-data'
-import { formatCompact, formatPercent } from '@/lib/analytics/format'
+import { type PostRow } from '@/app/(dashboard)/analytics/mock-data'
+import { formatCompact, formatPercent, sourceSuffix, type SectionSource } from '@/lib/analytics/format'
 import { NETWORK_LABEL } from '@/components/analytics/network-meta'
 
 type SortKey = 'views' | 'likes' | 'comments' | 'shares' | 'engagementRate'
@@ -27,11 +27,11 @@ const COLUMNS: { key: SortKey; label: string }[] = [
   { key: 'engagementRate', label: 'Eng. rate' },
 ]
 
-export function PostPerformance({ network }: { network: Network }) {
+export function PostPerformance({ posts: input, source }: { posts: PostRow[]; source: SectionSource }) {
   const [sortKey, setSortKey] = useState<SortKey>('engagementRate')
   const [desc, setDesc] = useState(true)
 
-  const posts = [...getPostPerformance(network)].sort((a, b) => {
+  const posts = [...input].sort((a, b) => {
     const diff = (a[sortKey] as number) - (b[sortKey] as number)
     return desc ? -diff : diff
   })
@@ -49,7 +49,7 @@ export function PostPerformance({ network }: { network: Network }) {
     <Section
       title="Content performance"
       icon={FileText}
-      source="scheduled_posts (mock) + per-network insights"
+      source={`scheduled_posts + per-network insights ${sourceSuffix(source)}`}
       description="Per-post metrics across formats and captions. The post list is already in Supabase — engagement numbers join in from each network's API."
     >
       <Card>

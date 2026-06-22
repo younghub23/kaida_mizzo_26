@@ -20,16 +20,30 @@ export function DataSource({ label, className }: { label: string; className?: st
   )
 }
 
-/** Page-level banner making it unmistakable that the whole page is demo data. */
-export function DemoBanner() {
+/**
+ * Page-level banner. When no account is pulling live data it makes clear the
+ * page is demo data; once one or more platforms are connected it explains the
+ * page is partially live and the rest is still placeholder.
+ */
+export function DemoBanner({ livePlatforms = [] }: { livePlatforms?: string[] }) {
+  const isLive = livePlatforms.length > 0
   return (
     <div className="flex items-start gap-2.5 rounded-xl border border-amber-300/60 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-200">
       <TriangleAlert className="mt-0.5 size-4 shrink-0" />
-      <p>
-        <span className="font-semibold">Demo data</span> — these analytics are
-        placeholders and not connected to live integrations yet. Each section
-        notes where its real data will come from.
-      </p>
+      {isLive ? (
+        <p>
+          <span className="font-semibold">Partially live</span> — pulling real
+          data from {livePlatforms.join(', ')}. Sections marked{' '}
+          <span className="font-medium">(mock)</span> are still placeholders
+          until those integrations are connected.
+        </p>
+      ) : (
+        <p>
+          <span className="font-semibold">Demo data</span> — no accounts are
+          connected yet, so every section shows placeholders. Connect a social
+          account to start pulling live numbers; each section notes its source.
+        </p>
+      )}
     </div>
   )
 }

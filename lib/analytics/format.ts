@@ -19,3 +19,12 @@ export function formatDelta(deltaPct: number): string {
   const sign = deltaPct > 0 ? '+' : ''
   return `${sign}${deltaPct.toFixed(1)}%`
 }
+
+/** Where a section's data came from this load. Drives the "(live/mock)" badge. */
+export type SectionSource = 'live' | 'mock' | 'mixed'
+
+export function sourceSuffix(source: SectionSource): string {
+  if (source === 'live') return '(live)'
+  if (source === 'mixed') return '(live + mock)'
+  return '(mock)'
+}
