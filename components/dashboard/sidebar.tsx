@@ -21,7 +21,7 @@ const NAV_LINKS = [
   { href: '/calendar', label: 'Calendar', icon: CalendarDays },
   { href: '/socials', label: 'Socials', icon: Share2 },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/ai', label: 'AI Tools', icon: Sparkles },
+  { href: '/ai', label: 'AI Assistant', icon: Sparkles },
   { href: '/profile', label: 'Profile', icon: User },
   { href: '/about', label: 'About', icon: Info },
 ]

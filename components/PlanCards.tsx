@@ -40,7 +40,7 @@ export default function PlanCards({ plans }: { plans: Plan[] }) {
         setLoading(null)
         return
       }
-      window.location.href = url
+      window.location.assign(url)
     } catch (err) {
       logError('plan', 'checkout redirect failed', err)
       setError('Something went wrong. Please try again.')

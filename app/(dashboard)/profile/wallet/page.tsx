@@ -25,7 +25,7 @@ const PLANS: PlanOption[] = [
     name: 'Growth',
     tier: 'growth',
     price: '$99/mo',
-    features: ['5 channels', 'AI Tier 1', '10,000 email contacts', 'Analytics'],
+    features: ['5 channels', 'AI Content Strategist', '10,000 email contacts', 'Analytics'],
     priceId: process.env.STRIPE_PRICE_ID ?? '',
   },
   {
@@ -35,7 +35,7 @@ const PLANS: PlanOption[] = [
     features: [
       '10 social + Google',
       '50,000 contacts',
-      'AI Tier 1 & 2',
+      'AI Content Strategist & Data Analyst',
       'Analytics',
       'Creator Marketplace',
     ],

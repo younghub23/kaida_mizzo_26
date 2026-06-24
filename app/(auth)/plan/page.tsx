@@ -24,13 +24,13 @@ export default async function PlanPage() {
       name: 'Growth',
       price: '$99/mo',
       priceId: process.env.STRIPE_PRICE_ID!,
-      features: ['5 channels', '10k email contacts', 'AI Tier 1', 'Analytics'],
+      features: ['5 channels', '10k email contacts', 'AI Content Strategist', 'Analytics'],
     },
     {
       name: 'Pro',
       price: '$299/mo',
       priceId: process.env.STRIPE_PRO_PRICE_ID!,
-      features: ['10 channels', 'Google Ads', '50k contacts', 'AI Tier 1 & 2', 'Analytics', 'Creator marketplace'],
+      features: ['10 channels', 'Google Ads', '50k contacts', 'AI Content Strategist & Data Analyst', 'Analytics', 'Creator marketplace'],
     },
     {
       name: 'Agency',
