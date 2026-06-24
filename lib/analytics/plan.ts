@@ -25,6 +25,11 @@ export const PLAN_FEATURES = {
     label: 'Social listening & sentiment',
     tiers: ['pro', 'agency'] as PlanTier[],
   },
+  // AI Data Analyst chat role: competitor intelligence + inspiration.
+  aiDataAnalyst: {
+    label: 'AI Data Analyst',
+    tiers: ['pro', 'agency'] as PlanTier[],
+  },
 } as const
 
 export function canUseSocialListening(plan: PlanTier): boolean {
@@ -33,10 +38,21 @@ export function canUseSocialListening(plan: PlanTier): boolean {
 
 // AI assistant is available on Growth, Pro, and Agency (not the free default
 // or Starter). Used to gate AI features and brand-context injection.
+// This is the gate for the AI Content Strategist role.
 const AI_TIERS: PlanTier[] = ['growth', 'pro', 'agency']
 
 export function canUseAi(plan: string): boolean {
   return AI_TIERS.includes(plan as PlanTier)
+}
+
+// The AI Content Strategist role is available wherever AI is (Growth+).
+export function canUseContentStrategist(plan: string): boolean {
+  return canUseAi(plan)
+}
+
+// The AI Data Analyst role is Pro/Agency only — same gate as Social Listening.
+export function canUseDataAnalyst(plan: string): boolean {
+  return PLAN_FEATURES.aiDataAnalyst.tiers.includes(plan as PlanTier)
 }
 
 // ---------------------------------------------------------------------------
