@@ -136,7 +136,7 @@ export default function ConnectAccountsPage() {
     }
     const route = routes[platformId]
     if (route) {
-      window.location.href = route
+      window.location.assign(route)
     } else {
       toast('Coming soon')
     }
