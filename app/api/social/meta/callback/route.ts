@@ -44,34 +44,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL('/socials/connect?error=config', req.url))
   }
 
-  // TEMP DIAGNOSTICS: record what Meta returns at each stage into a table we can
-  // read, to pinpoint why connects save nothing. Never stores access tokens.
-  // Remove this (and drop public.meta_connect_debug) once the issue is found.
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  const debug: Record<string, unknown> = {}
-  const writeDebug = async (stage: string) => {
-    try {
-      await supabase.from('meta_connect_debug').insert({ user_id: user?.id ?? null, stage, detail: debug })
-    } catch {
-      // best-effort
-    }
-  }
-
   try {
     // Exchange code for short-lived token
     const tokenRes = await fetch(
       `${GRAPH}/oauth/access_token?client_id=${appId}&client_secret=${appSecret}&redirect_uri=${encodeURIComponent(redirectUri)}&code=${code}`
     )
     const tokenData = (await tokenRes.json()) as { access_token?: string; error?: unknown }
-    debug.token_ok = !!tokenData.access_token
-    debug.token_error = tokenData.error ?? null
 
     if (!tokenData.access_token) {
       logError('social/meta/callback', 'Failed to get access token', undefined, { tokenData })
-      await writeDebug('token_failed')
       return NextResponse.redirect(new URL('/socials/connect?error=token', req.url))
     }
 
@@ -80,12 +61,9 @@ export async function GET(req: NextRequest) {
       `${GRAPH}/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${tokenData.access_token}`
     )
     const longLivedData = (await longLivedRes.json()) as { access_token?: string; error?: unknown }
-    debug.long_ok = !!longLivedData.access_token
-    debug.long_error = longLivedData.error ?? null
 
     if (!longLivedData.access_token) {
       logError('social/meta/callback', 'Failed to get long-lived token', undefined, { longLivedData })
-      await writeDebug('long_failed')
       return NextResponse.redirect(new URL('/socials/connect?error=long_token', req.url))
     }
 
@@ -97,22 +75,18 @@ export async function GET(req: NextRequest) {
       data?: Array<{ id: string; name: string; access_token: string }>
       error?: unknown
     }
-    debug.pages_status = pagesRes.status
-    debug.pages_count = pagesData.data?.length ?? 0
-    debug.pages = pagesData.data?.map((p) => ({ id: p.id, name: p.name })) ?? null
-    debug.pages_error = pagesData.error ?? null
-    debug.has_user = !!user
-
-    if (!user) {
-      logError('social/meta/callback', 'User not authenticated')
-      await writeDebug('no_user')
-      return NextResponse.redirect(new URL('/login', req.url))
-    }
 
     if (!pagesData.data?.length) {
       logError('social/meta/callback', 'No Facebook pages found', undefined, { pagesData })
-      await writeDebug('no_pages')
       return NextResponse.redirect(new URL('/socials/connect?error=no_pages', req.url))
+    }
+
+    const supabase = await createClient()
+    const { data: { user }, error: authErr } = await supabase.auth.getUser()
+
+    if (authErr || !user) {
+      logError('social/meta/callback', 'User not authenticated', authErr)
+      return NextResponse.redirect(new URL('/login', req.url))
     }
 
     // Connect the first Page, then its linked Instagram Business account.
@@ -130,11 +104,8 @@ export async function GET(req: NextRequest) {
       },
       { onConflict: 'user_id,platform' }
     )
-    debug.fb_saved = !fbErr
-    debug.fb_error = fbErr ?? null
     if (fbErr) {
       logError('social/meta/callback', 'Failed to save Facebook account', fbErr)
-      await writeDebug('fb_save_failed')
       return NextResponse.redirect(new URL('/socials/connect?error=save_failed', req.url))
     }
 
@@ -146,15 +117,12 @@ export async function GET(req: NextRequest) {
       instagram_business_account?: { id: string }
       error?: unknown
     }
-    debug.ig_found = !!igData.instagram_business_account?.id
-    debug.ig_raw = igData
 
     if (!igData.instagram_business_account?.id) {
       // Facebook connected, but this Page has no linked Instagram Business account.
       logError('social/meta/callback', 'No Instagram business account linked to page', undefined, {
         page: page.id,
       })
-      await writeDebug('no_instagram')
       return NextResponse.redirect(new URL('/socials/connect?error=no_instagram', req.url))
     }
 
@@ -173,20 +141,14 @@ export async function GET(req: NextRequest) {
       },
       { onConflict: 'user_id,platform' }
     )
-    debug.ig_saved = !igErr
-    debug.ig_error = igErr ?? null
     if (igErr) {
       logError('social/meta/callback', 'Failed to save Instagram account', igErr)
-      await writeDebug('ig_save_failed')
       return NextResponse.redirect(new URL('/socials/connect?error=save_failed', req.url))
     }
 
-    await writeDebug('success')
     return NextResponse.redirect(new URL('/socials/connect?success=1', req.url))
   } catch (err) {
     logError('social/meta/callback', 'Unexpected error during OAuth callback', err)
-    debug.exception = String(err)
-    await writeDebug('exception')
     return NextResponse.redirect(new URL('/socials/connect?error=unexpected', req.url))
   }
 }
