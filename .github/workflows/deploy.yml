@@ -1,0 +1,47 @@
+name: Deploy to Cloudflare Workers
+
+# Publishes the app to Cloudflare Workers (via OpenNext) on every push to main,
+# so "push to main" == "go live". Can also be triggered manually from the
+# Actions tab via the "Run workflow" button.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Never run two deploys at once; if a new push lands mid-deploy, cancel the
+# in-flight run so the latest commit is what ends up live.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and deploy to Cloudflare
+        # Runs `opennextjs-cloudflare build && opennextjs-cloudflare deploy`.
+        # wrangler reads CLOUDFLARE_API_TOKEN from the environment to authenticate.
+        run: npm run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          # Only needed if your API token has access to more than one account.
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # NOTE: Next.js inlines NEXT_PUBLIC_* values at BUILD time. If the app
+          # relies on any (e.g. NEXT_PUBLIC_SUPABASE_URL), add them as repo
+          # secrets and expose them here, or the built bundle will be missing them.
+          # Server-only secrets (STRIPE_SECRET_KEY, ANTHROPIC_API_KEY, etc.) are
+          # runtime values — set those as Worker secrets via `wrangler secret put`
+          # or the Cloudflare dashboard, not here.
