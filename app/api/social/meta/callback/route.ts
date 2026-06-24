@@ -89,54 +89,61 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(new URL('/login', req.url))
     }
 
-    for (const page of pagesData.data) {
-      // Upsert Facebook page token
-      const { error: fbErr } = await supabase.from('social_accounts').upsert(
-        {
-          user_id: user.id,
-          platform: 'facebook',
-          username: page.name,
-          platform_user_id: page.id,
-          access_token: page.access_token,
-        },
-        { onConflict: 'user_id,platform' }
-      )
-      if (fbErr) {
-        logError('social/meta/callback', 'Failed to save Facebook account', fbErr)
-      }
+    // Connect the first Page, then its linked Instagram Business account.
+    // Each step redirects with a specific status so the UI reports the real
+    // outcome instead of a misleading "success".
+    const page = pagesData.data[0]
 
-      // Get Instagram account linked to this page
-      const igRes = await fetch(
-        `${GRAPH}/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`
-      )
-      const igData = (await igRes.json()) as {
-        instagram_business_account?: { id: string }
-        error?: unknown
-      }
+    const { error: fbErr } = await supabase.from('social_accounts').upsert(
+      {
+        user_id: user.id,
+        platform: 'facebook',
+        username: page.name,
+        platform_user_id: page.id,
+        access_token: page.access_token,
+      },
+      { onConflict: 'user_id,platform' }
+    )
+    if (fbErr) {
+      logError('social/meta/callback', 'Failed to save Facebook account', fbErr)
+      return NextResponse.redirect(new URL('/socials/connect?error=save_failed', req.url))
+    }
 
-      if (igData.instagram_business_account?.id) {
-        const igId = igData.instagram_business_account.id
-        const igInfoRes = await fetch(`${GRAPH}/${igId}?fields=name,username&access_token=${page.access_token}`)
-        const igInfo = (await igInfoRes.json()) as { name?: string; username?: string }
-        const igName = igInfo.name ?? igInfo.username ?? page.name
+    // Find the Instagram Business account linked to this Page.
+    const igRes = await fetch(
+      `${GRAPH}/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`
+    )
+    const igData = (await igRes.json()) as {
+      instagram_business_account?: { id: string }
+      error?: unknown
+    }
 
-        const { error: igErr } = await supabase.from('social_accounts').upsert(
-          {
-            user_id: user.id,
-            platform: 'instagram',
-            username: igName,
-            platform_user_id: igId,
-            access_token: page.access_token,
-          },
-          { onConflict: 'user_id,platform' }
-        )
-        if (igErr) {
-          logError('social/meta/callback', 'Failed to save Instagram account', igErr)
-        }
-      }
+    if (!igData.instagram_business_account?.id) {
+      // Facebook connected, but this Page has no linked Instagram Business account.
+      logError('social/meta/callback', 'No Instagram business account linked to page', undefined, {
+        page: page.id,
+      })
+      return NextResponse.redirect(new URL('/socials/connect?error=no_instagram', req.url))
+    }
 
-      // Only handle the first page for now
-      break
+    const igId = igData.instagram_business_account.id
+    const igInfoRes = await fetch(`${GRAPH}/${igId}?fields=name,username&access_token=${page.access_token}`)
+    const igInfo = (await igInfoRes.json()) as { name?: string; username?: string }
+    const igName = igInfo.name ?? igInfo.username ?? page.name
+
+    const { error: igErr } = await supabase.from('social_accounts').upsert(
+      {
+        user_id: user.id,
+        platform: 'instagram',
+        username: igName,
+        platform_user_id: igId,
+        access_token: page.access_token,
+      },
+      { onConflict: 'user_id,platform' }
+    )
+    if (igErr) {
+      logError('social/meta/callback', 'Failed to save Instagram account', igErr)
+      return NextResponse.redirect(new URL('/socials/connect?error=save_failed', req.url))
     }
 
     return NextResponse.redirect(new URL('/socials/connect?success=1', req.url))

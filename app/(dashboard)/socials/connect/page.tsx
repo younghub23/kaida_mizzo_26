@@ -100,10 +100,14 @@ export default function ConnectAccountsPage() {
         config: 'App not configured. Please contact support.',
         token: 'Failed to retrieve access token.',
         long_token: 'Failed to retrieve long-lived token.',
-        no_pages: 'No Facebook Pages found. Make sure you manage at least one Page.',
+        no_pages:
+          'No Facebook Page found. To connect Instagram you need a Facebook Page — and you must grant access to it during login.',
+        no_instagram:
+          'Facebook connected, but no Instagram Business account is linked to your Page. In Instagram, switch to a Business/Creator account and link it to your Facebook Page, then reconnect.',
+        save_failed: 'Connected to Facebook, but saving the account failed. Please try again.',
         unexpected: 'An unexpected error occurred.',
       }
-      toast.error(messages[error] ?? 'Connection failed.')
+      toast.error(messages[error] ?? 'Connection failed.', { duration: 10000 })
       router.replace('/socials/connect')
     }
   }, [searchParams, router])
