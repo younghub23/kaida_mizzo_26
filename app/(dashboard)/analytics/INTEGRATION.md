@@ -1,16 +1,14 @@
 # Analytics — data integration status
 
 The `/analytics` page pulls **live data when an account is connected** and a
-provider succeeds. Otherwise:
+provider succeeds. Otherwise it shows **real data only** — sections with no
+connected source render an empty "connect an account" state, **never fake
+numbers**, in every environment.
 
-- **Development / preview** → falls back to **mock** data (so we can build & demo).
-- **Production (live site)** → shows **real data only**; sections with no
-  connected source render an empty "connect an account" state — never fake
-  numbers.
-
-This is controlled by `lib/analytics/config.ts` (`ALLOW_MOCK_ANALYTICS`):
-mock is on when `NODE_ENV !== 'production'`, overridable with
-`NEXT_PUBLIC_ANALYTICS_ALLOW_MOCK` (`'true'`/`'false'`).
+This is controlled by `lib/analytics/config.ts` (`ALLOW_MOCK_ANALYTICS`): mock
+data is **off by default** and only turns on when
+`NEXT_PUBLIC_ANALYTICS_ALLOW_MOCK` is set to the string `'true'` — a deliberate
+opt-in for local building & demoing. Anything else keeps the page real-only.
 
 ## How data flows
 
@@ -39,9 +37,10 @@ baseline. The page cannot break because a fetch failed.
 Each network section's "Source:" badge shows `(live)`, `(mock)`,
 `(live + mock)`, or `(not connected)` so the real state is always visible.
 
-Sections still mock-only (no provider yet): trend chart, audience demographics,
-best-time (Claude), competitor benchmark, ROI/UTM, social listening. In
-production these render empty states until a provider is added.
+Sections with no provider yet (trend chart, audience demographics, best-time
+(Claude), competitor benchmark, ROI/UTM, social listening) render empty
+"connect an account" states until a real provider is added — unless mock is
+explicitly opted in for local previewing.
 
 ## Database
 

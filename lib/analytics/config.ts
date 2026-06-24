@@ -1,20 +1,17 @@
 // ============================================================================
 // Analytics data-source policy
 // ----------------------------------------------------------------------------
-// Mock data is shown ONLY while building/previewing (non-production). On the
-// live site the analytics page shows REAL data exclusively — any section with
-// no connected source renders an empty "connect an account" state instead of
-// placeholder numbers.
+// The analytics page shows REAL data ONLY — every metric is derived straight
+// from the accounts a customer has connected to Tala (lib/analytics/providers/
+// *). Any section without a connected, live source renders an empty "connect an
+// account" state instead of placeholder/fake numbers — in every environment.
 //
-// Override explicitly with NEXT_PUBLIC_ANALYTICS_ALLOW_MOCK = 'true' | 'false'
-// (must be NEXT_PUBLIC_ so the value is consistent on server and client).
+// Mock/demo data is therefore OFF by default. It can be turned on deliberately
+// for local building/previewing by setting
+// NEXT_PUBLIC_ANALYTICS_ALLOW_MOCK = 'true' (must be NEXT_PUBLIC_ so the value
+// is identical on server and client and hydration matches). Anything other
+// than the explicit string 'true' keeps the page real-data-only.
 // ============================================================================
 
-const override = process.env.NEXT_PUBLIC_ANALYTICS_ALLOW_MOCK
-
 export const ALLOW_MOCK_ANALYTICS =
-  override === 'true'
-    ? true
-    : override === 'false'
-      ? false
-      : process.env.NODE_ENV !== 'production'
+  process.env.NEXT_PUBLIC_ANALYTICS_ALLOW_MOCK === 'true'

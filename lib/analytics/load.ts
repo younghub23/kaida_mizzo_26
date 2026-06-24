@@ -3,10 +3,9 @@
 // ----------------------------------------------------------------------------
 // Single entry point the page uses to get analytics data. For each network it
 // returns LIVE data when the customer has connected that account (and the
-// provider succeeds) and otherwise:
-//   • development  → falls back to MOCK data (for building/previewing)
-//   • production   → leaves the section EMPTY (real data only — no placeholders)
-// driven by ALLOW_MOCK_ANALYTICS (lib/analytics/config.ts).
+// provider succeeds) and otherwise leaves the section EMPTY — real data only,
+// no placeholders. Mock/demo data is opt-in for local previewing only, via
+// ALLOW_MOCK_ANALYTICS (lib/analytics/config.ts → NEXT_PUBLIC_ANALYTICS_ALLOW_MOCK).
 //
 // Each section is tagged with where its data came from so the UI can label it.
 // Meta has a complete provider; LinkedIn/TikTok/Google providers are wired up
@@ -57,7 +56,7 @@ const PROVIDERS: Record<RealNetwork, Provider> = {
 }
 
 export async function loadAnalytics(): Promise<AnalyticsData> {
-  // 1. Baseline: mock in dev, empty in prod.
+  // 1. Baseline: empty (real data only); mock only when explicitly opted in.
   const mockKpis = (id: Network) =>
     ALLOW_MOCK_ANALYTICS
       ? { kpis: getCoreMetrics(id), source: 'mock' as SectionSource }
