@@ -39,9 +39,49 @@ baseline. The page cannot break because a fetch failed.
 Each network section's "Source:" badge shows `(live)`, `(mock)`,
 `(live + mock)`, or `(not connected)` so the real state is always visible.
 
+Providers also expose an optional `followers` roster (`PlatformAnalytics.followers`)
+for the cross-channel matcher; every provider returns `null` today (no platform
+API exposes a roster). See **Cross-channel followers** below.
+
 Sections still mock-only (no provider yet): trend chart, audience demographics,
 best-time (Claude), competitor benchmark, ROI/UTM, social listening. In
 production these render empty states until a provider is added.
+
+## Cross-channel followers
+
+Finds people who follow the brand on 2+ networks under near-duplicate
+identities (e.g. Instagram `@jane.eyre` + TikTok `@jane_eyre`) and surfaces them
+as **potential** matches with a confidence score — never confirmed identities.
+
+Data flow:
+
+```
+loadAnalytics()                                   lib/analytics/load.ts
+  ├─ each provider may return a `followers` roster (PlatformAnalytics.followers)
+  ├─ collect LIVE rosters from connected providers → liveRosters[]
+  ├─ matchCrossChannelFollowers(rosters)           lib/analytics/cross-channel.ts
+  │     normalize handle/name/bio → blend (Levenshtein + Jaccard) →
+  │     union-find groups → keep groups spanning 2+ distinct platforms
+  └─ tag the section live / mock / empty (never mix live + mock followers)
+        ├─ live rosters present        → matcher over live data        (live)
+        ├─ else ALLOW_MOCK_ANALYTICS   → matcher over the dev sample    (mock)
+        └─ else (production, no source) → empty "connect an account"    (empty)
+```
+
+The matcher (`lib/analytics/cross-channel.ts`) is **pure and deterministic** (no
+`Math.random()` / `Date.now()`), so it produces identical output on the server
+and client. The UI is `components/analytics/cross-channel-followers.tsx`
+(potential-matches banner, summary cards, ranked list with per-platform @handle
+chips, match reason, and a confidence badge), wired into the dashboard between
+Audience insights and Best times and listed in the report builder.
+
+**Status: not live.** No platform API exposes a follower roster today, so every
+provider returns `followers: null` (documented inline in each `providers/*`).
+That `null` is the **activation point**: once a real follower source is wired in
+(a provider returns a `followers` array), matching runs against live data
+automatically — no UI change. Until then the section uses the dev-only sample
+roster in `mock-data.ts` (`getSampleFollowerRosters()`) in development and an
+empty state in production.
 
 ## Database
 

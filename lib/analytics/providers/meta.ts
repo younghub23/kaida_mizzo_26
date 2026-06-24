@@ -134,7 +134,9 @@ async function fetchInstagram(token: string): Promise<PlatformAnalytics | null> 
       if (reach) live.engagementRate = rate(likes + comments, reach)
     }
 
-    return { kpis: overlayKpis('instagram', live), posts: posts.length ? posts : null }
+    // followers: the IG Graph API does not expose a follower roster (only an
+    // aggregate count), so cross-channel matching stays mock until one exists.
+    return { kpis: overlayKpis('instagram', live), posts: posts.length ? posts : null, followers: null }
   } catch (err) {
     logError('analytics/meta', 'Instagram live fetch failed; using mock', err)
     return null
@@ -202,7 +204,9 @@ async function fetchFacebook(token: string): Promise<PlatformAnalytics | null> {
     }
     if (engagements !== undefined && reach) live.engagementRate = rate(engagements, reach)
 
-    return { kpis: overlayKpis('facebook', live), posts: posts.length ? posts : null }
+    // followers: Facebook Pages expose fan counts, not a roster, so cross-channel
+    // matching stays mock until a real follower source is connected.
+    return { kpis: overlayKpis('facebook', live), posts: posts.length ? posts : null, followers: null }
   } catch (err) {
     logError('analytics/meta', 'Facebook live fetch failed; using mock', err)
     return null

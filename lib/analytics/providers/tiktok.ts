@@ -91,7 +91,9 @@ export async function fetchTikTok(account: ConnectedAccount): Promise<PlatformAn
       live.engagementRate = rate(likes + comments + shares, totalViews)
     }
 
-    return { kpis: overlayKpis('tiktok', live), posts: posts.length ? posts : null }
+    // followers: TikTok's API exposes a follower count, not a roster, so the
+    // cross-channel matcher stays mock until a real follower source is wired.
+    return { kpis: overlayKpis('tiktok', live), posts: posts.length ? posts : null, followers: null }
   } catch (err) {
     logError('analytics/tiktok', 'TikTok live fetch failed; using fallback', err)
     return null
