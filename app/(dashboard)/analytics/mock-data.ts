@@ -17,6 +17,8 @@
 // is seeded so server-rendered HTML matches client hydration.
 // ============================================================================
 
+import type { FollowerProfile, NetworkRoster } from '@/lib/analytics/cross-channel'
+
 // ----------------------------------------------------------------------------
 // Networks (drives the cross-network unified-reporting filter)
 // ----------------------------------------------------------------------------
@@ -296,6 +298,48 @@ const COMPETITORS: Competitor[] = [
 ]
 
 // ----------------------------------------------------------------------------
+// 6. CROSS-CHANNEL FOLLOWERS — people who follow us on 2+ networks under
+//    near-duplicate identities (e.g. IG @jane.eyre + TikTok @jane_eyre).
+// SOURCE: per-platform FOLLOWER ROSTERS (handle + name + bio) from each
+// network's API — Instagram/Facebook (Meta Graph), TikTok, LinkedIn, Google.
+// None of those expose a follower roster today (see lib/analytics/providers/*),
+// so the matcher (lib/analytics/cross-channel.ts) runs against the sample below
+// purely for dev preview. It activates automatically once a real follower
+// source is connected. NEVER mixed with live followers — see loadAnalytics().
+//
+// The sample deliberately includes:
+//   • the canonical IG @jane.eyre / TikTok @jane_eyre pair,
+//   • a few more cross-platform people (one spanning three networks),
+//   • single-platform "noise" accounts that must NOT match anything.
+// ----------------------------------------------------------------------------
+const SAMPLE_FOLLOWER_ROSTERS: Record<RealNetwork, FollowerProfile[]> = {
+  instagram: [
+    { handle: '@jane.eyre', name: 'Jane Eyre', bio: 'Bookworm 📚 coffee lover. Marketing @ Thornfield. London.' },
+    { handle: '@marcus.lee', name: 'Marcus Lee', bio: 'Product designer ✏️ coffee + dogs' },
+    { handle: '@david.kim.photo', name: 'David Kim', bio: 'Wedding photographer 📷 NYC' },
+    { handle: '@hannah.bauer', name: 'Hannah Bauer', bio: 'Travel blogger ✈️ exploring Europe one city at a time' },
+    { handle: '@coffee.house.co', name: 'The Coffee House', bio: 'Your neighborhood cafe ☕ open daily from 7am' },
+  ],
+  tiktok: [
+    { handle: '@jane_eyre', name: 'Jane Eyre', bio: 'coffee + books ☕📚 marketing girl in London' },
+    { handle: '@marcus_lee', name: 'Marcus Lee', bio: 'designer, coffee addict, dog dad 🐶' },
+    { handle: '@gym.rat.mike', name: 'Mike Torres', bio: 'Fitness coach. Leg day enthusiast 💪' },
+  ],
+  linkedin: [
+    { handle: 'marcuslee', name: 'Marcus Lee', bio: 'Product designer at Acme. Coffee & dogs.' },
+    { handle: 'davidkimphoto', name: 'Dave Kim', bio: 'Photographer. Brooklyn based.' },
+    { handle: 'hannahbauer1', name: 'Hannah Bauer', bio: 'Content creator & travel writer. Berlin.' },
+    { handle: 'sarah-johnson', name: 'Sarah Johnson', bio: 'VP of Sales at Globex. Revenue leader.' },
+  ],
+  facebook: [
+    { handle: 'bobsburgers.official', name: "Bob's Burgers", bio: 'Best burgers in town since 1994' },
+  ],
+  google: [
+    { handle: 'acme-marketing', name: 'Acme Marketing', bio: 'B2B growth agency for small business' },
+  ],
+}
+
+// ----------------------------------------------------------------------------
 // 7. CUSTOM REPORT BUILDER — widget toggles + export formats
 // SOURCE: user config (would persist to a `report_layouts` table). Export
 // rendering would run server-side (PDF/CSV/PPTX generators).
@@ -308,6 +352,7 @@ export const REPORT_WIDGETS: ReportWidget[] = [
   { id: 'top-content', label: 'Top content', defaultOn: true },
   { id: 'posts', label: 'Post performance table', defaultOn: true },
   { id: 'audience', label: 'Audience demographics', defaultOn: false },
+  { id: 'cross-channel', label: 'Cross-channel followers', defaultOn: false },
   { id: 'best-time', label: 'Best time to post', defaultOn: false },
   { id: 'competitors', label: 'Competitor benchmark', defaultOn: false },
   { id: 'roi', label: 'ROI / attribution', defaultOn: false },
@@ -495,6 +540,19 @@ export function getAudience(network: Network): AudienceData {
     heatmap: { days: HEATMAP_DAYS, hourLabels: HEATMAP_HOUR_LABELS, values },
     followerSeries,
   }
+}
+
+/**
+ * 6. Dev-only sample follower rosters for the cross-channel matcher preview.
+ * Returns the per-platform rosters in the shape the live providers will one day
+ * supply (lib/analytics/providers/*). Only ever used as the MOCK input to the
+ * matcher in loadAnalytics — never mixed with live follower data.
+ */
+export function getSampleFollowerRosters(): NetworkRoster[] {
+  return REAL_NETWORKS.map((platform) => ({
+    platform,
+    followers: SAMPLE_FOLLOWER_ROSTERS[platform],
+  }))
 }
 
 /** 4. Claude-recommended best times to post, per network. */

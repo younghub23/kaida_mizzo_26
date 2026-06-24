@@ -97,7 +97,9 @@ export async function fetchGoogle(account: ConnectedAccount): Promise<PlatformAn
     if (sessions) live.clicks = sessions
     if (engagementRate) live.engagementRate = Math.round(engagementRate * 1000) / 10 // GA4 returns a 0..1 ratio
 
-    return { kpis: overlayKpis('google', live), posts: null }
+    // followers: GA4 is web analytics — there is no follower concept, so the
+    // cross-channel matcher has no roster to contribute from Google.
+    return { kpis: overlayKpis('google', live), posts: null, followers: null }
   } catch (err) {
     logError('analytics/google', 'Google live fetch failed; using fallback', err)
     return null
