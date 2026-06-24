@@ -308,6 +308,7 @@ export const REPORT_WIDGETS: ReportWidget[] = [
   { id: 'top-content', label: 'Top content', defaultOn: true },
   { id: 'posts', label: 'Post performance table', defaultOn: true },
   { id: 'audience', label: 'Audience demographics', defaultOn: false },
+  { id: 'cross-channel', label: 'Cross-channel followers', defaultOn: false },
   { id: 'best-time', label: 'Best time to post', defaultOn: false },
   { id: 'competitors', label: 'Competitor benchmark', defaultOn: false },
   { id: 'roi', label: 'ROI / attribution', defaultOn: false },
@@ -376,6 +377,48 @@ const LISTENING: ListeningData = {
     { id: 'm5', source: 'LinkedIn', author: 'Maya R.', text: 'Switched our agency clients to Tala this quarter — great support.', sentiment: 'positive', at: '2026-06-19' },
   ],
 }
+
+// ----------------------------------------------------------------------------
+// 10. CROSS-CHANNEL FOLLOWERS — one person who follows you on multiple networks
+// SOURCE: each network's follower/fan list (Meta Graph API followers,
+// TikTok follower list, LinkedIn connections, etc.). No shared identity key
+// exists across platforms, so the same human appears under slightly different
+// handles/names — the matcher in lib/analytics/cross-channel.ts reconciles them
+// by handle/name/bio similarity. The follower lists below are the raw inputs.
+// ----------------------------------------------------------------------------
+import {
+  matchCrossChannelFollowers,
+  type FollowerProfile,
+  type CrossChannelPerson,
+} from '@/lib/analytics/cross-channel'
+
+export type { CrossChannelPerson } from '@/lib/analytics/cross-channel'
+
+const FOLLOWERS: FollowerProfile[] = [
+  // Jane — same person, near-identical bio, handle differs only by separator.
+  { platform: 'instagram', handle: 'jane.eyre', displayName: 'Jane Eyre', bio: 'Bookworm & coffee addict ☕ | NYC' },
+  { platform: 'tiktok', handle: 'jane_eyre', displayName: 'jane eyre', bio: 'bookworm + coffee addict, nyc 📚' },
+
+  // Marcus — three platforms, handle variants + matching profession in bio.
+  { platform: 'instagram', handle: 'marcus.builds', displayName: 'Marcus Lee', bio: 'Furniture maker. Woodworking & design in Portland.' },
+  { platform: 'linkedin', handle: 'marcuslee', displayName: 'Marcus Lee', bio: 'Furniture designer and woodworker based in Portland, OR.' },
+  { platform: 'facebook', handle: 'marcus.builds', displayName: 'Marcus L.', bio: 'Woodworking and furniture design — Portland.' },
+
+  // Priya — two platforms, different display style, overlapping bio.
+  { platform: 'instagram', handle: 'priya.cooks', displayName: 'Priya • Plant-Based', bio: 'Vegan recipes 🌱 meal prep + wellness' },
+  { platform: 'tiktok', handle: 'priyacooks', displayName: 'Priya Cooks', bio: 'plant-based recipes, meal prep and wellness 🌱' },
+
+  // Diego — LinkedIn + Google, handle and name aligned.
+  { platform: 'linkedin', handle: 'diego-ramos', displayName: 'Diego Ramos', bio: 'B2B SaaS marketing leader. Growth & demand gen.' },
+  { platform: 'google', handle: 'diegoramos', displayName: 'Diego Ramos', bio: 'SaaS marketing and demand generation.' },
+
+  // Single-platform followers (noise) — must NOT match anyone above.
+  { platform: 'instagram', handle: 'sunsetsurfco', displayName: 'Sunset Surf Co.', bio: 'Surf shop & rentals 🏄 Malibu' },
+  { platform: 'tiktok', handle: 'gamerjax', displayName: 'Jax', bio: 'daily gaming clips and streams 🎮' },
+  { platform: 'facebook', handle: 'bloomandco', displayName: 'Bloom & Co Bakery', bio: 'Fresh bread daily. Family-owned since 2008.' },
+  { platform: 'linkedin', handle: 'sarah-okafor', displayName: 'Sarah Okafor', bio: 'Clinical research nurse. Oncology.' },
+  { platform: 'google', handle: 'trailmaps', displayName: 'TrailMaps', bio: 'Hiking routes and trail reviews.' },
+]
 
 // ============================================================================
 // ACCESSORS — the ONLY surface the UI touches. Swap the body of each to a real
@@ -531,4 +574,19 @@ export function getSocialListening(network: Network): ListeningData {
     totalMentions: Math.round(LISTENING.totalMentions * NETWORK_WEIGHT[network]),
     shareOfVoicePct: Math.max(5, Math.round(LISTENING.shareOfVoicePct * (0.6 + NETWORK_WEIGHT[network]))),
   }
+}
+
+/**
+ * 10. People who follow you on more than one network, reconciled from the raw
+ * per-platform follower lists by lib/analytics/cross-channel.ts.
+ *
+ * The result is inherently cross-network; when a single network is selected we
+ * narrow to people whose multi-channel presence INCLUDES that network (i.e.
+ * "who follows me here AND somewhere else"), keeping the page-wide filter
+ * meaningful without hiding the overlap that is the whole point of the section.
+ */
+export function getCrossChannelFollowers(network: Network): CrossChannelPerson[] {
+  const people = matchCrossChannelFollowers(FOLLOWERS)
+  if (network === 'all') return people
+  return people.filter((p) => p.platforms.includes(network))
 }

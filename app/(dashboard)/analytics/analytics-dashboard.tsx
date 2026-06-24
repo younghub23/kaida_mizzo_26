@@ -7,6 +7,7 @@ import { CorePerformance } from '@/components/analytics/core-performance'
 import { TopContent } from '@/components/analytics/top-content'
 import { PostPerformance } from '@/components/analytics/post-performance'
 import { AudienceInsights } from '@/components/analytics/audience-insights'
+import { CrossChannelFollowers } from '@/components/analytics/cross-channel-followers'
 import { BestTimes } from '@/components/analytics/best-times'
 import { CompetitorBenchmark } from '@/components/analytics/competitor-benchmark'
 import { ReportBuilder } from '@/components/analytics/report-builder'
@@ -59,6 +60,7 @@ export function AnalyticsDashboard({
       <TopContent posts={posts.posts} source={posts.source} />
       <PostPerformance posts={posts.posts} source={posts.source} />
       <AudienceInsights network={network} />
+      <CrossChannelFollowers network={network} />
       <BestTimes network={network} />
       <CompetitorBenchmark network={network} />
       <RoiAttribution network={network} />
