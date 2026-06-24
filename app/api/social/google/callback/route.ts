@@ -2,36 +2,29 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { logError } from '@/lib/log'
 
-// TEMP DIAGNOSTIC VERSION: on any failure this returns a plain-text page
-// describing exactly what happened (no tokens shown), so we can see the cause
-// in the browser. Will be reverted to clean redirects once the issue is found.
-function note(msg: string) {
-  return new NextResponse(`TALA GOOGLE CONNECT DEBUG\n\n${msg}`, {
-    status: 200,
-    headers: { 'content-type': 'text/plain; charset=utf-8' },
-  })
-}
-
+// Stores a Google (GA4) connection on social_accounts. Uses the authenticated
+// user's own session (RLS policy "Users manage own social accounts") to write
+// the row — no service-role/admin client needed.
 export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url)
+  const code = searchParams.get('code')
+  const error = searchParams.get('error')
+
+  if (error || !code) {
+    logError('social/google/callback', 'OAuth error or missing code', undefined, { error })
+    return NextResponse.redirect(new URL('/socials/connect?error=oauth_denied', req.url))
+  }
+
+  const clientId = process.env.GOOGLE_CLIENT_ID
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/api/social/google/callback`
+
+  if (!clientId || !clientSecret) {
+    logError('social/google/callback', 'GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is not set')
+    return NextResponse.redirect(new URL('/socials/connect?error=config', req.url))
+  }
+
   try {
-    const { searchParams } = new URL(req.url)
-    const code = searchParams.get('code')
-    const error = searchParams.get('error')
-
-    if (error || !code) {
-      return note(`step=entry — Google returned no code.\nerror=${error ?? '(none)'}`)
-    }
-
-    const clientId = process.env.GOOGLE_CLIENT_ID
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/api/social/google/callback`
-
-    if (!clientId || !clientSecret) {
-      return note(
-        `step=config — missing env.\nhasClientId=${Boolean(clientId)} hasClientSecret=${Boolean(clientSecret)}\nredirectUri=${redirectUri}`
-      )
-    }
-
     // Exchange the authorization code for tokens.
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -53,11 +46,15 @@ export async function GET(req: NextRequest) {
     }
 
     if (!tokenData.access_token) {
-      return note(
-        `step=token — token exchange failed.\nhttpStatus=${tokenRes.status}\ngoogleError=${tokenData.error ?? '(none)'}\ndescription=${tokenData.error_description ?? '(none)'}\nredirectUri=${redirectUri}`
-      )
+      logError('social/google/callback', 'Failed to get access token', undefined, {
+        status: tokenRes.status,
+        error: tokenData.error,
+        description: tokenData.error_description,
+      })
+      return NextResponse.redirect(new URL('/socials/connect?error=token', req.url))
     }
 
+    // Fetch the account email for a friendly display name.
     let username = 'Google Account'
     try {
       const userInfo = (await (
@@ -67,7 +64,7 @@ export async function GET(req: NextRequest) {
       ).json()) as { email?: string }
       if (userInfo.email) username = userInfo.email
     } catch {
-      // Non-fatal.
+      // Non-fatal — keep the default display name.
     }
 
     const supabase = await createClient()
@@ -77,9 +74,8 @@ export async function GET(req: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (authErr || !user) {
-      return note(
-        `step=auth — could not read your Tala login session in the callback.\nhasUser=${Boolean(user)}\nauthError=${authErr?.message ?? '(none)'}\n\n(This means the session cookie isn't reaching the callback.)`
-      )
+      logError('social/google/callback', 'User not authenticated', authErr)
+      return NextResponse.redirect(new URL('/login', req.url))
     }
 
     const expiresAt = tokenData.expires_in
@@ -99,15 +95,13 @@ export async function GET(req: NextRequest) {
     )
 
     if (dbErr) {
-      return note(
-        `step=db — saving the connection failed.\nuserId=${user.id}\ndbError=${dbErr.message}\ndbCode=${(dbErr as { code?: string }).code ?? '(none)'}`
-      )
+      logError('social/google/callback', 'Failed to save Google account', dbErr)
+      return NextResponse.redirect(new URL('/socials/connect?error=unexpected', req.url))
     }
 
-    // Success — go back to the connect page as normal.
     return NextResponse.redirect(new URL('/socials/connect?success=1', req.url))
   } catch (err) {
     logError('social/google/callback', 'Unexpected error during OAuth callback', err)
-    return note(`step=exception — ${err instanceof Error ? `${err.name}: ${err.message}` : String(err)}`)
+    return NextResponse.redirect(new URL('/socials/connect?error=unexpected', req.url))
   }
 }
