@@ -90,8 +90,8 @@ export function AiChat({ initialConversations, canStrategist, canAnalyst }: Prop
     const value = (text ?? input).trim()
     if (!value || sending || !currentAllowed) return
 
-    const next: ChatMessage[] = [...messages, { role: 'user', content: value }]
-    setMessages(next)
+    const base: ChatMessage[] = [...messages, { role: 'user', content: value }]
+    setMessages(base)
     setInput('')
     setSending(true)
     setError(null)
@@ -100,15 +100,74 @@ export function AiChat({ initialConversations, canStrategist, canAnalyst }: Prop
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId: activeId, mode, messages: next }),
+        body: JSON.stringify({ conversationId: activeId, mode, messages: base }),
       })
-      const data = await res.json()
-      if (!res.ok || data.error) {
+
+      // Pre-flight failures (validation, gating, auth) come back as JSON.
+      if (!res.ok || !res.body) {
+        const data = await res.json().catch(() => ({}) as { error?: string })
         setError(data.error ?? 'Something went wrong')
         return
       }
-      setActiveId(data.conversationId)
-      setMessages([...next, { role: 'assistant', content: data.assistant }])
+
+      // Success: a stream of newline-delimited JSON frames.
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let assistantOpen = false
+
+      const openAssistant = () => {
+        if (assistantOpen) return
+        setMessages((prev) => [...prev, { role: 'assistant', content: '' }])
+        assistantOpen = true
+      }
+      const appendDelta = (delta: string) =>
+        setMessages((prev) => {
+          const copy = [...prev]
+          const last = copy[copy.length - 1]
+          if (last && last.role === 'assistant') {
+            copy[copy.length - 1] = { ...last, content: last.content + delta }
+          }
+          return copy
+        })
+
+      for (;;) {
+        const { value: chunk, done } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(chunk, { stream: true })
+
+        let nl = buffer.indexOf('\n')
+        while (nl !== -1) {
+          const line = buffer.slice(0, nl).trim()
+          buffer = buffer.slice(nl + 1)
+          nl = buffer.indexOf('\n')
+          if (!line) continue
+
+          let frame: { type: string; conversationId?: string; text?: string; error?: string }
+          try {
+            frame = JSON.parse(line)
+          } catch {
+            continue
+          }
+
+          if (frame.type === 'meta') {
+            if (frame.conversationId) setActiveId(frame.conversationId)
+            openAssistant()
+          } else if (frame.type === 'delta') {
+            openAssistant()
+            appendDelta(frame.text ?? '')
+          } else if (frame.type === 'error') {
+            setError(frame.error ?? 'Something went wrong')
+            // Drop a trailing empty assistant bubble if nothing streamed.
+            setMessages((prev) => {
+              const last = prev[prev.length - 1]
+              if (last && last.role === 'assistant' && last.content === '') return prev.slice(0, -1)
+              return prev
+            })
+          }
+        }
+      }
+
       refresh()
     } catch {
       setError('Something went wrong')
@@ -264,7 +323,7 @@ export function AiChat({ initialConversations, canStrategist, canAnalyst }: Prop
               messages.map((m, i) => <MessageBubble key={i} message={m} />)
             )}
 
-            {sending && (
+            {sending && messages[messages.length - 1]?.role === 'user' && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" />
                 {getModeMeta(mode).label} is thinking…
