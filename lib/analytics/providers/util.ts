@@ -33,18 +33,20 @@ export type ConnectedAccount = {
 export type Provider = (account: ConnectedAccount) => Promise<PlatformAnalytics | null>
 
 /**
- * Start from the mock KPI baseline for a platform and override ONLY the metrics
- * the live API actually returned, so the KPI card set stays complete while
- * surfacing as much real data as possible. deltaPct stays mock (we don't
- * compute period-over-period here yet).
+ * Build a platform's KPI cards from LIVE data only. A card is emitted ONLY for
+ * a metric the live API actually returned — unmapped metrics are omitted
+ * entirely (never shown with a mock value), so every number on the page is
+ * real. We reuse the catalog's label/format for each metric (static metadata,
+ * not data) and set deltaPct to null because real period-over-period isn't
+ * computed yet — the UI hides the "vs last period" line when it's null.
  */
 export function overlayKpis(
   platform: RealNetwork,
   live: Partial<Record<MetricKey, number>>
 ): Kpi[] {
-  return getCoreMetrics(platform).map((k) =>
-    live[k.key] !== undefined ? { ...k, value: Math.round(live[k.key]! * 10) / 10 } : k
-  )
+  return getCoreMetrics(platform)
+    .filter((k) => live[k.key] !== undefined)
+    .map((k) => ({ ...k, value: Math.round(live[k.key]! * 10) / 10, deltaPct: null }))
 }
 
 /** Engagement rate as a percentage, guarding divide-by-zero. */

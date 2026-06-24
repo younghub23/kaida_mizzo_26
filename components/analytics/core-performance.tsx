@@ -33,7 +33,7 @@ export function CorePerformance({
       <>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((kpi) => {
-          const up = kpi.deltaPct >= 0
+          const up = kpi.deltaPct !== null && kpi.deltaPct >= 0
           return (
             <Card key={kpi.key} size="sm">
               <CardHeader>
@@ -43,16 +43,20 @@ export function CorePerformance({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <span
-                  className={cn(
-                    'inline-flex items-center gap-1 text-xs font-medium',
-                    up ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'
-                  )}
-                >
-                  {up ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
-                  {formatDelta(kpi.deltaPct)}
-                  <span className="text-muted-foreground">vs last period</span>
-                </span>
+                {/* Only show a period-over-period delta when it's a real number;
+                    live data has none yet, so we omit it rather than fake it. */}
+                {kpi.deltaPct !== null && (
+                  <span
+                    className={cn(
+                      'inline-flex items-center gap-1 text-xs font-medium',
+                      up ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'
+                    )}
+                  >
+                    {up ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
+                    {formatDelta(kpi.deltaPct)}
+                    <span className="text-muted-foreground">vs last period</span>
+                  </span>
+                )}
               </CardContent>
             </Card>
           )

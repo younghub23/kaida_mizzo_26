@@ -95,9 +95,10 @@ export async function loadAnalytics(): Promise<AnalyticsData> {
 
         const result = await provider(account)
         // Overlay each part independently; non-live parts keep their baseline.
-        if (result?.kpis) coreMetricsByNetwork[platform] = { kpis: result.kpis, source: 'live' }
-        if (result?.posts) postsByNetwork[platform] = { posts: result.posts, source: 'live' }
-        if (result?.kpis || result?.posts) livePlatforms.push(platform)
+        // Only treat a part as live when it actually carries real data.
+        if (result?.kpis?.length) coreMetricsByNetwork[platform] = { kpis: result.kpis, source: 'live' }
+        if (result?.posts?.length) postsByNetwork[platform] = { posts: result.posts, source: 'live' }
+        if (result?.kpis?.length || result?.posts?.length) livePlatforms.push(platform)
       }
     }
   } catch (err) {
@@ -108,11 +109,15 @@ export async function loadAnalytics(): Promise<AnalyticsData> {
   // 3. Recompute the "All" aggregate from per-network data once anything is
   //    live, so the unified view reflects the real numbers.
   if (livePlatforms.length > 0) {
+    // With mock off, every per-network contribution is live, so the aggregate is
+    // 'live'. With mock opted in (dev), unconnected networks contribute mock
+    // baselines, so it's genuinely 'mixed'.
+    const aggSource: SectionSource = ALLOW_MOCK_ANALYTICS ? 'mixed' : 'live'
     const liveKpiSets = REAL_NETWORKS.map((n) => coreMetricsByNetwork[n].kpis).filter((k) => k.length > 0)
-    coreMetricsByNetwork.all = { kpis: aggregateKpis(liveKpiSets), source: 'mixed' }
+    coreMetricsByNetwork.all = { kpis: aggregateKpis(liveKpiSets), source: aggSource }
     postsByNetwork.all = {
       posts: REAL_NETWORKS.flatMap((n) => postsByNetwork[n].posts),
-      source: 'mixed',
+      source: aggSource,
     }
   }
 

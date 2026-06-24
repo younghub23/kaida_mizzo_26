@@ -103,7 +103,10 @@ export type Kpi = {
   label: string
   value: number
   format: 'percent' | 'number'
-  deltaPct: number
+  // Period-over-period change. `null` when there's no real comparison to show
+  // (live data — we don't compute real period-over-period yet), so the UI can
+  // omit the "vs last period" line rather than render a fabricated delta.
+  deltaPct: number | null
 }
 
 type KpiSpec = {
@@ -415,23 +418,33 @@ export function getCoreMetrics(network: Network): Kpi[] {
  * real numbers (sum additive metrics, average the engagement rate).
  */
 export function aggregateKpis(perNetwork: Kpi[][]): Kpi[] {
-  return (Object.keys(BASE_KPIS) as MetricKey[]).map((key) => {
+  return (Object.keys(BASE_KPIS) as MetricKey[]).flatMap((key) => {
     const spec = BASE_KPIS[key]
     const vals = perNetwork
       .map((set) => set.find((k) => k.key === key))
       .filter((k): k is Kpi => Boolean(k))
-    const count = vals.length || 1
+    // Only surface a metric the underlying networks actually reported — never
+    // fabricate a card for a metric nobody provided.
+    if (vals.length === 0) return []
     const value = spec.additive
       ? vals.reduce((s, k) => s + k.value, 0)
-      : vals.reduce((s, k) => s + k.value, 0) / count
-    const deltaPct = vals.reduce((s, k) => s + k.deltaPct, 0) / count
-    return {
-      key,
-      label: spec.label,
-      value: Math.round(value * 10) / 10,
-      format: spec.format,
-      deltaPct: Math.round(deltaPct * 10) / 10,
-    }
+      : vals.reduce((s, k) => s + k.value, 0) / vals.length
+    // Carry a delta only if every contributing network has a real one;
+    // otherwise null (no fabricated period-over-period).
+    const deltas = vals.map((k) => k.deltaPct).filter((d): d is number => d !== null)
+    const deltaPct =
+      deltas.length === vals.length
+        ? Math.round((deltas.reduce((s, d) => s + d, 0) / vals.length) * 10) / 10
+        : null
+    return [
+      {
+        key,
+        label: spec.label,
+        value: Math.round(value * 10) / 10,
+        format: spec.format,
+        deltaPct,
+      },
+    ]
   })
 }
 
