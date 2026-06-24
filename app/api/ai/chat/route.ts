@@ -21,6 +21,15 @@ function deriveTitle(text: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  // --- Pre-flight: everything that must return a real HTTP status code -------
+  // (Once we start streaming the response status is 200, so all validation,
+  // auth, plan gating and the initial DB writes happen here.)
+  let convId: string
+  let title: string
+  let system: string
+  let apiMessages: Anthropic.Messages.MessageParam[]
+  let tools: Anthropic.Messages.ToolUnion[] | undefined
+
   try {
     const body = (await req.json()) as {
       conversationId?: string
@@ -57,7 +66,6 @@ export async function POST(req: NextRequest) {
       .single()
     const plan = profile?.plan ?? 'free'
 
-    // --- Plan gating (server-side, per role) ---------------------------------
     if (mode === 'content_strategist' && !canUseContentStrategist(plan)) {
       return NextResponse.json(
         { error: 'The AI Content Strategist requires a Growth, Pro, or Agency plan.' },
@@ -71,7 +79,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // --- Brand context (AI-enabled plans only) -------------------------------
     let brandContext = ''
     if (profile && canUseAi(plan)) {
       brandContext = buildBrandContext(
@@ -81,7 +88,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // --- Strategist grounding: general for the first 5 posts, then real data -
+    // Strategist grounding: general for the first 5 posts, then real history.
     let strategistCtx: { publishedPostCount: number; postHistory?: string } | undefined
     if (mode === 'content_strategist') {
       const { count } = await supabase
@@ -102,7 +109,9 @@ export async function POST(req: NextRequest) {
           .limit(20)
         postHistory = (posts ?? [])
           .map((p) => {
-            const when = p.scheduled_at ? new Date(p.scheduled_at as string).toISOString() : 'unknown time'
+            const when = p.scheduled_at
+              ? new Date(p.scheduled_at as string).toISOString()
+              : 'unknown time'
             const platforms = Array.isArray(p.platforms) ? (p.platforms as string[]).join(', ') : ''
             const snippet = ((p.content as string) ?? '').replace(/\s+/g, ' ').slice(0, 140)
             return `- [${when}]${platforms ? ` (${platforms})` : ''} ${snippet}`
@@ -112,19 +121,18 @@ export async function POST(req: NextRequest) {
       strategistCtx = { publishedPostCount, postHistory }
     }
 
-    // --- Ensure a conversation row (auto-save) -------------------------------
-    let convId = conversationId
-    let title = ''
-    if (convId) {
+    // Ensure a conversation row (auto-save).
+    if (conversationId) {
       const { data: existing } = await supabase
         .from('ai_conversations')
         .select('id, title')
-        .eq('id', convId)
+        .eq('id', conversationId)
         .eq('user_id', user.id)
         .single()
       if (!existing) {
         return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
       }
+      convId = existing.id as string
       title = (existing.title as string) ?? 'New conversation'
     } else {
       const firstUser = messages.find((m) => m.role === 'user')?.content ?? 'New conversation'
@@ -142,87 +150,101 @@ export async function POST(req: NextRequest) {
     }
 
     // Persist the new user turn (the last message in the thread).
-    const userTurn = messages[messages.length - 1].content
     await supabase.from('ai_messages').insert({
       conversation_id: convId,
       role: 'user',
-      content: userTurn,
+      content: messages[messages.length - 1].content,
     })
 
-    // --- Call Claude with the full conversation ------------------------------
-    const system = buildSystemPrompt(mode, brandContext, strategistCtx)
-    const tools =
+    system = buildSystemPrompt(mode, brandContext, strategistCtx)
+    tools =
       mode === 'data_analyst'
         ? ([{ type: 'web_search_20260209', name: 'web_search' }] as unknown as Anthropic.Messages.ToolUnion[])
         : undefined
-
-    const apiMessages: Anthropic.Messages.MessageParam[] = messages.map((m) => ({
-      role: m.role,
-      content: m.content,
-    }))
-
-    let response = await anthropic.messages.create({
-      model: MODEL,
-      max_tokens: MAX_TOKENS,
-      system,
-      messages: apiMessages,
-      ...(tools ? { tools } : {}),
-    })
-
-    // Server-tool (web search) loop: resume on pause_turn.
-    let guard = 0
-    while (response.stop_reason === 'pause_turn' && guard < MAX_PAUSE_TURNS) {
-      apiMessages.push({
-        role: 'assistant',
-        content: response.content as unknown as Anthropic.Messages.ContentBlockParam[],
-      })
-      response = await anthropic.messages.create({
-        model: MODEL,
-        max_tokens: MAX_TOKENS,
-        system,
-        messages: apiMessages,
-        ...(tools ? { tools } : {}),
-      })
-      guard++
-    }
-
-    const assistantText = response.content
-      .filter((b): b is Anthropic.Messages.TextBlock => b.type === 'text')
-      .map((b) => b.text)
-      .join('\n\n')
-      .trim()
-
-    if (!assistantText) {
-      logError('ai/chat', 'Empty assistant response', undefined, { stop: response.stop_reason })
-      return NextResponse.json({ error: 'No response from AI' }, { status: 500 })
-    }
-
-    // Persist the assistant reply and bump the conversation timestamp.
-    await supabase.from('ai_messages').insert({
-      conversation_id: convId,
-      role: 'assistant',
-      content: assistantText,
-    })
-    await supabase
-      .from('ai_conversations')
-      .update({ updated_at: new Date().toISOString() })
-      .eq('id', convId)
-      .eq('user_id', user.id)
-
-    return NextResponse.json({ conversationId: convId, title, assistant: assistantText })
+    apiMessages = messages.map((m) => ({ role: m.role, content: m.content }))
   } catch (err) {
-    logError('ai/chat', 'Failed to generate chat response', err)
-
-    if (err instanceof Anthropic.APIError && err.status === 429) {
-      return NextResponse.json(
-        {
-          error:
-            'The AI assistant is temporarily unavailable due to high demand. Please try again in a few minutes.',
-        },
-        { status: 503 }
-      )
-    }
-
-    return NextResponse.json({ error: 'Failed to generate response' }, { status: 500 })
+    logError('ai/chat', 'Pre-flight failed', err)
+    return NextResponse.json({ error: 'Failed to start response' }, { status: 500 })
   }
+
+  // --- Stream the model output as newline-delimited JSON frames -------------
+  const encoder = new TextEncoder()
+  const conversationId = convId
+
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (obj: unknown) =>
+        controller.enqueue(encoder.encode(`${JSON.stringify(obj)}\n`))
+
+      let fullText = ''
+      try {
+        send({ type: 'meta', conversationId, title })
+
+        // Server-tool (web search) loop: resume on pause_turn.
+        let guard = 0
+        while (guard <= MAX_PAUSE_TURNS) {
+          const modelStream = anthropic.messages.stream({
+            model: MODEL,
+            max_tokens: MAX_TOKENS,
+            system,
+            messages: apiMessages,
+            ...(tools ? { tools } : {}),
+          })
+
+          modelStream.on('text', (delta: string) => {
+            fullText += delta
+            send({ type: 'delta', text: delta })
+          })
+
+          const final = await modelStream.finalMessage()
+          if (final.stop_reason === 'pause_turn' && guard < MAX_PAUSE_TURNS) {
+            apiMessages.push({
+              role: 'assistant',
+              content: final.content as unknown as Anthropic.Messages.ContentBlockParam[],
+            })
+            guard++
+            continue
+          }
+          break
+        }
+
+        const assistantText = fullText.trim()
+        if (!assistantText) {
+          send({ type: 'error', error: 'No response from AI' })
+          controller.close()
+          return
+        }
+
+        // Persist the assistant reply + bump the conversation timestamp.
+        const supabase = await createClient()
+        await supabase.from('ai_messages').insert({
+          conversation_id: conversationId,
+          role: 'assistant',
+          content: assistantText,
+        })
+        await supabase
+          .from('ai_conversations')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', conversationId)
+
+        send({ type: 'done' })
+      } catch (err) {
+        logError('ai/chat', 'Streaming failed', err)
+        const message =
+          err instanceof Anthropic.APIError && err.status === 429
+            ? 'The AI assistant is temporarily unavailable due to high demand. Please try again in a few minutes.'
+            : 'Failed to generate response'
+        send({ type: 'error', error: message })
+      } finally {
+        controller.close()
+      }
+    },
+  })
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'application/x-ndjson; charset=utf-8',
+      'Cache-Control': 'no-store',
+    },
+  })
 }
