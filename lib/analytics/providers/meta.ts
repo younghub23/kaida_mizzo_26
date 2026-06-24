@@ -37,7 +37,8 @@ import {
   type ConnectedAccount,
 } from '@/lib/analytics/providers/util'
 
-const GRAPH = 'https://graph.facebook.com/v19.0'
+// v19 is past its sunset (Meta auto-upgrades it); v23 is current and verified.
+const GRAPH = 'https://graph.facebook.com/v23.0'
 
 type InsightsResponse = { data?: { name: string; values?: { value: number }[] }[] }
 
@@ -107,12 +108,21 @@ async function fetchInstagram(token: string): Promise<PlatformAnalytics | null> 
   const igId = page?.instagram_business_account?.id
   if (!igId) return null
 
-  // Account insights (reach/impressions) need instagram_manage_insights — an
-  // App-Review permission. Media + engagement counts need only instagram_basic.
-  // Fetch independently so a missing insights scope doesn't drop the post data.
+  // The IG account node carries the live follower count directly (instagram_basic).
+  const profile = await attempt('Instagram profile fetch failed', () =>
+    graphGet<{ followers_count?: number }>(`${igId}`, {
+      fields: 'followers_count',
+      access_token: token,
+    })
+  )
+
+  // Account reach needs instagram_manage_insights — an App-Review permission.
+  // Media + engagement counts need only instagram_basic. Fetch independently so
+  // a missing insights scope doesn't drop the post data. (`impressions` was
+  // deprecated by Meta, so we request only the still-valid `reach`.)
   const insights = await attempt('Instagram insights fetch failed', () =>
     graphGet<InsightsResponse>(`${igId}/insights`, {
-      metric: 'reach,impressions',
+      metric: 'reach',
       period: 'days_28',
       access_token: token,
     })
@@ -155,10 +165,9 @@ async function fetchInstagram(token: string): Promise<PlatformAnalytics | null> 
   })
 
   const reach = insights ? sumMetric(insights, 'reach') : undefined
-  const impressions = insights ? sumMetric(insights, 'impressions') : undefined
   const live: Partial<Record<MetricKey, number>> = {}
+  if (profile?.followers_count !== undefined) live.followers = profile.followers_count
   if (reach !== undefined) live.reach = reach
-  if (impressions !== undefined) live.impressions = impressions
   if (posts.length) {
     const likes = posts.reduce((s, p) => s + p.likes, 0)
     const comments = posts.reduce((s, p) => s + p.comments, 0)
@@ -182,18 +191,25 @@ type FbPost = {
 }
 
 async function fetchFacebook(token: string): Promise<PlatformAnalytics | null> {
+  // The Page node carries the live follower count directly (readable with
+  // pages_read_engagement — no App Review needed).
   const page = await attempt('Facebook page lookup failed', () =>
-    graphGet<{ id: string }>('me', { fields: 'id', access_token: token })
+    graphGet<{ id: string; followers_count?: number; fan_count?: number }>('me', {
+      fields: 'id,followers_count,fan_count',
+      access_token: token,
+    })
   )
   const pageId = page?.id
   if (!pageId) return null
 
-  // Page insights need read_insights — an App-Review permission. Posts +
-  // engagement counts need only pages_read_engagement. Fetch independently so a
-  // missing insights scope doesn't drop the post data we're allowed to read.
+  // Insights and posts use different permissions, so fetch them independently —
+  // a failure in one never suppresses the other. NOTE: Meta deprecated the old
+  // page_impressions* / page_fan_adds metrics; `page_daily_follows` is the
+  // current follower-change metric. Page-level reach/impressions are no longer
+  // offered by the Graph API, so we surface only what Meta actually returns.
   const insights = await attempt('Facebook insights fetch failed', () =>
     graphGet<InsightsResponse>(`${pageId}/insights`, {
-      metric: 'page_impressions,page_impressions_unique,page_fan_adds,page_post_engagements',
+      metric: 'page_daily_follows',
       period: 'days_28',
       access_token: token,
     })
@@ -226,15 +242,11 @@ async function fetchFacebook(token: string): Promise<PlatformAnalytics | null> {
   })
 
   const live: Partial<Record<MetricKey, number>> = {}
+  const followers = page.followers_count ?? page.fan_count
+  if (followers !== undefined) live.followers = followers
   if (insights) {
-    const reach = sumMetric(insights, 'page_impressions_unique')
-    const impressions = sumMetric(insights, 'page_impressions')
-    const fanAdds = sumMetric(insights, 'page_fan_adds')
-    const engagements = sumMetric(insights, 'page_post_engagements')
-    if (reach !== undefined) live.reach = reach
-    if (impressions !== undefined) live.impressions = impressions
-    if (fanAdds !== undefined) live.followerGrowth = fanAdds
-    if (engagements !== undefined && reach) live.engagementRate = rate(engagements, reach)
+    const follows = sumMetric(insights, 'page_daily_follows')
+    if (follows !== undefined) live.followerGrowth = follows
   }
   if (posts.length) {
     live.likes = posts.reduce((s, p) => s + p.likes, 0)

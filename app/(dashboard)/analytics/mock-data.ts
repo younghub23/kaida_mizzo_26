@@ -90,6 +90,7 @@ function networkSeed(network: Network): number {
 // ----------------------------------------------------------------------------
 export type MetricKey =
   | 'engagementRate'
+  | 'followers'
   | 'reach'
   | 'followerGrowth'
   | 'impressions'
@@ -119,6 +120,7 @@ type KpiSpec = {
 
 const BASE_KPIS: Record<MetricKey, KpiSpec> = {
   engagementRate: { label: 'Engagement rate', format: 'percent', value: 4.8, deltaPct: 12.4, additive: false },
+  followers: { label: 'Followers', format: 'number', value: 24_800, deltaPct: 3.4, additive: true },
   reach: { label: 'Reach', format: 'number', value: 184_200, deltaPct: 8.1, additive: true },
   followerGrowth: { label: 'Follower growth', format: 'number', value: 3_240, deltaPct: 18.6, additive: true },
   impressions: { label: 'Impressions', format: 'number', value: 412_800, deltaPct: 5.3, additive: true },
