@@ -54,15 +54,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(new URL('/socials/connect?error=token', req.url))
     }
 
-    // Fetch the account email for a friendly display name.
+    // Fetch the OpenID profile for a friendly display name (email) and the
+    // stable account identifier (sub), which we store as platform_user_id.
     let username = 'Google Account'
+    let googleUserId: string | null = null
     try {
       const userInfo = (await (
         await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
           headers: { Authorization: `Bearer ${tokenData.access_token}` },
         })
-      ).json()) as { email?: string }
+      ).json()) as { email?: string; sub?: string }
       if (userInfo.email) username = userInfo.email
+      if (userInfo.sub) googleUserId = userInfo.sub
     } catch {
       // Non-fatal — keep the default display name.
     }
@@ -86,6 +89,10 @@ export async function GET(req: NextRequest) {
       {
         user_id: user.id,
         platform: 'google',
+        // platform_user_id is NOT NULL in the DB; the Google account's stable
+        // OpenID `sub` is the right value, falling back to the display name so
+        // the insert never violates the constraint.
+        platform_user_id: googleUserId ?? username,
         username,
         access_token: tokenData.access_token,
         refresh_token: tokenData.refresh_token ?? null,
