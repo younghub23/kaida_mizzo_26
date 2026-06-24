@@ -1,42 +1,64 @@
-import { Users2 } from 'lucide-react'
+import { Users2, Info } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Section, EmptyState } from '@/components/analytics/data-source'
 import { NETWORK_ICON, NETWORK_LABEL } from '@/components/analytics/network-meta'
-import { getCrossChannelFollowers, type Network, type CrossChannelPerson } from '@/app/(dashboard)/analytics/mock-data'
-import { formatPercent, sourceSuffix } from '@/lib/analytics/format'
-import { ALLOW_MOCK_ANALYTICS } from '@/lib/analytics/config'
+import { type Network } from '@/app/(dashboard)/analytics/mock-data'
+import { type CrossChannelPerson } from '@/lib/analytics/cross-channel'
+import { formatPercent, sourceSuffix, type SectionSource } from '@/lib/analytics/format'
 import { cn } from '@/lib/utils'
 
 // Why two accounts were matched, phrased for a human.
 const SIGNAL_REASON = {
-  handle: 'Similar handles',
-  name: 'Matching name',
+  handle: 'Similar handle',
+  name: 'Similar name',
   bio: 'Similar bio',
 } as const
 
-export function CrossChannelFollowers({ network }: { network: Network }) {
-  const people = getCrossChannelFollowers(network)
-  const accountCount = people.reduce((sum, p) => sum + p.accounts.length, 0)
+export function CrossChannelFollowers({
+  people,
+  source,
+  network,
+}: {
+  people: CrossChannelPerson[]
+  source: SectionSource
+  network: Network
+}) {
+  // The matched set is cross-network; when a single network is selected, narrow
+  // to people whose multi-channel presence includes it ("follows me here AND
+  // elsewhere") so the page-wide filter still applies.
+  const visible =
+    network === 'all' ? people : people.filter((p) => p.platforms.includes(network))
+  const accountCount = visible.reduce((sum, p) => sum + p.accounts.length, 0)
 
   return (
     <Section
       title="Cross-channel followers"
       icon={Users2}
-      source={`Per-network follower lists + identity matching ${sourceSuffix(ALLOW_MOCK_ANALYTICS ? 'mock' : 'empty')}`}
-      description="The same person often follows you under slightly different handles on each platform. We match by handle, name, and bio to find who's following you across multiple channels."
+      source={`Follower rosters + identity matching ${sourceSuffix(source)}`}
+      description="The same person often follows you under slightly different handles on each platform. We flag likely overlaps by comparing handle, name, and bio."
     >
-      {!ALLOW_MOCK_ANALYTICS ? (
-        <EmptyState message="Cross-channel matches will appear once two or more accounts with follower access are connected." />
-      ) : people.length === 0 ? (
-        <EmptyState message="No overlapping followers found on this network yet — try the “All” filter to see everyone." />
+      {source === 'empty' ? (
+        <EmptyState message="Cross-channel matches will appear once accounts that expose their follower rosters are connected." />
+      ) : visible.length === 0 ? (
+        <EmptyState message="No likely cross-channel followers on this network — switch to “All” to see everyone." />
       ) : (
         <div className="flex flex-col gap-4">
+          {/* These are inferred, not confirmed — make that unmistakable. */}
+          <div className="flex items-start gap-2.5 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
+            <Info className="mt-0.5 size-4 shrink-0" />
+            <p>
+              <span className="font-medium text-foreground">Potential matches.</span>{' '}
+              These are likely the same person based on similar handles, names, and
+              bios — not confirmed identities. Review before acting on them.
+            </p>
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardDescription>People on multiple channels</CardDescription>
-                <CardTitle className="text-2xl tabular-nums">{people.length}</CardTitle>
+                <CardDescription>Potential cross-channel people</CardDescription>
+                <CardTitle className="text-2xl tabular-nums">{visible.length}</CardTitle>
               </CardHeader>
             </Card>
             <Card>
@@ -49,13 +71,14 @@ export function CrossChannelFollowers({ network }: { network: Network }) {
 
           <Card>
             <CardHeader>
-              <CardTitle>Matched people</CardTitle>
+              <CardTitle>Potential matches</CardTitle>
               <CardDescription>
-                Ranked by how many channels they follow you on, then match confidence.
+                Ranked by how many channels they likely follow you on, then match
+                confidence.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-2.5">
-              {people.map((person) => (
+              {visible.map((person) => (
                 <PersonRow key={person.id} person={person} />
               ))}
             </CardContent>
@@ -109,8 +132,9 @@ function PersonRow({ person }: { person: CrossChannelPerson }) {
         <Badge
           variant={person.confidenceLabel === 'High' ? 'default' : 'outline'}
           className={cn('tabular-nums', person.confidenceLabel === 'High' && 'bg-emerald-600 hover:bg-emerald-600')}
+          title="Estimated likelihood these accounts are the same person"
         >
-          {person.confidenceLabel} · {formatPercent(person.confidence * 100, 0)}
+          {person.confidenceLabel} · {formatPercent(person.confidence * 100, 0)} likely
         </Badge>
       </div>
     </div>

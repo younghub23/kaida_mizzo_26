@@ -386,15 +386,12 @@ const LISTENING: ListeningData = {
 // handles/names — the matcher in lib/analytics/cross-channel.ts reconciles them
 // by handle/name/bio similarity. The follower lists below are the raw inputs.
 // ----------------------------------------------------------------------------
-import {
-  matchCrossChannelFollowers,
-  type FollowerProfile,
-  type CrossChannelPerson,
-} from '@/lib/analytics/cross-channel'
+import type { FollowerProfile } from '@/lib/analytics/cross-channel'
 
-export type { CrossChannelPerson } from '@/lib/analytics/cross-channel'
-
-const FOLLOWERS: FollowerProfile[] = [
+// Dev-only sample roster. In production the cross-channel section reads ONLY
+// live follower data from connected providers (see lib/analytics/load.ts); this
+// list exists purely so the section is previewable while building.
+const MOCK_FOLLOWERS: FollowerProfile[] = [
   // Jane — same person, near-identical bio, handle differs only by separator.
   { platform: 'instagram', handle: 'jane.eyre', displayName: 'Jane Eyre', bio: 'Bookworm & coffee addict ☕ | NYC' },
   { platform: 'tiktok', handle: 'jane_eyre', displayName: 'jane eyre', bio: 'bookworm + coffee addict, nyc 📚' },
@@ -577,16 +574,10 @@ export function getSocialListening(network: Network): ListeningData {
 }
 
 /**
- * 10. People who follow you on more than one network, reconciled from the raw
- * per-platform follower lists by lib/analytics/cross-channel.ts.
- *
- * The result is inherently cross-network; when a single network is selected we
- * narrow to people whose multi-channel presence INCLUDES that network (i.e.
- * "who follows me here AND somewhere else"), keeping the page-wide filter
- * meaningful without hiding the overlap that is the whole point of the section.
+ * 10. Dev-only sample follower roster for the cross-channel section. The actual
+ * matching runs server-side in lib/analytics/load.ts over LIVE follower data
+ * (this is only the preview baseline when no account is connected, in dev).
  */
-export function getCrossChannelFollowers(network: Network): CrossChannelPerson[] {
-  const people = matchCrossChannelFollowers(FOLLOWERS)
-  if (network === 'all') return people
-  return people.filter((p) => p.platforms.includes(network))
+export function getMockFollowers(): FollowerProfile[] {
+  return MOCK_FOLLOWERS
 }

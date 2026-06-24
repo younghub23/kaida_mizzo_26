@@ -83,7 +83,9 @@ export async function fetchLinkedIn(account: ConnectedAccount): Promise<Platform
     }
 
     // Post-level org analytics need ugcPosts + per-share stats — left for later.
-    return { kpis: overlayKpis('linkedin', live), posts: null }
+    // The Marketing API exposes follower demographics but not a follower roster,
+    // so there is no follower list to contribute for cross-channel matching.
+    return { kpis: overlayKpis('linkedin', live), posts: null, followers: null }
   } catch (err) {
     logError('analytics/linkedin', 'LinkedIn live fetch failed; using fallback', err)
     return null

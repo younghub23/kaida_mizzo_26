@@ -43,6 +43,22 @@ Sections still mock-only (no provider yet): trend chart, audience demographics,
 best-time (Claude), competitor benchmark, ROI/UTM, social listening. In
 production these render empty states until a provider is added.
 
+### Cross-channel followers
+
+Finds people who follow you on 2+ networks under slightly different identities
+(e.g. Instagram `@jane.eyre` and TikTok `@jane_eyre`). Providers contribute a
+`followers` roster (`FollowerProfile` = handle + name + bio) via
+`PlatformAnalytics`; `loadAnalytics()` runs `lib/analytics/cross-channel.ts`
+(normalize + Levenshtein + Jaccard, union-find grouping) over the **combined
+live rosters** and returns the matched people, tagged `live`/`mock`/`empty`.
+
+Results are surfaced as **potential** matches (a confidence score, never a
+confirmed identity). Today every provider returns `followers: null` — the major
+platform APIs (Meta/TikTok/LinkedIn) don't expose follower rosters with profile
+details — so the section shows mock in dev and an empty state in prod. It
+activates automatically once any provider returns a real roster (e.g. a
+permitted follower endpoint, a CSV/audience-tool import, or a partner API).
+
 ## Database
 
 `social_accounts` columns used: `platform`, `platform_user_id`, `access_token`,

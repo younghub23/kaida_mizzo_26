@@ -8,16 +8,25 @@ import {
   type PostRow,
   type RealNetwork,
 } from '@/app/(dashboard)/analytics/mock-data'
+import type { FollowerProfile } from '@/lib/analytics/cross-channel'
 
 /**
  * Per-platform live result. Each part is independent: a provider returns live
- * `kpis` and/or live `posts`, and `null` for whatever it couldn't fetch live
- * (the loader then keeps the mock baseline for that part). Returning `null`
- * from the provider entirely means "nothing live — use mock".
+ * `kpis`, `posts`, and/or `followers`, and `null` for whatever it couldn't
+ * fetch live (the loader then keeps the baseline for that part). Returning
+ * `null` from the provider entirely means "nothing live — use baseline".
+ *
+ * `followers` is the platform's follower roster (handle + name + bio), used to
+ * reconcile the same person across networks (see lib/analytics/cross-channel.ts
+ * and the cross-channel section). Most platform APIs do NOT expose follower
+ * rosters with profile details, so providers return `null` here until a real
+ * follower source is connected — exactly the scaffolded pattern the KPI
+ * providers use.
  */
 export type PlatformAnalytics = {
   kpis: Kpi[] | null
   posts: PostRow[] | null
+  followers: FollowerProfile[] | null
 }
 
 /** A connected social account row (subset of `social_accounts`). */

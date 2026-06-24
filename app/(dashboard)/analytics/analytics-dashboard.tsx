@@ -60,7 +60,11 @@ export function AnalyticsDashboard({
       <TopContent posts={posts.posts} source={posts.source} />
       <PostPerformance posts={posts.posts} source={posts.source} />
       <AudienceInsights network={network} />
-      <CrossChannelFollowers network={network} />
+      <CrossChannelFollowers
+        people={data.crossChannel.people}
+        source={data.crossChannel.source}
+        network={network}
+      />
       <BestTimes network={network} />
       <CompetitorBenchmark network={network} />
       <RoiAttribution network={network} />
