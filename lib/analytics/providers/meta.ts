@@ -178,7 +178,9 @@ async function fetchInstagram(token: string): Promise<PlatformAnalytics | null> 
 
   const kpis = overlayKpis('instagram', live)
   if (!kpis.length && !posts.length) return null
-  return { kpis, posts: posts.length ? posts : null }
+  // followers: the IG Graph API exposes only an aggregate follower count (the
+  // `followers` KPI above), not a roster, so cross-channel matching stays null.
+  return { kpis, posts: posts.length ? posts : null, followers: null }
 }
 
 type FbPost = {
@@ -256,7 +258,9 @@ async function fetchFacebook(token: string): Promise<PlatformAnalytics | null> {
 
   const kpis = overlayKpis('facebook', live)
   if (!kpis.length && !posts.length) return null
-  return { kpis, posts: posts.length ? posts : null }
+  // followers: Facebook Pages expose only an aggregate fan/follower count (the
+  // `followers` KPI above), not a roster, so cross-channel matching stays null.
+  return { kpis, posts: posts.length ? posts : null, followers: null }
 }
 
 /** Provider entry point. Returns live data where readable, or null when nothing

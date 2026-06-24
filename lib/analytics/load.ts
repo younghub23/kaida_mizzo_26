@@ -21,6 +21,7 @@ import {
   REAL_NETWORKS,
   getCoreMetrics,
   getPostPerformance,
+  getSampleFollowerRosters,
   aggregateKpis,
   type Network,
   type Kpi,
@@ -32,6 +33,11 @@ import { fetchMeta } from '@/lib/analytics/providers/meta'
 import { fetchLinkedIn } from '@/lib/analytics/providers/linkedin'
 import { fetchTikTok } from '@/lib/analytics/providers/tiktok'
 import { fetchGoogle } from '@/lib/analytics/providers/google'
+import {
+  matchCrossChannelFollowers,
+  type NetworkRoster,
+  type MatchedPerson,
+} from '@/lib/analytics/cross-channel'
 import type { SectionSource } from '@/lib/analytics/format'
 
 export type { SectionSource }
@@ -39,6 +45,13 @@ export type { SectionSource }
 export type AnalyticsData = {
   coreMetricsByNetwork: Record<Network, { kpis: Kpi[]; source: SectionSource }>
   postsByNetwork: Record<Network, { posts: PostRow[]; source: SectionSource }>
+  /**
+   * Cross-channel followers — people who follow us on 2+ networks under
+   * near-duplicate identities, matched server-side from per-platform rosters.
+   * `live` when real rosters were available, `mock` for the dev sample, `empty`
+   * in production with no follower source. Live and mock are never mixed.
+   */
+  crossChannelFollowers: { people: MatchedPerson[]; source: SectionSource }
   /** Platforms that successfully returned live data this load. */
   livePlatforms: RealNetwork[]
   /** Whether mock fallback is permitted (dev) or data must be real (prod). */
@@ -75,6 +88,9 @@ export async function loadAnalytics(): Promise<AnalyticsData> {
 
   // 2. Overlay live data for every connected, supported platform.
   const livePlatforms: RealNetwork[] = []
+  // Live follower rosters, collected per platform that exposes one. Kept apart
+  // from the mock sample so the two are never mixed in the matcher.
+  const liveRosters: NetworkRoster[] = []
   try {
     const supabase = await createClient()
     const {
@@ -98,12 +114,25 @@ export async function loadAnalytics(): Promise<AnalyticsData> {
         // Only treat a part as live when it actually carries real data.
         if (result?.kpis?.length) coreMetricsByNetwork[platform] = { kpis: result.kpis, source: 'live' }
         if (result?.posts?.length) postsByNetwork[platform] = { posts: result.posts, source: 'live' }
+        if (result?.followers?.length) liveRosters.push({ platform, followers: result.followers })
         if (result?.kpis?.length || result?.posts?.length) livePlatforms.push(platform)
       }
     }
   } catch (err) {
     // Never let a data-source failure break the page.
     logError('analytics/load', 'Live analytics load failed', err)
+  }
+
+  // 2b. Cross-channel followers. Run the deterministic matcher over LIVE rosters
+  //     when any provider supplied one; otherwise fall back to the dev sample
+  //     (mock) or an empty section in production. Live and mock are never mixed.
+  let crossChannelFollowers: AnalyticsData['crossChannelFollowers']
+  if (liveRosters.length > 0) {
+    crossChannelFollowers = { people: matchCrossChannelFollowers(liveRosters), source: 'live' }
+  } else if (ALLOW_MOCK_ANALYTICS) {
+    crossChannelFollowers = { people: matchCrossChannelFollowers(getSampleFollowerRosters()), source: 'mock' }
+  } else {
+    crossChannelFollowers = { people: [], source: 'empty' }
   }
 
   // 3. Recompute the "All" aggregate from per-network data once anything is
@@ -121,5 +150,11 @@ export async function loadAnalytics(): Promise<AnalyticsData> {
     }
   }
 
-  return { coreMetricsByNetwork, postsByNetwork, livePlatforms, allowMock: ALLOW_MOCK_ANALYTICS }
+  return {
+    coreMetricsByNetwork,
+    postsByNetwork,
+    crossChannelFollowers,
+    livePlatforms,
+    allowMock: ALLOW_MOCK_ANALYTICS,
+  }
 }
