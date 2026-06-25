@@ -30,10 +30,22 @@ export const PLAN_FEATURES = {
     label: 'AI Data Analyst',
     tiers: ['pro', 'agency'] as PlanTier[],
   },
+  // Automatic email-list sync from the user's external website (ingestion API
+  // + connect wizard). Lower tiers get manual contact entry only.
+  websiteSync: {
+    label: 'Website email sync',
+    tiers: ['pro', 'agency'] as PlanTier[],
+  },
 } as const
 
 export function canUseSocialListening(plan: PlanTier): boolean {
   return PLAN_FEATURES.socialListening.tiers.includes(plan)
+}
+
+// Automatic website -> email-list sync is Pro/Agency only. Starter & Growth
+// get manual contact entry instead.
+export function canUseWebsiteSync(plan: string): boolean {
+  return PLAN_FEATURES.websiteSync.tiers.includes(plan as PlanTier)
 }
 
 // AI assistant is available on Growth, Pro, and Agency (not the free default
@@ -55,17 +67,15 @@ export function canUseDataAnalyst(plan: string): boolean {
   return PLAN_FEATURES.aiDataAnalyst.tiers.includes(plan as PlanTier)
 }
 
-// ---------------------------------------------------------------------------
-// SOURCE: Stripe subscription tier (mock).
-//
-// The plan tier is NOT yet persisted on `profiles` or a `subscriptions` table,
-// so this returns a single, switchable mock value. Flip MOCK_PLAN below to test
-// the gating (e.g. set it to 'pro' to unlock Social Listening). When a real
-// subscription record exists, replace the body of getCurrentPlan() with a
-// lookup — the call sites won't need to change.
-// ---------------------------------------------------------------------------
-const MOCK_PLAN: PlanTier = 'starter'
+// The set of real, paying tiers. The Stripe webhook may also write the billing
+// states 'free' / 'past_due' onto profiles.plan; those are not feature tiers
+// and unlock nothing gated.
+export const PAID_TIERS: readonly PlanTier[] = ['starter', 'growth', 'pro', 'agency']
 
-export function getCurrentPlan(): PlanTier {
-  return MOCK_PLAN
+export function isPlanTier(value: string | null | undefined): value is PlanTier {
+  return !!value && PAID_TIERS.includes(value as PlanTier)
 }
+
+// NOTE: the live tier lookup (reads profiles.plan, which the Stripe webhook
+// keeps in sync) lives in lib/plan/server.ts — it is server-only and must not
+// be imported here, since this module is also pulled into client components.

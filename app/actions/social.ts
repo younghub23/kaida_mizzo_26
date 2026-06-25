@@ -18,6 +18,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { logError } from '@/lib/log'
+import { zonedToUtcIso } from '@/lib/socials/schedule'
 
 export type ScheduledPost = {
   id: string
@@ -33,6 +34,73 @@ export type ScheduledPost = {
 export type SocialActionState = {
   error: string | null
   success: boolean
+}
+
+// ---------------------------------------------------------------------------
+// Per-channel composer: save a single-platform post as a draft, schedule it
+// for a specific wall-clock time in a chosen timezone, or publish it now.
+// ---------------------------------------------------------------------------
+export async function savePost(
+  _prevState: SocialActionState,
+  formData: FormData
+): Promise<SocialActionState> {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: 'Unauthorized', success: false }
+  }
+
+  const platform = formData.get('platform') as string
+  const content = (formData.get('content') as string)?.trim() ?? ''
+  const imageUrl = formData.get('imageUrl') as string | null
+  const intent = formData.get('intent') as 'draft' | 'schedule' | 'now'
+  const date = (formData.get('date') as string) || ''
+  const time = (formData.get('time') as string) || '09:00'
+  const timezone = (formData.get('timezone') as string) || 'America/New_York'
+
+  if (!platform) {
+    return { error: 'Missing platform', success: false }
+  }
+  if (!content && !imageUrl) {
+    return { error: 'Add a caption or some media before saving', success: false }
+  }
+
+  let scheduledAt: string
+  if (intent === 'now') {
+    scheduledAt = new Date().toISOString()
+  } else if (date) {
+    scheduledAt = zonedToUtcIso(date, time, timezone)
+  } else if (intent === 'schedule') {
+    return { error: 'Pick a date and time to schedule this post', success: false }
+  } else {
+    // Draft with no chosen time — park it at "now" so it sorts sensibly.
+    scheduledAt = new Date().toISOString()
+  }
+
+  const status = intent === 'now' ? 'published' : intent === 'draft' ? 'draft' : 'scheduled'
+
+  const { error } = await supabase.from('scheduled_posts').insert({
+    user_id: user.id,
+    content,
+    image_url: imageUrl || null,
+    platforms: [platform],
+    scheduled_at: scheduledAt,
+    status,
+  })
+
+  if (error) {
+    logError('social/savePost', 'Failed to save post', error, { userId: user.id, platform })
+    return { error: error.message, success: false }
+  }
+
+  revalidatePath('/socials')
+  revalidatePath(`/socials/${platform}`)
+
+  return { error: null, success: true }
 }
 
 export async function schedulePost(
