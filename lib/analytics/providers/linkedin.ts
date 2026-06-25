@@ -83,9 +83,9 @@ export async function fetchLinkedIn(account: ConnectedAccount): Promise<Platform
     }
 
     // Post-level org analytics need ugcPosts + per-share stats — left for later.
-    // followers: LinkedIn does not expose a follower roster (only aggregate
-    // demographics), so cross-channel matching stays mock until one exists.
-    return { kpis: overlayKpis('linkedin', live), posts: null, followers: null }
+    // trend/audience: org time-series + demographics endpoints exist but are left
+    // for later; followers: LinkedIn exposes aggregate demographics, not a roster.
+    return { kpis: overlayKpis('linkedin', live), posts: null, trend: null, audience: null, followers: null }
   } catch (err) {
     logError('analytics/linkedin', 'LinkedIn live fetch failed; using fallback', err)
     return null

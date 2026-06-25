@@ -2,24 +2,23 @@ import { TrendingUp, TrendingDown, Activity } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardDescription, CardTitle } from '@/components/ui/card'
 import { Section, EmptyState } from '@/components/analytics/data-source'
 import { LineChart } from '@/components/analytics/charts'
-import { getTrend, type Network, type Kpi } from '@/app/(dashboard)/analytics/mock-data'
+import { type Kpi, type TrendPoint } from '@/app/(dashboard)/analytics/mock-data'
 import { formatCompact, formatPercent, formatDelta, sourceSuffix, type SectionSource } from '@/lib/analytics/format'
-import { ALLOW_MOCK_ANALYTICS } from '@/lib/analytics/config'
 import { cn } from '@/lib/utils'
 
 export function CorePerformance({
-  network,
   kpis,
   source,
+  trend,
+  trendSource,
 }: {
-  network: Network
   kpis: Kpi[]
   source: SectionSource
+  // Daily time series for the trend chart; live where a provider (GA4) supplies
+  // it, mock in dev, empty otherwise. Rendered only when it has real points.
+  trend: TrendPoint[]
+  trendSource: SectionSource
 }) {
-  // KPI cards are live-where-connected; the trend chart is still mock-only, so
-  // it only renders where mock data is permitted (dev / preview).
-  const trend = getTrend(network)
-
   return (
     <Section
       title="Core performance"
@@ -63,11 +62,11 @@ export function CorePerformance({
         })}
       </div>
 
-      {ALLOW_MOCK_ANALYTICS && (
+      {trend.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Engagement &amp; reach</CardTitle>
-            <CardDescription>Last 30 days · time series (mock)</CardDescription>
+            <CardDescription>Last 30 days · time series {sourceSuffix(trendSource)}</CardDescription>
           </CardHeader>
           <CardContent>
             <LineChart

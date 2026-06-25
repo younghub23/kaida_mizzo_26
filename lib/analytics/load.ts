@@ -21,11 +21,15 @@ import {
   REAL_NETWORKS,
   getCoreMetrics,
   getPostPerformance,
+  getTrend,
+  getAudience,
   getSampleFollowerRosters,
   aggregateKpis,
   type Network,
   type Kpi,
   type PostRow,
+  type TrendPoint,
+  type AudienceData,
   type RealNetwork,
 } from '@/app/(dashboard)/analytics/mock-data'
 import type { Provider } from '@/lib/analytics/providers/util'
@@ -45,6 +49,10 @@ export type { SectionSource }
 export type AnalyticsData = {
   coreMetricsByNetwork: Record<Network, { kpis: Kpi[]; source: SectionSource }>
   postsByNetwork: Record<Network, { posts: PostRow[]; source: SectionSource }>
+  /** Daily engagement/reach trend per network (live where a provider supplies it). */
+  trendByNetwork: Record<Network, { trend: TrendPoint[]; source: SectionSource }>
+  /** Audience demographics per network (live where a provider supplies it). */
+  audienceByNetwork: Record<Network, { audience: AudienceData | null; source: SectionSource }>
   /**
    * Cross-channel followers — people who follow us on 2+ networks under
    * near-duplicate identities, matched server-side from per-platform rosters.
@@ -78,12 +86,24 @@ export async function loadAnalytics(): Promise<AnalyticsData> {
     ALLOW_MOCK_ANALYTICS
       ? { posts: getPostPerformance(id), source: 'mock' as SectionSource }
       : { posts: [], source: 'empty' as SectionSource }
+  const mockTrend = (id: Network) =>
+    ALLOW_MOCK_ANALYTICS
+      ? { trend: getTrend(id), source: 'mock' as SectionSource }
+      : { trend: [], source: 'empty' as SectionSource }
+  const mockAudience = (id: Network) =>
+    ALLOW_MOCK_ANALYTICS
+      ? { audience: getAudience(id), source: 'mock' as SectionSource }
+      : { audience: null, source: 'empty' as SectionSource }
 
   const coreMetricsByNetwork = {} as AnalyticsData['coreMetricsByNetwork']
   const postsByNetwork = {} as AnalyticsData['postsByNetwork']
+  const trendByNetwork = {} as AnalyticsData['trendByNetwork']
+  const audienceByNetwork = {} as AnalyticsData['audienceByNetwork']
   for (const { id } of NETWORKS) {
     coreMetricsByNetwork[id] = mockKpis(id)
     postsByNetwork[id] = mockPosts(id)
+    trendByNetwork[id] = mockTrend(id)
+    audienceByNetwork[id] = mockAudience(id)
   }
 
   // 2. Overlay live data for every connected, supported platform.
@@ -114,8 +134,11 @@ export async function loadAnalytics(): Promise<AnalyticsData> {
         // Only treat a part as live when it actually carries real data.
         if (result?.kpis?.length) coreMetricsByNetwork[platform] = { kpis: result.kpis, source: 'live' }
         if (result?.posts?.length) postsByNetwork[platform] = { posts: result.posts, source: 'live' }
+        if (result?.trend?.length) trendByNetwork[platform] = { trend: result.trend, source: 'live' }
+        if (result?.audience) audienceByNetwork[platform] = { audience: result.audience, source: 'live' }
         if (result?.followers?.length) liveRosters.push({ platform, followers: result.followers })
-        if (result?.kpis?.length || result?.posts?.length) livePlatforms.push(platform)
+        if (result?.kpis?.length || result?.posts?.length || result?.trend?.length || result?.audience)
+          livePlatforms.push(platform)
       }
     }
   } catch (err) {
@@ -148,11 +171,20 @@ export async function loadAnalytics(): Promise<AnalyticsData> {
       posts: REAL_NETWORKS.flatMap((n) => postsByNetwork[n].posts),
       source: aggSource,
     }
+
+    // Trend + audience aren't summable across networks, so the unified "All" view
+    // adopts whichever connected network supplied them (today only GA4/Google).
+    const liveTrend = REAL_NETWORKS.find((n) => trendByNetwork[n].source === 'live')
+    if (liveTrend) trendByNetwork.all = { ...trendByNetwork[liveTrend], source: aggSource }
+    const liveAudience = REAL_NETWORKS.find((n) => audienceByNetwork[n].source === 'live')
+    if (liveAudience) audienceByNetwork.all = { ...audienceByNetwork[liveAudience], source: aggSource }
   }
 
   return {
     coreMetricsByNetwork,
     postsByNetwork,
+    trendByNetwork,
+    audienceByNetwork,
     crossChannelFollowers,
     livePlatforms,
     allowMock: ALLOW_MOCK_ANALYTICS,

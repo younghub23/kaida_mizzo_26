@@ -180,7 +180,9 @@ async function fetchInstagram(token: string): Promise<PlatformAnalytics | null> 
   if (!kpis.length && !posts.length) return null
   // followers: the IG Graph API exposes only an aggregate follower count (the
   // `followers` KPI above), not a roster, so cross-channel matching stays null.
-  return { kpis, posts: posts.length ? posts : null, followers: null }
+  // trend/audience: Meta's time-series + audience insights need read_insights /
+  // instagram_manage_insights (App Review), so they stay null until granted.
+  return { kpis, posts: posts.length ? posts : null, trend: null, audience: null, followers: null }
 }
 
 type FbPost = {
@@ -260,7 +262,9 @@ async function fetchFacebook(token: string): Promise<PlatformAnalytics | null> {
   if (!kpis.length && !posts.length) return null
   // followers: Facebook Pages expose only an aggregate fan/follower count (the
   // `followers` KPI above), not a roster, so cross-channel matching stays null.
-  return { kpis, posts: posts.length ? posts : null, followers: null }
+  // trend/audience: Meta's time-series + audience insights need read_insights /
+  // instagram_manage_insights (App Review), so they stay null until granted.
+  return { kpis, posts: posts.length ? posts : null, trend: null, audience: null, followers: null }
 }
 
 /** Provider entry point. Returns live data where readable, or null when nothing

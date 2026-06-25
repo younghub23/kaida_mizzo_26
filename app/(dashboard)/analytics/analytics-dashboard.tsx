@@ -22,9 +22,10 @@ import type { AnalyticsData } from '@/lib/analytics/load'
  * network down to every section so the whole page reacts to it (Section 6:
  * cross-network unified reporting).
  *
- * Core metrics and post performance come pre-resolved from the server (live
- * where an account is connected, mock otherwise); the remaining sections still
- * read mock data directly until their providers are built.
+ * Core metrics, posts, the trend chart and audience demographics come
+ * pre-resolved from the server (live where a provider supplies them, mock in
+ * dev, empty otherwise); the remaining sections without a live provider read
+ * mock in dev and show an empty state in production.
  */
 export function AnalyticsDashboard({
   data,
@@ -37,6 +38,8 @@ export function AnalyticsDashboard({
 
   const core = data.coreMetricsByNetwork[network]
   const posts = data.postsByNetwork[network]
+  const trend = data.trendByNetwork[network]
+  const audience = data.audienceByNetwork[network]
 
   return (
     <div className="flex flex-col gap-8">
@@ -56,10 +59,15 @@ export function AnalyticsDashboard({
         </TabsList>
       </Tabs>
 
-      <CorePerformance network={network} kpis={core.kpis} source={core.source} />
+      <CorePerformance
+        kpis={core.kpis}
+        source={core.source}
+        trend={trend.trend}
+        trendSource={trend.source}
+      />
       <TopContent posts={posts.posts} source={posts.source} />
       <PostPerformance posts={posts.posts} source={posts.source} />
-      <AudienceInsights network={network} />
+      <AudienceInsights audience={audience.audience} source={audience.source} />
       <CrossChannelFollowers
         people={data.crossChannelFollowers.people}
         source={data.crossChannelFollowers.source}

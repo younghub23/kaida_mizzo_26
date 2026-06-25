@@ -30,7 +30,7 @@ baseline. The page cannot break because a fetch failed.
 | Network | Provider | Status |
 | --- | --- | --- |
 | Instagram / Facebook | `providers/meta.ts` | **Live** — follower count, follower growth (`page_daily_follows`) and posts from Graph API v23, using the already-granted scopes (no App Review). Page-level reach/impressions were deprecated by Meta and are omitted (never faked). |
-| Google (GA4) | `providers/google.ts` | **Implemented** — KPIs from the GA4 Data API. Connect flow built; needs a Google OAuth app + App Verification. |
+| Google (GA4) | `providers/google.ts` | **Live** — KPIs, the **trend chart** (daily sessions/users) and **audience demographics** (top countries, age, gender, active-hours heatmap) from the GA4 Data API. Needs the OAuth consent screen published; age/gender need Google Signals on. Returns only what GA4 actually has (empty until there's traffic). |
 | LinkedIn | `providers/linkedin.ts` | **Scaffolded** — wired up but inactive until org scopes are granted. Falls back today (intended). |
 | TikTok | `providers/tiktok.ts` | **Scaffolded** — wired up but inactive until analytics scopes are granted. Falls back today (intended). |
 
@@ -41,10 +41,15 @@ Providers also expose an optional `followers` roster (`PlatformAnalytics.followe
 for the cross-channel matcher; every provider returns `null` today (no platform
 API exposes a roster). See **Cross-channel followers** below.
 
-Sections with no provider yet (trend chart, audience demographics, best-time
-(Claude), competitor benchmark, ROI/UTM, social listening) render empty
-"connect an account" states until a real provider is added — unless mock is
-explicitly opted in for local previewing.
+The **trend chart** and **audience demographics** are live via the GA4 provider
+(`providers/google.ts`) — they populate from real web data once GA4 is connected
+and has traffic, and show an empty state otherwise.
+
+Sections with no real source yet — **best time to post** (needs published-post
+engagement history), **competitor benchmark** and **social listening** (need a
+third-party intelligence/monitoring tool), and **ROI/UTM** (needs GA4 conversions
++ Stripe revenue) — render empty "connect an account" states in production until
+a provider is wired, and mock only when explicitly opted in for local previewing.
 
 ## Cross-channel followers
 

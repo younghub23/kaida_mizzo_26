@@ -7,14 +7,17 @@ import {
   type MetricKey,
   type PostRow,
   type RealNetwork,
+  type TrendPoint,
+  type AudienceData,
 } from '@/app/(dashboard)/analytics/mock-data'
 import type { FollowerProfile } from '@/lib/analytics/cross-channel'
 
 /**
  * Per-platform live result. Each part is independent: a provider returns live
- * `kpis`, `posts`, and/or a `followers` roster, and `null` for whatever it
- * couldn't fetch live (the loader then keeps the mock baseline for that part).
- * Returning `null` from the provider entirely means "nothing live — use mock".
+ * `kpis`, `posts`, `trend`, `audience`, and/or a `followers` roster, and `null`
+ * for whatever it couldn't fetch live (the loader then keeps the mock baseline
+ * for that part). Returning `null` from the provider entirely means "nothing
+ * live — use mock".
  *
  * `followers` is the per-platform roster (handle + name + bio) the cross-channel
  * matcher consumes (lib/analytics/cross-channel.ts). No platform API exposes a
@@ -24,6 +27,10 @@ import type { FollowerProfile } from '@/lib/analytics/cross-channel'
 export type PlatformAnalytics = {
   kpis: Kpi[] | null
   posts: PostRow[] | null
+  /** Daily engagement/reach time series for the trend chart, or null. */
+  trend: TrendPoint[] | null
+  /** Demographics + active-hours for the audience section, or null. */
+  audience: AudienceData | null
   followers: FollowerProfile[] | null
 }
 

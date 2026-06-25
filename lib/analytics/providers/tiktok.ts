@@ -78,6 +78,7 @@ export async function fetchTikTok(account: ConnectedAccount): Promise<PlatformAn
     })
 
     const live: Partial<Record<MetricKey, number>> = {}
+    if (info.data?.user?.follower_count !== undefined) live.followers = info.data.user.follower_count
     if (videos.length) {
       const totalViews = videos.reduce((s, v) => s + (v.view_count ?? 0), 0)
       const likes = videos.reduce((s, v) => s + (v.like_count ?? 0), 0)
@@ -91,9 +92,9 @@ export async function fetchTikTok(account: ConnectedAccount): Promise<PlatformAn
       live.engagementRate = rate(likes + comments + shares, totalViews)
     }
 
-    // followers: TikTok's API exposes a follower count, not a roster, so the
-    // cross-channel matcher stays mock until a real follower source is wired.
-    return { kpis: overlayKpis('tiktok', live), posts: posts.length ? posts : null, followers: null }
+    // trend/audience: TikTok's time-series + audience endpoints are left for
+    // later; followers: the API exposes a follower count, not a roster.
+    return { kpis: overlayKpis('tiktok', live), posts: posts.length ? posts : null, trend: null, audience: null, followers: null }
   } catch (err) {
     logError('analytics/tiktok', 'TikTok live fetch failed; using fallback', err)
     return null
