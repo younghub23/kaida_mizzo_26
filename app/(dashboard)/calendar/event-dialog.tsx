@@ -22,7 +22,7 @@ import {
   type EventInput,
 } from '@/app/actions/calendar'
 import { SELECTABLE_CATEGORIES, getCategory } from './categories'
-import { dateKey, toDateTimeLocal, type CalendarItem } from './calendar-utils'
+import { dateKey, type CalendarItem } from './calendar-utils'
 
 type EventDialogProps = {
   open: boolean
@@ -40,6 +40,16 @@ const inputClass =
 // Uppercase accent micro-label, per the Tala field-label spec.
 const labelClass = 'text-[11px] font-semibold uppercase tracking-[0.16em] text-primary'
 
+const pad = (n: number) => `${n}`.padStart(2, '0')
+// "HH:mm" value for an <input type="time"> from a Date.
+const toTimeValue = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`
+// One hour later, capped at end-of-day, preserving the minutes.
+function plusOneHour(time: string): string {
+  const [h, m] = time.split(':').map(Number)
+  if (Number.isNaN(h)) return time
+  return h + 1 > 23 ? '23:59' : `${pad(h + 1)}:${pad(m || 0)}`
+}
+
 export function EventDialog({
   open,
   onOpenChange,
@@ -52,8 +62,10 @@ export function EventDialog({
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('personal')
   const [allDay, setAllDay] = useState(false)
-  const [start, setStart] = useState('')
-  const [end, setEnd] = useState('')
+  // A single day plus explicit start/end clock times (e.g. 2:00 PM → 4:00 PM).
+  const [date, setDate] = useState('')
+  const [startTime, setStartTime] = useState('09:00')
+  const [endTime, setEndTime] = useState('10:00')
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -65,57 +77,80 @@ export function EventDialog({
 
     if (item?.event) {
       const e = item.event
+      const startDate = new Date(e.start_at)
       setTitle(e.title)
       setCategory(e.category)
       setAllDay(e.all_day)
-      const startDate = new Date(e.start_at)
-      setStart(e.all_day ? dateKey(startDate) : toDateTimeLocal(startDate))
-      setEnd(e.end_at ? (e.all_day ? dateKey(new Date(e.end_at)) : toDateTimeLocal(new Date(e.end_at))) : '')
+      setDate(dateKey(startDate))
+      setStartTime(toTimeValue(startDate))
+      // End time is optional — leave it blank for open-ended events.
+      setEndTime(e.end_at ? toTimeValue(new Date(e.end_at)) : '')
       setNotes(e.notes ?? '')
     } else {
-      // New event. Default to the chosen day at 9:00am.
+      // New event. Honor a clicked hour (week/day grid) else default to 9:00am.
+      // The end is left open — fill it in only if there's a specific end time.
       const base = defaultDate ? new Date(defaultDate) : new Date()
-      base.setHours(9, 0, 0, 0)
+      const clickedTime = defaultDate && (base.getHours() !== 0 || base.getMinutes() !== 0)
       setTitle('')
       setCategory('personal')
       setAllDay(false)
-      setStart(toDateTimeLocal(base))
-      setEnd('')
+      setDate(dateKey(base))
+      setStartTime(clickedTime ? toTimeValue(base) : '09:00')
+      setEndTime('')
       setNotes('')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, item])
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  // Switching all-day on/off converts the existing value between date and datetime-local.
-  function handleAllDayChange(checked: boolean) {
-    setAllDay(checked)
-    if (start) {
-      const d = new Date(start)
-      if (!Number.isNaN(d.getTime())) {
-        setStart(checked ? dateKey(d) : toDateTimeLocal(d))
-      }
+  // If an end time is set but editing the start would put it on/before the
+  // start, nudge the end an hour ahead. An empty (open-ended) end stays empty.
+  function handleStartTimeChange(value: string) {
+    setStartTime(value)
+    if (endTime && endTime <= value) {
+      setEndTime(plusOneHour(value))
     }
-    if (end) {
-      const d = new Date(end)
-      if (!Number.isNaN(d.getTime())) {
-        setEnd(checked ? dateKey(d) : toDateTimeLocal(d))
-      }
-    }
-  }
-
-  function toISO(value: string): string | null {
-    if (!value) return null
-    // For all-day, value is YYYY-MM-DD; anchor to local midnight.
-    const d = allDay ? new Date(`${value}T00:00`) : new Date(value)
-    return Number.isNaN(d.getTime()) ? null : d.toISOString()
   }
 
   async function handleSubmit() {
-    const startISO = toISO(start)
-    if (!title.trim() || !startISO) {
-      toast.error('Please add a title and a start date')
+    if (!title.trim() || !date) {
+      toast.error('Please add a title and a date')
       return
+    }
+
+    let startISO: string
+    let endISO: string | null
+
+    if (allDay) {
+      const d = new Date(`${date}T00:00`)
+      if (Number.isNaN(d.getTime())) {
+        toast.error('Please pick a valid date')
+        return
+      }
+      startISO = d.toISOString()
+      endISO = null
+    } else {
+      const s = new Date(`${date}T${startTime}`)
+      if (Number.isNaN(s.getTime())) {
+        toast.error('Please add a start time')
+        return
+      }
+      startISO = s.toISOString()
+      // The end time is optional — leave the event open-ended when it's blank.
+      if (endTime) {
+        const en = new Date(`${date}T${endTime}`)
+        if (Number.isNaN(en.getTime())) {
+          toast.error('Please enter a valid end time')
+          return
+        }
+        if (en.getTime() <= s.getTime()) {
+          toast.error('The end time must be after the start time')
+          return
+        }
+        endISO = en.toISOString()
+      } else {
+        endISO = null
+      }
     }
 
     const input: EventInput = {
@@ -123,7 +158,7 @@ export function EventDialog({
       notes,
       category,
       start_at: startISO,
-      end_at: toISO(end),
+      end_at: endISO,
       all_day: allDay,
     }
 
@@ -201,38 +236,51 @@ export function EventDialog({
             </div>
           </div>
 
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="event-date" className={labelClass}>Date</Label>
+            <input
+              id="event-date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+
           <label className="flex w-fit cursor-pointer items-center gap-2 text-sm">
             <input
               type="checkbox"
               checked={allDay}
-              onChange={(e) => handleAllDayChange(e.target.checked)}
+              onChange={(e) => setAllDay(e.target.checked)}
               className="size-3.5"
             />
             All day
           </label>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="event-start" className={labelClass}>Starts</Label>
-              <input
-                id="event-start"
-                type={allDay ? 'date' : 'datetime-local'}
-                value={start}
-                onChange={(e) => setStart(e.target.value)}
-                className={inputClass}
-              />
+          {!allDay && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="event-start" className={labelClass}>Starts at</Label>
+                <input
+                  id="event-start"
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => handleStartTimeChange(e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="event-end" className={labelClass}>Ends at (optional)</Label>
+                <input
+                  id="event-end"
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className={inputClass}
+                />
+              </div>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="event-end" className={labelClass}>Ends (optional)</Label>
-              <input
-                id="event-end"
-                type={allDay ? 'date' : 'datetime-local'}
-                value={end}
-                onChange={(e) => setEnd(e.target.value)}
-                className={inputClass}
-              />
-            </div>
-          </div>
+          )}
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="event-notes" className={labelClass}>Notes (optional)</Label>
