@@ -45,6 +45,9 @@ import { fetchMeta } from '@/lib/analytics/providers/meta'
 import { fetchLinkedIn } from '@/lib/analytics/providers/linkedin'
 import { fetchTikTok } from '@/lib/analytics/providers/tiktok'
 import { fetchGoogle } from '@/lib/analytics/providers/google'
+import { fetchYouTube } from '@/lib/analytics/providers/youtube'
+import { fetchPinterest } from '@/lib/analytics/providers/pinterest'
+import { fetchSnapchat } from '@/lib/analytics/providers/snapchat'
 import { fetchCompetitorBenchmark } from '@/lib/analytics/providers/competitor'
 import { fetchSocialListening } from '@/lib/analytics/providers/listening'
 import {
@@ -91,6 +94,9 @@ const PROVIDERS: Record<RealNetwork, Provider> = {
   facebook: fetchMeta,
   linkedin: fetchLinkedIn,
   tiktok: fetchTikTok,
+  youtube: fetchYouTube,
+  pinterest: fetchPinterest,
+  snapchat: fetchSnapchat,
   google: fetchGoogle,
 }
 

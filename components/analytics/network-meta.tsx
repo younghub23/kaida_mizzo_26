@@ -1,4 +1,4 @@
-import { Camera, Megaphone, Briefcase, Music2, Search } from 'lucide-react'
+import { Camera, Megaphone, Briefcase, Music2, Search, Play, Pin, Ghost } from 'lucide-react'
 import type { RealNetwork } from '@/app/(dashboard)/analytics/mock-data'
 
 export const NETWORK_LABEL: Record<RealNetwork, string> = {
@@ -6,6 +6,9 @@ export const NETWORK_LABEL: Record<RealNetwork, string> = {
   facebook: 'Facebook',
   linkedin: 'LinkedIn',
   tiktok: 'TikTok',
+  youtube: 'YouTube',
+  pinterest: 'Pinterest',
+  snapchat: 'Snapchat',
   google: 'Google',
 }
 
@@ -16,5 +19,8 @@ export const NETWORK_ICON: Record<RealNetwork, React.ComponentType<{ className?:
   facebook: Megaphone,
   linkedin: Briefcase,
   tiktok: Music2,
+  youtube: Play,
+  pinterest: Pin,
+  snapchat: Ghost,
   google: Search,
 }

@@ -29,6 +29,9 @@ export type Network =
   | 'linkedin'
   | 'tiktok'
   | 'google'
+  | 'youtube'
+  | 'pinterest'
+  | 'snapchat'
 
 export type RealNetwork = Exclude<Network, 'all'>
 
@@ -38,6 +41,9 @@ export const NETWORKS: { id: Network; label: string }[] = [
   { id: 'facebook', label: 'Facebook' },
   { id: 'linkedin', label: 'LinkedIn' },
   { id: 'tiktok', label: 'TikTok' },
+  { id: 'youtube', label: 'YouTube' },
+  { id: 'pinterest', label: 'Pinterest' },
+  { id: 'snapchat', label: 'Snapchat' },
   { id: 'google', label: 'Google' },
 ]
 
@@ -46,17 +52,23 @@ export const REAL_NETWORKS: RealNetwork[] = [
   'facebook',
   'linkedin',
   'tiktok',
+  'youtube',
+  'pinterest',
+  'snapchat',
   'google',
 ]
 
 // Share of total volume each network contributes (sums to 1.0). Used to split
 // the aggregate "All" numbers into believable per-network values.
 const NETWORK_WEIGHT: Record<RealNetwork, number> = {
-  instagram: 0.34,
-  facebook: 0.22,
-  linkedin: 0.14,
-  tiktok: 0.24,
-  google: 0.06,
+  instagram: 0.26,
+  facebook: 0.16,
+  linkedin: 0.1,
+  tiktok: 0.18,
+  youtube: 0.13,
+  pinterest: 0.08,
+  snapchat: 0.04,
+  google: 0.05,
 }
 
 // Per-network bias applied to period-over-period deltas so the filter feels
@@ -66,6 +78,9 @@ const NETWORK_DELTA_BIAS: Record<RealNetwork, number> = {
   facebook: -3,
   linkedin: 1,
   tiktok: 5,
+  youtube: 3,
+  pinterest: 1,
+  snapchat: -2,
   google: -4,
 }
 
@@ -138,6 +153,9 @@ const NETWORK_ENGAGEMENT_RATE: Record<RealNetwork, number> = {
   facebook: 3.2,
   linkedin: 4.1,
   tiktok: 7.3,
+  youtube: 2.4,
+  pinterest: 1.6,
+  snapchat: 3.0,
   google: 1.9,
 }
 
@@ -274,6 +292,21 @@ const BEST_TIMES_BY_NETWORK: Record<RealNetwork, TimeSlot[]> = {
     { day: 'Tue', time: '9:00 PM', score: 93 },
     { day: 'Sun', time: '8:00 PM', score: 88 },
   ],
+  youtube: [
+    { day: 'Sat', time: '2:00 PM', score: 92 },
+    { day: 'Sun', time: '11:00 AM', score: 87 },
+    { day: 'Thu', time: '6:00 PM', score: 80 },
+  ],
+  pinterest: [
+    { day: 'Sat', time: '9:00 PM', score: 90 },
+    { day: 'Sun', time: '8:00 PM', score: 85 },
+    { day: 'Mon', time: '3:00 PM', score: 72 },
+  ],
+  snapchat: [
+    { day: 'Fri', time: '8:00 PM', score: 94 },
+    { day: 'Wed', time: '10:00 PM', score: 86 },
+    { day: 'Sat', time: '9:00 PM', score: 81 },
+  ],
   google: [
     { day: 'Mon', time: '10:00 AM', score: 79 },
     { day: 'Wed', time: '2:00 PM', score: 74 },
@@ -338,6 +371,17 @@ const SAMPLE_FOLLOWER_ROSTERS: Record<RealNetwork, FollowerProfile[]> = {
   ],
   facebook: [
     { handle: 'bobsburgers.official', name: "Bob's Burgers", bio: 'Best burgers in town since 1994' },
+  ],
+  youtube: [
+    { handle: '@janeeyre', name: 'Jane Eyre', bio: 'book + coffee vlogs ☕📚 London' },
+    { handle: '@makerandmain', name: 'Maker & Main', bio: 'DIY home & craft tutorials' },
+  ],
+  pinterest: [
+    { handle: 'jane.eyre', name: 'Jane Eyre', bio: 'mood boards, coffee, books' },
+    { handle: 'thecoffeehouseco', name: 'The Coffee House', bio: 'cafe recipes & latte art' },
+  ],
+  snapchat: [
+    { handle: 'jane.eyre', name: 'Jane Eyre', bio: 'behind the scenes ✨' },
   ],
   google: [
     { handle: 'acme-marketing', name: 'Acme Marketing', bio: 'B2B growth agency for small business' },

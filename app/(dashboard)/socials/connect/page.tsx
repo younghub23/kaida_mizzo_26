@@ -54,17 +54,28 @@ const PLATFORMS: Platform[] = [
     description: 'Schedule and publish short-form videos to your TikTok business account.',
   },
   {
-    id: 'google',
-    label: 'Google',
-    color: '#4285F4',
-    description: 'Connect Google Analytics 4 to track traffic, conversions, and revenue on your Analytics dashboard.',
+    id: 'youtube',
+    label: 'YouTube',
+    color: '#FF0000',
+    description: 'Track subscribers, views, and video engagement on your YouTube channel.',
+  },
+  {
+    id: 'pinterest',
+    label: 'Pinterest',
+    color: '#E60023',
+    description: 'Track followers, monthly views, and pins on your Pinterest business account.',
   },
   {
     id: 'snapchat',
     label: 'Snapchat',
     color: '#C9A800',
-    description: 'Share Snaps and Stories and track reach with your Snapchat audience.',
-    comingSoon: true,
+    description: 'Connect your Snapchat account so its analytics light up as the integration goes live.',
+  },
+  {
+    id: 'google',
+    label: 'Google',
+    color: '#4285F4',
+    description: 'Connect Google Analytics 4 to track traffic, conversions, and revenue on your Analytics dashboard.',
   },
   {
     id: 'x',
@@ -77,7 +88,7 @@ const PLATFORMS: Platform[] = [
     id: 'other',
     label: 'Other',
     color: '#6B7280',
-    description: 'YouTube, Pinterest, Threads, Reddit, Bluesky, and Google Business Profile — more platforms coming soon.',
+    description: 'Threads, Reddit, Bluesky, and Google Business Profile — more platforms coming soon.',
     comingSoon: true,
   },
 ]
@@ -136,6 +147,9 @@ export default function ConnectAccountsPage() {
       instagram: '/api/social/meta/connect',
       linkedin: '/api/social/linkedin/connect',
       tiktok: '/api/social/tiktok/connect',
+      youtube: '/api/social/youtube/connect',
+      pinterest: '/api/social/pinterest/connect',
+      snapchat: '/api/social/snapchat/connect',
       google: '/api/social/google/connect',
     }
     const route = routes[platformId]

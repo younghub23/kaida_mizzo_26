@@ -31,8 +31,17 @@ baseline. The page cannot break because a fetch failed.
 | --- | --- | --- |
 | Instagram / Facebook | `providers/meta.ts` | **Live** — follower count, follower growth (`page_daily_follows`) and posts from Graph API v23, using the already-granted scopes (no App Review). Page-level reach/impressions were deprecated by Meta and are omitted (never faked). |
 | Google (GA4) | `providers/google.ts` | **Live** — KPIs, the **trend chart** (daily sessions/users) and **audience demographics** (top countries, age, gender, active-hours heatmap) from the GA4 Data API. Needs the OAuth consent screen published; age/gender need Google Signals on. Returns only what GA4 actually has (empty until there's traffic). |
-| LinkedIn | `providers/linkedin.ts` | **Scaffolded** — wired up but inactive until org scopes are granted. Falls back today (intended). |
-| TikTok | `providers/tiktok.ts` | **Scaffolded** — wired up but inactive until analytics scopes are granted. Falls back today (intended). |
+| LinkedIn | `providers/linkedin.ts` | **Scaffolded** — wired up but inactive until org scopes (`r_organization_social`) are granted. Falls back today (intended). |
+| TikTok | `providers/tiktok.ts` | **Scaffolded** — KPIs/posts/best-times wire up once `user.info.stats` + `video.list` scopes are granted. Maps real `follower_count` to the Followers KPI. |
+| YouTube | `providers/youtube.ts` | **Scaffolded** — subscribers, video posts + best-times via the YouTube Data API (reuses Google OAuth + `youtube.readonly`). Activates on connect. |
+| Pinterest | `providers/pinterest.ts` | **Scaffolded** — followers + monthly views (`user_account`), pins as posts + best-times (Pinterest API v5). Activates on connect. |
+| Snapchat | `providers/snapchat.ts` | **Scaffolded** — wired into the loader; returns null until a real organic-analytics source exists (the Marketing API is ad-account oriented). |
+
+Every channel is wired through the loader the same way: connect the account
+(`app/api/social/<platform>/{connect,callback}`) and its provider supplies
+whatever its API exposes; an unconnected channel is simply skipped. Adding a new
+channel = network entry in `mock-data.ts` + a `providers/<name>.ts` + connect/
+callback routes + a row in `PROVIDERS` (load.ts).
 
 Each network section's "Source:" badge shows `(live)`, `(mock)`,
 `(live + mock)`, or `(not connected)` so the real state is always visible.
