@@ -37,6 +37,9 @@ type EventDialogProps = {
 const inputClass =
   'h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50'
 
+// Uppercase accent micro-label, per the Tala field-label spec.
+const labelClass = 'text-[11px] font-semibold uppercase tracking-[0.16em] text-primary'
+
 export function EventDialog({
   open,
   onOpenChange,
@@ -155,17 +158,17 @@ export function EventDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="tala-theme max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Edit event' : 'Add event'}</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="font-fredoka">{isEdit ? 'Edit event' : 'Add event'}</DialogTitle>
+          <DialogDescription className="font-dm-serif italic">
             {isEdit ? 'Update the details of your event.' : 'Add anything to your calendar.'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="event-title">Title</Label>
+            <Label htmlFor="event-title" className={labelClass}>Title</Label>
             <Input
               id="event-title"
               value={title}
@@ -176,7 +179,7 @@ export function EventDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label>Category</Label>
+            <Label className={labelClass}>Category</Label>
             <div className="flex flex-wrap gap-1.5">
               {SELECTABLE_CATEGORIES.map((c) => {
                 const active = category === c.key
@@ -210,7 +213,7 @@ export function EventDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="event-start">Starts</Label>
+              <Label htmlFor="event-start" className={labelClass}>Starts</Label>
               <input
                 id="event-start"
                 type={allDay ? 'date' : 'datetime-local'}
@@ -220,7 +223,7 @@ export function EventDialog({
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="event-end">Ends (optional)</Label>
+              <Label htmlFor="event-end" className={labelClass}>Ends (optional)</Label>
               <input
                 id="event-end"
                 type={allDay ? 'date' : 'datetime-local'}
@@ -232,7 +235,7 @@ export function EventDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="event-notes">Notes (optional)</Label>
+            <Label htmlFor="event-notes" className={labelClass}>Notes (optional)</Label>
             <textarea
               id="event-notes"
               value={notes}
