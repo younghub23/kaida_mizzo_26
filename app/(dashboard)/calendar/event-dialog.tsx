@@ -82,33 +82,32 @@ export function EventDialog({
       setCategory(e.category)
       setAllDay(e.all_day)
       setDate(dateKey(startDate))
-      const sTime = toTimeValue(startDate)
-      setStartTime(sTime)
-      setEndTime(e.end_at ? toTimeValue(new Date(e.end_at)) : plusOneHour(sTime))
+      setStartTime(toTimeValue(startDate))
+      // End time is optional — leave it blank for open-ended events.
+      setEndTime(e.end_at ? toTimeValue(new Date(e.end_at)) : '')
       setNotes(e.notes ?? '')
     } else {
-      // New event. Honor a clicked hour (week/day grid) else default to 9:00am,
-      // and give it a one-hour run so both a start and end time are filled in.
+      // New event. Honor a clicked hour (week/day grid) else default to 9:00am.
+      // The end is left open — fill it in only if there's a specific end time.
       const base = defaultDate ? new Date(defaultDate) : new Date()
       const clickedTime = defaultDate && (base.getHours() !== 0 || base.getMinutes() !== 0)
-      const sTime = clickedTime ? toTimeValue(base) : '09:00'
       setTitle('')
       setCategory('personal')
       setAllDay(false)
       setDate(dateKey(base))
-      setStartTime(sTime)
-      setEndTime(plusOneHour(sTime))
+      setStartTime(clickedTime ? toTimeValue(base) : '09:00')
+      setEndTime('')
       setNotes('')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, item])
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  // Editing the start time nudges the end to stay one hour ahead whenever the
-  // end is empty or would otherwise land on/before the new start.
+  // If an end time is set but editing the start would put it on/before the
+  // start, nudge the end an hour ahead. An empty (open-ended) end stays empty.
   function handleStartTimeChange(value: string) {
     setStartTime(value)
-    if (!endTime || endTime <= value) {
+    if (endTime && endTime <= value) {
       setEndTime(plusOneHour(value))
     }
   }
@@ -131,19 +130,27 @@ export function EventDialog({
       startISO = d.toISOString()
       endISO = null
     } else {
-      // Both times anchor to the chosen day; the end must come after the start.
       const s = new Date(`${date}T${startTime}`)
-      const en = new Date(`${date}T${endTime}`)
-      if (Number.isNaN(s.getTime()) || Number.isNaN(en.getTime())) {
-        toast.error('Please add a start and end time')
-        return
-      }
-      if (en.getTime() <= s.getTime()) {
-        toast.error('The end time must be after the start time')
+      if (Number.isNaN(s.getTime())) {
+        toast.error('Please add a start time')
         return
       }
       startISO = s.toISOString()
-      endISO = en.toISOString()
+      // The end time is optional — leave the event open-ended when it's blank.
+      if (endTime) {
+        const en = new Date(`${date}T${endTime}`)
+        if (Number.isNaN(en.getTime())) {
+          toast.error('Please enter a valid end time')
+          return
+        }
+        if (en.getTime() <= s.getTime()) {
+          toast.error('The end time must be after the start time')
+          return
+        }
+        endISO = en.toISOString()
+      } else {
+        endISO = null
+      }
     }
 
     const input: EventInput = {
@@ -263,7 +270,7 @@ export function EventDialog({
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="event-end" className={labelClass}>Ends at</Label>
+                <Label htmlFor="event-end" className={labelClass}>Ends at (optional)</Label>
                 <input
                   id="event-end"
                   type="time"
