@@ -130,3 +130,37 @@
     @apply font-sans;
   }
 }
+
+/* ── Tala calendar theme ──────────────────────────────────────────────────
+   A warm, paper-like, editorial palette scoped to the calendar page and its
+   portaled dialogs (which opt in via the `tala-theme` class). Existing shadcn
+   token utilities — bg-background, text-muted-foreground, border-border, … —
+   resolve to these earthy values inside the scope, so the calendar gets its
+   cream-and-brown identity without touching the rest of the app. */
+.tala-theme {
+  --background: #f4f1ea; /* page */
+  --foreground: #3a2e22; /* primary ink */
+  --card: #faf9f6; /* surfaces */
+  --card-foreground: #3a2e22;
+  --popover: #faf9f6;
+  --popover-foreground: #3a2e22;
+  --primary: #a48d78; /* accent brown */
+  --primary-foreground: #faf9f6;
+  --secondary: #ede6d9;
+  --secondary-foreground: #3a2e22;
+  --muted: #efeae0; /* soft warm fill */
+  --muted-foreground: #a4977f; /* muted text */
+  --accent: #eae3d6; /* selected / soft fill */
+  --accent-foreground: #3a2e22;
+  --destructive: #b5604a; /* warm clay */
+  --border: rgba(164, 141, 120, 0.2); /* hairlines */
+  --input: rgba(164, 141, 120, 0.3);
+  --ring: #a48d78;
+  /* Crisp ~3px button corners; cards keep their ~14px via rounded-xl. */
+  --radius-md: 0.1875rem;
+}
+
+/* A touch warmer accent on primary-button hover, matching the spec (#8A715C). */
+.tala-theme .bg-primary:is(button):hover {
+  background-color: #8a715c;
+}

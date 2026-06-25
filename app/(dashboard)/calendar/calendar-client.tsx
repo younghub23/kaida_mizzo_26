@@ -168,12 +168,17 @@ export function CalendarClient({ initialEvents, initialPosts, initialTodos }: Pr
     view === 'day' ? formatFullDate(cursor) : formatMonthYear(cursor)
 
   return (
-    <div className="flex flex-col gap-5 p-6">
+    <div className="tala-theme flex min-h-screen flex-col gap-5 bg-background p-6 font-sans text-foreground">
       {/* ── Header ── */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight font-heading">Calendar</h1>
-          <p className="mt-1 text-xl text-muted-foreground font-heading">{headingDate}</p>
+          <p className="font-fredoka text-sm font-semibold lowercase tracking-[0.04em] text-primary">
+            tala
+          </p>
+          <h1 className="font-fredoka text-3xl font-semibold tracking-tight text-foreground">
+            Calendar
+          </h1>
+          <p className="mt-0.5 font-dm-serif text-xl italic text-muted-foreground">{headingDate}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -197,7 +202,9 @@ export function CalendarClient({ initialEvents, initialPosts, initialTodos }: Pr
                 onClick={() => setView(v)}
                 className={cn(
                   'rounded-md px-2.5 py-1 text-sm font-medium capitalize transition-colors',
-                  view === v ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
+                  view === v
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
                 )}
               >
                 {v}
@@ -222,6 +229,7 @@ export function CalendarClient({ initialEvents, initialPosts, initialTodos }: Pr
           <MiniMonth
             cursor={cursor}
             today={today}
+            items={items}
             onPick={(d) => setCursor(d)}
           />
           <Legend />
@@ -350,10 +358,12 @@ export function CalendarClient({ initialEvents, initialPosts, initialTodos }: Pr
 function MiniMonth({
   cursor,
   today,
+  items,
   onPick,
 }: {
   cursor: Date
   today: Date
+  items: CalendarItem[]
   onPick: (d: Date) => void
 }) {
   const [view, setView] = useState(() => new Date(cursor.getFullYear(), cursor.getMonth(), 1))
@@ -367,9 +377,9 @@ function MiniMonth({
   const matrix = getMonthMatrix(view.getFullYear(), view.getMonth())
 
   return (
-    <div className="rounded-xl border border-border p-3">
+    <div className="rounded-xl border border-border bg-card p-3">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-sm font-semibold">{formatMonthYear(view)}</span>
+        <span className="font-fredoka text-sm font-semibold">{formatMonthYear(view)}</span>
         <div className="flex items-center gap-0.5">
           <Button
             variant="ghost"
@@ -391,7 +401,10 @@ function MiniMonth({
       </div>
       <div className="grid grid-cols-7 gap-0.5 text-center">
         {WEEKDAY_LABELS.map((d) => (
-          <span key={d} className="py-1 text-[10px] font-medium text-muted-foreground">
+          <span
+            key={d}
+            className="py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary"
+          >
             {d[0]}
           </span>
         ))}
@@ -399,19 +412,27 @@ function MiniMonth({
           const inMonth = d.getMonth() === view.getMonth()
           const isToday = sameDay(d, today)
           const isSelected = sameDay(d, cursor)
+          const dayItems = itemsForDay(items, d)
+          const showDot = inMonth && dayItems.length > 0 && !isToday && !isSelected
           return (
             <button
               key={dateKey(d)}
               onClick={() => onPick(d)}
               className={cn(
-                'flex h-6 items-center justify-center rounded-full text-xs tabular-nums transition-colors',
+                'relative flex h-6 items-center justify-center rounded-full font-fredoka text-xs tabular-nums transition-colors',
                 !inMonth && 'text-muted-foreground/40',
                 inMonth && 'hover:bg-muted',
-                isSelected && 'bg-primary text-primary-foreground hover:bg-primary',
-                isToday && !isSelected && 'font-bold text-primary'
+                isToday && 'bg-primary text-primary-foreground hover:bg-primary',
+                isSelected && !isToday && 'bg-accent text-foreground'
               )}
             >
               {d.getDate()}
+              {showDot && (
+                <span
+                  className="absolute bottom-0.5 left-1/2 size-1 -translate-x-1/2 rounded-full"
+                  style={{ backgroundColor: getCategory(dayItems[0].category).color }}
+                />
+              )}
             </button>
           )
         })}
@@ -423,8 +444,8 @@ function MiniMonth({
 // ── Legend (MORE INFO) ────────────────────────────────────────────────────────
 function Legend() {
   return (
-    <div className="rounded-xl border border-border p-3">
-      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className="rounded-xl border border-border bg-card p-3">
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
         More info
       </p>
       <ul className="flex flex-col gap-1.5">
@@ -461,10 +482,13 @@ function MonthView({
   const maxPills = compact ? 2 : 3
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border">
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
       <div className="grid grid-cols-7 border-b border-border bg-muted/40">
         {WEEKDAY_LABELS.map((d) => (
-          <div key={d} className="px-2 py-1.5 text-center text-xs font-medium text-muted-foreground">
+          <div
+            key={d}
+            className="px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.16em] text-primary"
+          >
             {d}
           </div>
         ))}
@@ -492,7 +516,7 @@ function MonthView({
                     onOpenDay(day)
                   }}
                   className={cn(
-                    'flex size-6 items-center justify-center rounded-full text-xs tabular-nums transition-colors hover:bg-muted',
+                    'flex size-6 items-center justify-center rounded-full font-fredoka text-xs tabular-nums transition-colors hover:bg-muted',
                     !inMonth && 'text-muted-foreground/40',
                     isToday && 'bg-primary font-semibold text-primary-foreground hover:bg-primary'
                   )}
@@ -512,7 +536,7 @@ function MonthView({
                       e.stopPropagation()
                       onOpenDay(day)
                     }}
-                    className="px-1 text-left text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                    className="px-1 text-left font-dm-serif text-xs italic text-muted-foreground hover:text-foreground"
                   >
                     +{dayItems.length - maxPills} more
                   </button>
@@ -563,7 +587,7 @@ function TimeGridView({
   onOpenItem: (it: CalendarItem) => void
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border">
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
       {/* Day headers */}
       <div
         className="grid border-b border-border bg-muted/40"
@@ -574,10 +598,12 @@ function TimeGridView({
           const isToday = sameDay(d, today)
           return (
             <div key={dateKey(d)} className="border-r border-border px-2 py-1.5 text-center last:border-r-0">
-              <div className="text-xs text-muted-foreground">{WEEKDAY_LABELS[d.getDay()]}</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+                {WEEKDAY_LABELS[d.getDay()]}
+              </div>
               <div
                 className={cn(
-                  'mx-auto mt-0.5 flex size-7 items-center justify-center rounded-full text-sm font-medium tabular-nums',
+                  'mx-auto mt-0.5 flex size-7 items-center justify-center rounded-full font-fredoka text-sm font-medium tabular-nums',
                   isToday && 'bg-primary text-primary-foreground'
                 )}
               >
@@ -593,7 +619,7 @@ function TimeGridView({
         className="grid border-b border-border"
         style={{ gridTemplateColumns: `56px repeat(${days.length}, 1fr)` }}
       >
-        <div className="border-r border-border px-1 py-1 text-right text-[10px] uppercase text-muted-foreground">
+        <div className="border-r border-border px-1 py-1 text-right text-[10px] font-semibold uppercase tracking-[0.12em] text-primary">
           All day
         </div>
         {days.map((d) => {
@@ -685,10 +711,10 @@ function Panel({
   children: React.ReactNode
 }) {
   return (
-    <div className="rounded-xl border border-border">
+    <div className="rounded-xl border border-border bg-card">
       <button
         onClick={onToggle}
-        className="flex w-full items-center justify-between px-4 py-2.5 text-sm font-semibold"
+        className="flex w-full items-center justify-between px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary"
       >
         {title}
         <ChevronDown className={cn('size-4 text-muted-foreground transition-transform', !open && '-rotate-90')} />
@@ -785,13 +811,13 @@ function PostDetailDialog({ item, onClose }: { item: CalendarItem | null; onClos
   const open = Boolean(item)
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="tala-theme max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 font-fredoka">
             <CalendarDays className="size-4 text-muted-foreground" />
             Scheduled post
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="font-dm-serif italic">
             Imported from your social schedule — edit it on the Social page.
           </DialogDescription>
         </DialogHeader>
@@ -836,14 +862,18 @@ function SettingsDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="tala-theme max-w-sm">
         <DialogHeader>
-          <DialogTitle>Calendar settings</DialogTitle>
-          <DialogDescription>Personalize how your calendar looks.</DialogDescription>
+          <DialogTitle className="font-fredoka">Calendar settings</DialogTitle>
+          <DialogDescription className="font-dm-serif italic">
+            Personalize how your calendar looks.
+          </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">Default view</span>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+              Default view
+            </span>
             <div className="inline-flex items-center rounded-lg border border-border p-0.5">
               {(['month', 'week', 'day'] as CalendarView[]).map((v) => (
                 <button
@@ -851,7 +881,9 @@ function SettingsDialog({
                   onClick={() => onChange({ ...settings, defaultView: v })}
                   className={cn(
                     'flex-1 rounded-md px-2.5 py-1 text-sm font-medium capitalize transition-colors',
-                    settings.defaultView === v ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
+                    settings.defaultView === v
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
                   {v}

@@ -27,12 +27,12 @@ export type Category = {
 }
 
 export const CATEGORIES: Category[] = [
-  { key: 'social', label: 'Social posts', color: '#C13A77', tint: '#F7E2EE', text: '#8A2456' },
-  { key: 'email', label: 'Email', color: '#D97706', tint: '#FBEDD9', text: '#92520A' },
-  { key: 'content', label: 'Content / AI plan', color: '#7C3AED', tint: '#ECE3FB', text: '#5B27B0' },
-  { key: 'personal', label: 'Personal', color: '#059669', tint: '#D9F2E9', text: '#046C4E' },
-  { key: 'work', label: 'Work', color: '#0284C7', tint: '#DBEEFB', text: '#055f93' },
-  { key: 'other', label: 'Other', color: '#64748B', tint: '#E7EAEE', text: '#475569' },
+  { key: 'social', label: 'Social posts', color: '#D6498C', tint: '#F9E4EE', text: '#A82C66' },
+  { key: 'email', label: 'Email', color: '#F4C96D', tint: '#FBF0D2', text: '#9A6E16' },
+  { key: 'content', label: 'Content / AI plan', color: '#36B7C0', tint: '#DCF1F2', text: '#1E7B82' },
+  { key: 'personal', label: 'Personal', color: '#6E8F4F', tint: '#E8EFDB', text: '#4C6633' },
+  { key: 'work', label: 'Work', color: '#9AC6E0', tint: '#E4F0F8', text: '#3A6E92' },
+  { key: 'other', label: 'Other', color: '#F0B0A0', tint: '#FBE7E0', text: '#B5604A' },
 ]
 
 // Categories the user can pick when creating an event. `social` is excluded
