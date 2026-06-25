@@ -41,23 +41,52 @@ The content is a starting template — finalize it before launch.
 > live data. Each connect flow stores a token in the `social_accounts` table;
 > until a platform's keys + connect route exist, its card shows "Coming soon"
 > and Analytics shows mock (dev) / empty (prod).
+>
+> **API keys to obtain + set on Cloudflare (one glance):**
+> - [ ] `META_APP_ID`, `META_APP_SECRET`
+> - [ ] `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`  *(also powers YouTube)*
+> - [ ] `PINTEREST_APP_ID`, `PINTEREST_APP_SECRET`
+> - [ ] `SNAPCHAT_CLIENT_ID`, `SNAPCHAT_CLIENT_SECRET`
+> - [ ] `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`
+> - [ ] `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`
+> - [ ] `NEXT_PUBLIC_APP_URL` (used to build every OAuth redirect URI)
 
-Already wired (just need credentials + platform approval):
-- [ ] **Meta (Facebook + Instagram)** — `META_APP_ID`, `META_APP_SECRET`. Submit
-      `read_insights` + `instagram_manage_insights` for Meta App Review, then reconnect.
+Fully wired (connect/callback route + analytics provider built) — **just add the
+API keys below to Cloudflare and complete each platform's app approval**, and
+the Analytics page pulls that channel's real data automatically:
+
+- [ ] **Meta (Facebook + Instagram)** — `META_APP_ID`, `META_APP_SECRET`.
+      Follower count, follower growth and posts already work with the current
+      scopes (no App Review). App Review for `read_insights` /
+      `instagram_manage_insights` is *optional* — it only adds page
+      reach/impressions, which Meta has largely deprecated.
 - [ ] **Google (GA4)** — `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`. Publish the
-      OAuth consent screen (sensitive `analytics.readonly` scope). Tag already
-      installed via `NEXT_PUBLIC_GA_MEASUREMENT_ID`.
+      OAuth consent screen (sensitive `analytics.readonly` scope). Powers KPIs,
+      the trend chart, audience demographics, and ROI/UTM attribution.
+- [ ] **YouTube** — reuses **`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`** (no new
+      keys). Enable the **YouTube Data API v3** in the Google Cloud project and
+      add the `https://www.googleapis.com/auth/youtube.readonly` scope to the
+      consent screen. Authorized redirect URI:
+      `<NEXT_PUBLIC_APP_URL>/api/social/youtube/callback`.
+- [ ] **Pinterest** — `PINTEREST_APP_ID`, `PINTEREST_APP_SECRET`. Create a
+      Pinterest **business** developer app; scopes `user_accounts:read`,
+      `pins:read`, `boards:read`. Redirect URI:
+      `<NEXT_PUBLIC_APP_URL>/api/social/pinterest/callback`.
+- [ ] **TikTok** — `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`. Add `user.info.stats`
+      + `video.list` scopes (tokens expire ~24h — refresh is stored).
 - [ ] **LinkedIn** — `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`. Add org scopes
       (`r_organization_social`, `rw_organization_admin`) + Marketing Developer Platform access.
-- [ ] **TikTok** — `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`. Add `user.info.stats`
-      + `video.list` scopes; add token refresh.
+- [ ] **Snapchat** — `SNAPCHAT_CLIENT_ID`, `SNAPCHAT_CLIENT_SECRET`. Connect/callback
+      are wired (Snap Marketing API). Note: Snapchat's API is ad-account oriented,
+      so the analytics provider stays dormant (empty) until an organic-stats
+      source is available — the account still connects.
+
+> All redirect URIs follow the same shape:
+> `<NEXT_PUBLIC_APP_URL>/api/social/<platform>/callback`. Register each one in
+> that platform's developer console.
 
 Not built yet — need a connect/callback route + provider + keys (cards show "Coming soon"):
-- [ ] **Snapchat** — Snap Marketing API (Snap Kit / Marketing API credentials).
 - [ ] **X (Twitter)** — X API v2 OAuth 2.0 app (`X_CLIENT_ID`/`X_CLIENT_SECRET`); note API tier/pricing.
-- [ ] **YouTube** — YouTube Data API (reuses Google OAuth; add the `youtube.readonly` scope).
-- [ ] **Pinterest** — Pinterest API for business (`PINTEREST_APP_ID`/`PINTEREST_APP_SECRET`).
 - [ ] **Other to consider** — Threads, Reddit, Bluesky, Google Business Profile.
 
 When ready, ping me and I'll scaffold each connect route + analytics provider
