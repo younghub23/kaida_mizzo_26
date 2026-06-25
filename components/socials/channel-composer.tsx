@@ -1,9 +1,8 @@
 'use client'
 
 import { useActionState, useEffect, useState } from 'react'
-import Link from 'next/link'
 import { toast } from 'sonner'
-import { ArrowLeft, ImagePlus, Loader2, Sparkles, Calendar, Clock, X } from 'lucide-react'
+import { ImagePlus, Loader2, Sparkles, Calendar, Clock, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -25,9 +24,12 @@ const MINUTES = ['00', '15', '30', '45']
 export function ChannelComposer({
   platform,
   username,
+  onClose,
 }: {
   platform: PlatformMeta
   username: string
+  /** Collapse the inline composer back to just the logos. */
+  onClose?: () => void
 }) {
   const [state, formAction, isPending] = useActionState(savePost, INITIAL)
 
@@ -92,24 +94,22 @@ export function ChannelComposer({
   const previewData = { username, caption, mediaUrl }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       {/* header */}
       <div className="flex items-center gap-3">
-        <Link
-          href="/socials"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" />
-          Socials
-        </Link>
-        <span className="text-muted-foreground">/</span>
         <span
           className="flex size-7 items-center justify-center rounded-lg p-1 text-white"
           style={{ background: platform.gradient }}
         >
           <BrandLogo id={platform.id} />
         </span>
-        <h1 className="text-2xl font-semibold">{platform.label}</h1>
+        <h2 className="text-xl font-semibold">{platform.label}</h2>
+        {onClose && (
+          <Button variant="ghost" size="sm" onClick={onClose} className="ml-auto gap-1.5">
+            <X className="size-4" />
+            Close
+          </Button>
+        )}
       </div>
 
       <form className="grid gap-6 lg:grid-cols-2">

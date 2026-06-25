@@ -1,9 +1,8 @@
 // ============================================================================
-// Shared social-platform metadata for the Socials hub and per-channel pages.
+// Shared social-platform metadata for the Socials hub + inline composer.
 //
-// `dedicated: true` platforms have a hand-built, pixel-accurate composer page
-// (e.g. /socials/instagram). Others fall through to the generic channel page
-// at /socials/[platform].
+// `dedicated: true` platforms render a hand-built, pixel-accurate feed preview
+// (Instagram/X/LinkedIn). Others fall back to the generic preview.
 // ============================================================================
 
 export type PlatformId =
@@ -80,11 +79,6 @@ export const PLATFORM_IDS = Object.keys(PLATFORMS) as PlatformId[]
 
 export function isPlatformId(value: string): value is PlatformId {
   return value in PLATFORMS
-}
-
-/** Route a connected platform to its composer page. */
-export function platformHref(id: PlatformId): string {
-  return `/socials/${id}`
 }
 
 // Posting timezones offered in the scheduler (matches the design's

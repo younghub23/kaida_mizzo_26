@@ -98,7 +98,6 @@ export async function savePost(
   }
 
   revalidatePath('/socials')
-  revalidatePath(`/socials/${platform}`)
 
   return { error: null, success: true }
 }
