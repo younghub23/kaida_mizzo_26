@@ -227,6 +227,31 @@ export async function toggleTodo(id: string, done: boolean): Promise<CalendarAct
   return { error: null, success: true }
 }
 
+export async function updateTodo(id: string, title: string): Promise<CalendarActionState> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized', success: false }
+
+  const trimmed = title?.trim()
+  if (!trimmed) return { error: 'Please enter a task', success: false }
+
+  const { error } = await supabase
+    .from('calendar_todos')
+    .update({ title: trimmed })
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) {
+    logError('calendar/updateTodo', 'Failed to update todo', error, { userId: user.id, todoId: id })
+    return { error: error.message, success: false }
+  }
+
+  revalidatePath('/calendar')
+  return { error: null, success: true }
+}
+
 export async function deleteTodo(id: string): Promise<CalendarActionState> {
   const supabase = await createClient()
   const {

@@ -11,6 +11,8 @@ import {
   Trash2,
   ChevronDown,
   CalendarDays,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react'
 import {
   Dialog,
@@ -27,6 +29,7 @@ import {
   getTodos,
   createTodo,
   toggleTodo,
+  updateTodo,
   deleteTodo,
   type CalendarEvent,
   type CalendarTodo,
@@ -82,6 +85,8 @@ export function CalendarClient({ initialEvents, initialPosts, initialTodos }: Pr
 
   // Bottom panels (toggleable / collapsible)
   const [openPanels, setOpenPanels] = useState({ coming: true, updates: true, todo: true })
+  // Whether the To-do panel spans the full width of the page
+  const [todoExpanded, setTodoExpanded] = useState(false)
 
   // Settings (persisted to localStorage)
   const [settings, setSettings] = useState<Settings>({ defaultView: 'month', compact: false })
@@ -328,8 +333,23 @@ export function CalendarClient({ initialEvents, initialPosts, initialTodos }: Pr
           title="To-do"
           open={openPanels.todo}
           onToggle={() => setOpenPanels((p) => ({ ...p, todo: !p.todo }))}
+          className={cn(todoExpanded && 'md:col-span-3')}
+          action={
+            <button
+              onClick={() => setTodoExpanded((v) => !v)}
+              className="text-muted-foreground transition-colors hover:text-foreground"
+              aria-label={todoExpanded ? 'Collapse to-do list' : 'Expand to-do list to full width'}
+              title={todoExpanded ? 'Collapse' : 'Expand to full width'}
+            >
+              {todoExpanded ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
+            </button>
+          }
         >
-          <TodoList todos={todos} onChanged={() => getTodos().then(setTodos)} />
+          <TodoList
+            todos={todos}
+            expanded={todoExpanded}
+            onChanged={() => getTodos().then(setTodos)}
+          />
         </Panel>
       </div>
 
@@ -703,22 +723,32 @@ function Panel({
   title,
   open,
   onToggle,
+  action,
+  className,
   children,
 }: {
   title: string
   open: boolean
   onToggle: () => void
+  action?: React.ReactNode
+  className?: string
   children: React.ReactNode
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card">
-      <button
-        onClick={onToggle}
-        className="flex w-full items-center justify-between px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary"
-      >
-        {title}
-        <ChevronDown className={cn('size-4 text-muted-foreground transition-transform', !open && '-rotate-90')} />
-      </button>
+    <div className={cn('rounded-xl border border-border bg-card', className)}>
+      <div className="flex w-full items-center justify-between gap-2 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+        <button onClick={onToggle} className="flex flex-1 items-center text-left">
+          {title}
+        </button>
+        <div className="flex items-center gap-1.5">
+          {action}
+          <button onClick={onToggle} aria-label={open ? 'Collapse section' : 'Expand section'}>
+            <ChevronDown
+              className={cn('size-4 text-muted-foreground transition-transform', !open && '-rotate-90')}
+            />
+          </button>
+        </div>
+      </div>
       {open && <div className="px-4 pb-4">{children}</div>}
     </div>
   )
@@ -729,9 +759,19 @@ function EmptyHint({ text }: { text: string }) {
 }
 
 // ── To-do list ────────────────────────────────────────────────────────────────
-function TodoList({ todos, onChanged }: { todos: CalendarTodo[]; onChanged: () => void }) {
+function TodoList({
+  todos,
+  expanded,
+  onChanged,
+}: {
+  todos: CalendarTodo[]
+  expanded?: boolean
+  onChanged: () => void
+}) {
   const [value, setValue] = useState('')
   const [adding, setAdding] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState('')
 
   async function add() {
     if (!value.trim()) return
@@ -744,6 +784,22 @@ function TodoList({ todos, onChanged }: { todos: CalendarTodo[]; onChanged: () =
     } else {
       toast.error(res.error ?? 'Failed to add task')
     }
+  }
+
+  function startEdit(t: CalendarTodo) {
+    setEditingId(t.id)
+    setEditValue(t.title)
+  }
+
+  async function saveEdit(id: string) {
+    const trimmed = editValue.trim()
+    setEditingId(null)
+    const current = todos.find((t) => t.id === id)
+    // Nothing to do when blank or unchanged.
+    if (!trimmed || (current && trimmed === current.title)) return
+    const res = await updateTodo(id, trimmed)
+    if (res.success) onChanged()
+    else toast.error(res.error ?? 'Failed to update task')
   }
 
   return (
@@ -769,7 +825,12 @@ function TodoList({ todos, onChanged }: { todos: CalendarTodo[]; onChanged: () =
       {todos.length === 0 ? (
         <EmptyHint text="No tasks yet." />
       ) : (
-        <ul className="flex flex-col gap-1">
+        <ul
+          className={cn(
+            'flex flex-col gap-1',
+            expanded && 'sm:grid sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-3'
+          )}
+        >
           {todos.map((t) => (
             <li key={t.id} className="group flex items-center gap-2 text-sm">
               <button
@@ -785,9 +846,35 @@ function TodoList({ todos, onChanged }: { todos: CalendarTodo[]; onChanged: () =
               >
                 {t.done && <Check className="size-3" />}
               </button>
-              <span className={cn('flex-1 truncate', t.done && 'text-muted-foreground line-through')}>
-                {t.title}
-              </span>
+              {editingId === t.id ? (
+                <Input
+                  autoFocus
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      void saveEdit(t.id)
+                    } else if (e.key === 'Escape') {
+                      e.preventDefault()
+                      setEditingId(null)
+                    }
+                  }}
+                  onBlur={() => void saveEdit(t.id)}
+                  className="h-7 flex-1 text-sm"
+                />
+              ) : (
+                <button
+                  onClick={() => startEdit(t)}
+                  className={cn(
+                    'flex-1 truncate rounded px-1 py-0.5 text-left transition-colors hover:bg-muted',
+                    t.done && 'text-muted-foreground line-through'
+                  )}
+                  title="Click to edit"
+                >
+                  {t.title}
+                </button>
+              )}
               <button
                 onClick={async () => {
                   const res = await deleteTodo(t.id)
