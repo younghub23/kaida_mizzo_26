@@ -23,6 +23,10 @@ import {
   getPostPerformance,
   getTrend,
   getAudience,
+  getBestTimes,
+  getRoiAttribution,
+  getCompetitors,
+  getSocialListening,
   getSampleFollowerRosters,
   aggregateKpis,
   type Network,
@@ -30,6 +34,10 @@ import {
   type PostRow,
   type TrendPoint,
   type AudienceData,
+  type TimeSlot,
+  type RoiRow,
+  type Competitor,
+  type ListeningData,
   type RealNetwork,
 } from '@/app/(dashboard)/analytics/mock-data'
 import type { Provider } from '@/lib/analytics/providers/util'
@@ -37,6 +45,8 @@ import { fetchMeta } from '@/lib/analytics/providers/meta'
 import { fetchLinkedIn } from '@/lib/analytics/providers/linkedin'
 import { fetchTikTok } from '@/lib/analytics/providers/tiktok'
 import { fetchGoogle } from '@/lib/analytics/providers/google'
+import { fetchCompetitorBenchmark } from '@/lib/analytics/providers/competitor'
+import { fetchSocialListening } from '@/lib/analytics/providers/listening'
 import {
   matchCrossChannelFollowers,
   type NetworkRoster,
@@ -53,6 +63,14 @@ export type AnalyticsData = {
   trendByNetwork: Record<Network, { trend: TrendPoint[]; source: SectionSource }>
   /** Audience demographics per network (live where a provider supplies it). */
   audienceByNetwork: Record<Network, { audience: AudienceData | null; source: SectionSource }>
+  /** Best posting windows per network, derived from each account's real engagement. */
+  bestTimesByNetwork: Record<Network, { slots: TimeSlot[]; source: SectionSource }>
+  /** ROI/UTM attribution rows (brand-level; live from GA4 campaigns + revenue). */
+  roi: { rows: RoiRow[]; source: SectionSource }
+  /** Competitor benchmark (brand-level; needs a competitive-intel integration). */
+  competitors: { rows: Competitor[]; source: SectionSource }
+  /** Social listening + sentiment (brand-level; needs a brand-monitoring integration). */
+  socialListening: { data: ListeningData | null; source: SectionSource }
   /**
    * Cross-channel followers — people who follow us on 2+ networks under
    * near-duplicate identities, matched server-side from per-platform rosters.
@@ -94,17 +112,30 @@ export async function loadAnalytics(): Promise<AnalyticsData> {
     ALLOW_MOCK_ANALYTICS
       ? { audience: getAudience(id), source: 'mock' as SectionSource }
       : { audience: null, source: 'empty' as SectionSource }
+  const mockBestTimes = (id: Network) =>
+    ALLOW_MOCK_ANALYTICS
+      ? { slots: getBestTimes(id), source: 'mock' as SectionSource }
+      : { slots: [], source: 'empty' as SectionSource }
 
   const coreMetricsByNetwork = {} as AnalyticsData['coreMetricsByNetwork']
   const postsByNetwork = {} as AnalyticsData['postsByNetwork']
   const trendByNetwork = {} as AnalyticsData['trendByNetwork']
   const audienceByNetwork = {} as AnalyticsData['audienceByNetwork']
+  const bestTimesByNetwork = {} as AnalyticsData['bestTimesByNetwork']
   for (const { id } of NETWORKS) {
     coreMetricsByNetwork[id] = mockKpis(id)
     postsByNetwork[id] = mockPosts(id)
     trendByNetwork[id] = mockTrend(id)
     audienceByNetwork[id] = mockAudience(id)
+    bestTimesByNetwork[id] = mockBestTimes(id)
   }
+
+  // Brand-level sections (not per-network). ROI is overlaid from live providers
+  // below; competitor + social listening come from external integrations.
+  let roi = ALLOW_MOCK_ANALYTICS
+    ? { rows: getRoiAttribution('all'), source: 'mock' as SectionSource }
+    : { rows: [] as RoiRow[], source: 'empty' as SectionSource }
+  const liveRoiRows: RoiRow[] = []
 
   // 2. Overlay live data for every connected, supported platform.
   const livePlatforms: RealNetwork[] = []
@@ -136,14 +167,43 @@ export async function loadAnalytics(): Promise<AnalyticsData> {
         if (result?.posts?.length) postsByNetwork[platform] = { posts: result.posts, source: 'live' }
         if (result?.trend?.length) trendByNetwork[platform] = { trend: result.trend, source: 'live' }
         if (result?.audience) audienceByNetwork[platform] = { audience: result.audience, source: 'live' }
+        if (result?.bestTimes?.length) bestTimesByNetwork[platform] = { slots: result.bestTimes, source: 'live' }
+        if (result?.roi?.length) liveRoiRows.push(...result.roi)
         if (result?.followers?.length) liveRosters.push({ platform, followers: result.followers })
-        if (result?.kpis?.length || result?.posts?.length || result?.trend?.length || result?.audience)
+        if (
+          result?.kpis?.length ||
+          result?.posts?.length ||
+          result?.trend?.length ||
+          result?.audience ||
+          result?.bestTimes?.length ||
+          result?.roi?.length
+        )
           livePlatforms.push(platform)
       }
     }
   } catch (err) {
     // Never let a data-source failure break the page.
     logError('analytics/load', 'Live analytics load failed', err)
+  }
+
+  // 2a. ROI is brand-level: any live attribution rows replace the baseline.
+  if (liveRoiRows.length) roi = { rows: liveRoiRows, source: 'live' }
+
+  // 2a'. Competitor benchmark + social listening come from external integrations
+  //      (not connected social accounts). Live when configured, else mock(dev)/empty.
+  let competitors = ALLOW_MOCK_ANALYTICS
+    ? { rows: getCompetitors('all'), source: 'mock' as SectionSource }
+    : { rows: [] as Competitor[], source: 'empty' as SectionSource }
+  let socialListening: AnalyticsData['socialListening'] = ALLOW_MOCK_ANALYTICS
+    ? { data: getSocialListening('all'), source: 'mock' }
+    : { data: null, source: 'empty' }
+  try {
+    const comp = await fetchCompetitorBenchmark()
+    if (comp?.length) competitors = { rows: comp, source: 'live' }
+    const listen = await fetchSocialListening()
+    if (listen) socialListening = { data: listen, source: 'live' }
+  } catch (err) {
+    logError('analytics/load', 'Competitor/listening load failed', err)
   }
 
   // 2b. Cross-channel followers. Run the deterministic matcher over LIVE rosters
@@ -185,6 +245,10 @@ export async function loadAnalytics(): Promise<AnalyticsData> {
     postsByNetwork,
     trendByNetwork,
     audienceByNetwork,
+    bestTimesByNetwork,
+    roi,
+    competitors,
+    socialListening,
     crossChannelFollowers,
     livePlatforms,
     allowMock: ALLOW_MOCK_ANALYTICS,

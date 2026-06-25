@@ -73,11 +73,15 @@ export function AnalyticsDashboard({
         source={data.crossChannelFollowers.source}
         network={network}
       />
-      <BestTimes network={network} />
-      <CompetitorBenchmark network={network} />
-      <RoiAttribution network={network} />
+      <BestTimes network={network} bestTimesByNetwork={data.bestTimesByNetwork} />
+      <CompetitorBenchmark rows={data.competitors.rows} source={data.competitors.source} />
+      <RoiAttribution network={network} rows={data.roi.rows} source={data.roi.source} />
       <ReportBuilder />
-      <SocialListening network={network} unlocked={socialListeningUnlocked} />
+      <SocialListening
+        data={data.socialListening.data}
+        source={data.socialListening.source}
+        unlocked={socialListeningUnlocked}
+      />
     </div>
   )
 }

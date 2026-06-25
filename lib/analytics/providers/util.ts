@@ -9,15 +9,19 @@ import {
   type RealNetwork,
   type TrendPoint,
   type AudienceData,
+  type TimeSlot,
+  type RoiRow,
 } from '@/app/(dashboard)/analytics/mock-data'
 import type { FollowerProfile } from '@/lib/analytics/cross-channel'
 
 /**
  * Per-platform live result. Each part is independent: a provider returns live
- * `kpis`, `posts`, `trend`, `audience`, and/or a `followers` roster, and `null`
- * for whatever it couldn't fetch live (the loader then keeps the mock baseline
- * for that part). Returning `null` from the provider entirely means "nothing
- * live — use mock".
+ * data for whatever its API exposes and `null` for everything else (the loader
+ * then keeps the mock baseline / empty state for that part). Returning `null`
+ * from the provider entirely means "nothing live — use mock/empty".
+ *
+ * Every section is wired to consume whatever real data any connected account
+ * supplies; an unconnected/unsupported channel simply contributes `null`.
  *
  * `followers` is the per-platform roster (handle + name + bio) the cross-channel
  * matcher consumes (lib/analytics/cross-channel.ts). No platform API exposes a
@@ -31,7 +35,51 @@ export type PlatformAnalytics = {
   trend: TrendPoint[] | null
   /** Demographics + active-hours for the audience section, or null. */
   audience: AudienceData | null
+  /** Best posting windows derived from this account's real engagement, or null. */
+  bestTimes: TimeSlot[] | null
+  /** UTM/conversion attribution rows (GA4 + revenue), or null. */
+  roi: RoiRow[] | null
   followers: FollowerProfile[] | null
+}
+
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+function formatHour(h: number): string {
+  const period = h < 12 ? 'AM' : 'PM'
+  const hour12 = h % 12 === 0 ? 12 : h % 12
+  return `${hour12}:00 ${period}`
+}
+
+/**
+ * Derive best-time-to-post windows from REAL engagement samples — each sample is
+ * a post's timestamp paired with the engagement it earned. Buckets by weekday +
+ * hour, scores each window 0..100 relative to the strongest, and returns the top
+ * few. Returns [] when there's no engagement history (→ empty section, no fake).
+ */
+export function computeBestTimes(
+  samples: { at: string | number; weight: number }[],
+  topN = 3
+): TimeSlot[] {
+  const buckets = new Map<string, { day: number; hour: number; weight: number }>()
+  for (const s of samples) {
+    const date = typeof s.at === 'number' ? new Date(s.at * 1000) : new Date(s.at)
+    const t = date.getTime()
+    if (Number.isNaN(t)) continue
+    const day = date.getUTCDay()
+    const hour = date.getUTCHours()
+    const key = `${day}-${hour}`
+    const b = buckets.get(key) ?? { day, hour, weight: 0 }
+    b.weight += Math.max(s.weight, 0) + 1 // +1 so a post with zero engagement still counts as activity
+    buckets.set(key, b)
+  }
+  const ranked = [...buckets.values()].sort((a, b) => b.weight - a.weight)
+  if (!ranked.length) return []
+  const max = ranked[0].weight
+  return ranked.slice(0, topN).map((b) => ({
+    day: DAY_NAMES[b.day],
+    time: formatHour(b.hour),
+    score: Math.max(1, Math.round((b.weight / max) * 100)),
+  }))
 }
 
 /** A connected social account row (subset of `social_accounts`). */

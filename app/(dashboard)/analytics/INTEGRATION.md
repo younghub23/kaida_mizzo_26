@@ -41,15 +41,25 @@ Providers also expose an optional `followers` roster (`PlatformAnalytics.followe
 for the cross-channel matcher; every provider returns `null` today (no platform
 API exposes a roster). See **Cross-channel followers** below.
 
-The **trend chart** and **audience demographics** are live via the GA4 provider
-(`providers/google.ts`) — they populate from real web data once GA4 is connected
-and has traffic, and show an empty state otherwise.
+**Every section is now provider-driven** — each pulls whatever real data any
+connected account exposes and shows an empty state for the rest (a channel is
+simply skipped until its account is connected). What feeds each:
 
-Sections with no real source yet — **best time to post** (needs published-post
-engagement history), **competitor benchmark** and **social listening** (need a
-third-party intelligence/monitoring tool), and **ROI/UTM** (needs GA4 conversions
-+ Stripe revenue) — render empty "connect an account" states in production until
-a provider is wired, and mock only when explicitly opted in for local previewing.
+- **Core KPIs / posts / followers** — Meta + GA4 (+ LinkedIn/TikTok when scoped).
+- **Trend chart, audience demographics** — GA4 (`providers/google.ts`).
+- **Best time to post** — derived from each social account's *real* post
+  engagement by weekday/hour (`computeBestTimes` in `providers/util.ts`; Meta +
+  TikTok today). Empty until an account has published posts with engagement.
+- **ROI / UTM attribution** — GA4 campaigns (sessions, key events, revenue) via
+  `providers/google.ts`. Empty until GA4 has UTM-tagged campaign traffic.
+- **Competitor benchmark** (`providers/competitor.ts`) and **social listening**
+  (`providers/listening.ts`) — brand-level resolvers wired to activate once a
+  third-party competitive-intelligence / brand-monitoring integration is
+  configured. They return `null` (→ empty) until then; no connected social
+  account exposes that data.
+
+Mock data appears only when explicitly opted in for local previewing
+(`NEXT_PUBLIC_ANALYTICS_ALLOW_MOCK=true`); production is real-or-empty.
 
 ## Cross-channel followers
 

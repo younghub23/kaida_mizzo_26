@@ -82,10 +82,18 @@ export async function fetchLinkedIn(account: ConnectedAccount): Promise<Platform
       live.engagementRate = rate(interactions, totals.impressionCount)
     }
 
-    // Post-level org analytics need ugcPosts + per-share stats — left for later.
-    // trend/audience: org time-series + demographics endpoints exist but are left
-    // for later; followers: LinkedIn exposes aggregate demographics, not a roster.
-    return { kpis: overlayKpis('linkedin', live), posts: null, trend: null, audience: null, followers: null }
+    // Post-level org analytics (ugcPosts + per-share stats) — and the best-times,
+    // trend, audience and ROI they'd feed — are left for later; followers:
+    // LinkedIn exposes aggregate demographics, not a roster.
+    return {
+      kpis: overlayKpis('linkedin', live),
+      posts: null,
+      trend: null,
+      audience: null,
+      bestTimes: null,
+      roi: null,
+      followers: null,
+    }
   } catch (err) {
     logError('analytics/linkedin', 'LinkedIn live fetch failed; using fallback', err)
     return null

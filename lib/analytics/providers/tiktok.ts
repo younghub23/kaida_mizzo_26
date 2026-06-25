@@ -18,6 +18,7 @@ import {
   overlayKpis,
   rate,
   fetchJson,
+  computeBestTimes,
   type PlatformAnalytics,
   type ConnectedAccount,
 } from '@/lib/analytics/providers/util'
@@ -92,9 +93,24 @@ export async function fetchTikTok(account: ConnectedAccount): Promise<PlatformAn
       live.engagementRate = rate(likes + comments + shares, totalViews)
     }
 
-    // trend/audience: TikTok's time-series + audience endpoints are left for
-    // later; followers: the API exposes a follower count, not a roster.
-    return { kpis: overlayKpis('tiktok', live), posts: posts.length ? posts : null, trend: null, audience: null, followers: null }
+    // Best times: derived from real video timestamps + engagement.
+    const bestTimes = computeBestTimes(
+      videos.map((v) => ({
+        at: v.create_time ?? 0,
+        weight: (v.like_count ?? 0) + (v.comment_count ?? 0) + (v.share_count ?? 0),
+      }))
+    )
+    // trend/audience/roi: TikTok's time-series, audience and attribution endpoints
+    // are left for later; followers: the API exposes a count, not a roster.
+    return {
+      kpis: overlayKpis('tiktok', live),
+      posts: posts.length ? posts : null,
+      trend: null,
+      audience: null,
+      bestTimes: bestTimes.length ? bestTimes : null,
+      roi: null,
+      followers: null,
+    }
   } catch (err) {
     logError('analytics/tiktok', 'TikTok live fetch failed; using fallback', err)
     return null

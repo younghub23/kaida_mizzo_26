@@ -4,9 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Section, EmptyState } from '@/components/analytics/data-source'
-import { getSocialListening, type Network, type Mention } from '@/app/(dashboard)/analytics/mock-data'
-import { formatCompact, formatDelta } from '@/lib/analytics/format'
-import { ALLOW_MOCK_ANALYTICS } from '@/lib/analytics/config'
+import { type Mention, type ListeningData } from '@/app/(dashboard)/analytics/mock-data'
+import { formatCompact, formatDelta, sourceSuffix, type SectionSource } from '@/lib/analytics/format'
 import { PLAN_LABELS, PLAN_FEATURES } from '@/lib/analytics/plan'
 import { cn } from '@/lib/utils'
 
@@ -18,12 +17,21 @@ const SENTIMENT_META = {
   negative: { label: 'Negative', icon: Frown, color: 'var(--destructive)' },
 } as const
 
-export function SocialListening({ network, unlocked }: { network: Network; unlocked: boolean }) {
+export function SocialListening({
+  data,
+  source,
+  unlocked,
+}: {
+  // Brand-level — live once a brand-monitoring integration is configured.
+  data: ListeningData | null
+  source: SectionSource
+  unlocked: boolean
+}) {
   return (
     <Section
       title="Social listening &amp; sentiment"
       icon={Ear}
-      source={`Listening provider + Claude sentiment ${unlocked && !ALLOW_MOCK_ANALYTICS ? '(not connected)' : '(mock)'}`}
+      source={`Listening provider + Claude sentiment ${sourceSuffix(unlocked ? source : 'empty')}`}
       description="Brand-mention monitoring and sentiment across the web."
       action={
         <Badge variant={unlocked ? 'secondary' : 'outline'}>
@@ -31,19 +39,17 @@ export function SocialListening({ network, unlocked }: { network: Network; unloc
         </Badge>
       }
     >
-      {unlocked ? <UnlockedListening network={network} /> : <LockedListening />}
+      {unlocked ? <UnlockedListening data={data} /> : <LockedListening />}
     </Section>
   )
 }
 
-function UnlockedListening({ network }: { network: Network }) {
-  // No live listening provider yet, so real data only exists as mock in dev.
-  if (!ALLOW_MOCK_ANALYTICS) {
+function UnlockedListening({ data }: { data: ListeningData | null }) {
+  // Real-or-empty: no fabricated mentions are ever shown.
+  if (!data) {
     return <EmptyState message="Social listening requires a brand-monitoring integration (not connected yet)." />
   }
 
-  // Only fetched once we've confirmed the plan allows it.
-  const data = getSocialListening(network)
   const up = data.deltaPct >= 0
 
   return (

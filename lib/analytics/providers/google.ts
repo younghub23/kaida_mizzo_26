@@ -29,6 +29,8 @@ import type {
   LocationStat,
   AgeStat,
   Heatmap,
+  RoiRow,
+  RealNetwork,
 } from '@/app/(dashboard)/analytics/mock-data'
 import {
   overlayKpis,
@@ -232,6 +234,67 @@ async function fetchAudience(property: string, token: string): Promise<AudienceD
   }
 }
 
+// ---- ROI / conversion attribution -------------------------------------------
+function sourceToNetwork(src: string): RealNetwork {
+  const s = src.toLowerCase()
+  if (s.includes('instagram') || s === 'ig') return 'instagram'
+  if (s.includes('facebook') || s === 'fb' || s.includes('meta')) return 'facebook'
+  if (s.includes('tiktok')) return 'tiktok'
+  if (s.includes('linkedin')) return 'linkedin'
+  return 'google'
+}
+
+const SKIP_CAMPAIGN = new Set(['', '(not set)', '(organic)', '(direct)', '(referral)'])
+
+async function fetchRoi(property: string, token: string): Promise<RoiRow[] | null> {
+  // Sessions + revenue per campaign × source (totalRevenue is rock-solid).
+  const mainRows = await runReport(
+    property,
+    token,
+    {
+      dateRanges: LAST_28,
+      dimensions: [{ name: 'sessionCampaignName' }, { name: 'sessionSource' }],
+      metrics: [{ name: 'sessions' }, { name: 'totalRevenue' }],
+      orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+      limit: '10',
+    },
+    'roi'
+  )
+  if (!mainRows.length) return null
+
+  // Key events (conversions) per campaign — best-effort; if GA4 rejects the
+  // metric name the map is just empty and conversions show 0 (never faked).
+  const convRows = await runReport(
+    property,
+    token,
+    { dateRanges: LAST_28, dimensions: [{ name: 'sessionCampaignName' }], metrics: [{ name: 'keyEvents' }], limit: '50' },
+    'roi/conversions'
+  )
+  const conversions = new Map<string, number>()
+  for (const r of convRows) {
+    conversions.set(r.dimensionValues?.[0]?.value ?? '', Math.round(Number(r.metricValues?.[0]?.value ?? 0)))
+  }
+
+  const rows: RoiRow[] = []
+  for (const r of mainRows) {
+    const campaign = r.dimensionValues?.[0]?.value ?? ''
+    const source = r.dimensionValues?.[1]?.value ?? ''
+    const clicks = Math.round(Number(r.metricValues?.[0]?.value ?? 0))
+    const revenue = Math.round(Number(r.metricValues?.[1]?.value ?? 0))
+    if (SKIP_CAMPAIGN.has(campaign) || clicks <= 0) continue
+    rows.push({
+      postId: `ga4-${campaign}-${source}`,
+      caption: campaign,
+      platform: sourceToNetwork(source),
+      utmCampaign: campaign,
+      clicks,
+      conversions: conversions.get(campaign) ?? 0,
+      revenue,
+    })
+  }
+  return rows.length ? rows : null
+}
+
 type AccountSummaries = { accountSummaries?: { propertySummaries?: { property?: string }[] }[] }
 
 export async function fetchGoogle(account: ConnectedAccount): Promise<PlatformAnalytics | null> {
@@ -252,14 +315,17 @@ export async function fetchGoogle(account: ConnectedAccount): Promise<PlatformAn
     if (!property) return null
 
     // Each part is independent — partial data is fine, failures fall back to empty.
-    const [kpis, trend, audience] = await Promise.all([
+    const [kpis, trend, audience, roi] = await Promise.all([
       fetchKpis(property, token),
       fetchTrend(property, token),
       fetchAudience(property, token),
+      fetchRoi(property, token),
     ])
 
-    if (!kpis && !trend && !audience) return null
-    return { kpis, posts: null, trend, audience, followers: null }
+    if (!kpis && !trend && !audience && !roi) return null
+    // bestTimes: GA4 measures web traffic, not post engagement, so best-time-to-
+    // post stays null here (it comes from the social providers' real posts).
+    return { kpis, posts: null, trend, audience, bestTimes: null, roi, followers: null }
   } catch (err) {
     logError('analytics/google', 'Google live fetch failed; using fallback', err)
     return null

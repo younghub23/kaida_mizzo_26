@@ -33,6 +33,7 @@ import {
 import {
   overlayKpis,
   rate,
+  computeBestTimes,
   type PlatformAnalytics,
   type ConnectedAccount,
 } from '@/lib/analytics/providers/util'
@@ -177,12 +178,24 @@ async function fetchInstagram(token: string): Promise<PlatformAnalytics | null> 
   }
 
   const kpis = overlayKpis('instagram', live)
-  if (!kpis.length && !posts.length) return null
+  // Best times: derived from real media timestamps + engagement (empty until posts exist).
+  const bestTimes = computeBestTimes(
+    (media?.data ?? []).map((m) => ({ at: m.timestamp ?? '', weight: (m.like_count ?? 0) + (m.comments_count ?? 0) }))
+  )
+  if (!kpis.length && !posts.length && !bestTimes.length) return null
   // followers: the IG Graph API exposes only an aggregate follower count (the
   // `followers` KPI above), not a roster, so cross-channel matching stays null.
-  // trend/audience: Meta's time-series + audience insights need read_insights /
-  // instagram_manage_insights (App Review), so they stay null until granted.
-  return { kpis, posts: posts.length ? posts : null, trend: null, audience: null, followers: null }
+  // trend/audience/roi: Meta's time-series, audience insights and UTM revenue
+  // aren't exposed here, so they stay null until a source provides them.
+  return {
+    kpis,
+    posts: posts.length ? posts : null,
+    trend: null,
+    audience: null,
+    bestTimes: bestTimes.length ? bestTimes : null,
+    roi: null,
+    followers: null,
+  }
 }
 
 type FbPost = {
@@ -259,12 +272,30 @@ async function fetchFacebook(token: string): Promise<PlatformAnalytics | null> {
   }
 
   const kpis = overlayKpis('facebook', live)
-  if (!kpis.length && !posts.length) return null
+  // Best times: derived from real post timestamps + engagement (empty until posts exist).
+  const bestTimes = computeBestTimes(
+    (postsRes?.data ?? []).map((p) => ({
+      at: p.created_time ?? '',
+      weight:
+        (p.likes?.summary?.total_count ?? 0) +
+        (p.comments?.summary?.total_count ?? 0) +
+        (p.shares?.count ?? 0),
+    }))
+  )
+  if (!kpis.length && !posts.length && !bestTimes.length) return null
   // followers: Facebook Pages expose only an aggregate fan/follower count (the
   // `followers` KPI above), not a roster, so cross-channel matching stays null.
-  // trend/audience: Meta's time-series + audience insights need read_insights /
-  // instagram_manage_insights (App Review), so they stay null until granted.
-  return { kpis, posts: posts.length ? posts : null, trend: null, audience: null, followers: null }
+  // trend/audience/roi: Meta's time-series, audience insights and UTM revenue
+  // aren't exposed here, so they stay null until a source provides them.
+  return {
+    kpis,
+    posts: posts.length ? posts : null,
+    trend: null,
+    audience: null,
+    bestTimes: bestTimes.length ? bestTimes : null,
+    roi: null,
+    followers: null,
+  }
 }
 
 /** Provider entry point. Returns live data where readable, or null when nothing
