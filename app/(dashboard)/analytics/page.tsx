@@ -3,7 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
 import { AnalyticsDashboard } from './analytics-dashboard'
 import { loadAnalytics } from '@/lib/analytics/load'
-import { getCurrentPlan, canUseSocialListening, PLAN_LABELS } from '@/lib/analytics/plan'
+import { canUseSocialListening, PLAN_LABELS } from '@/lib/analytics/plan'
+import { getCurrentPlan } from '@/lib/plan/server'
 
 export default async function AnalyticsPage() {
   // Mirror the other dashboard pages: server-side auth guard.
@@ -16,8 +17,8 @@ export default async function AnalyticsPage() {
     redirect('/login')
   }
 
-  // SOURCE: subscription tier (mock) — see lib/analytics/plan.ts.
-  const plan = getCurrentPlan()
+  // Live subscription tier from profiles.plan — see lib/plan/server.ts.
+  const plan = await getCurrentPlan()
   const socialListeningUnlocked = canUseSocialListening(plan)
 
   // Live-where-connected, mock-otherwise. Reads social_accounts tokens.
