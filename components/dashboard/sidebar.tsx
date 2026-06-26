@@ -55,13 +55,23 @@ export function Sidebar({
                 key={link.label}
                 href={link.href}
                 className={cn(
-                  'flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors',
+                  'relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors',
                   isActive
-                    ? 'bg-accent text-foreground'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    ? 'font-semibold text-foreground'
+                    : 'font-medium text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
+                style={
+                  isActive ? { background: 'linear-gradient(100deg,#F9E4EE,#EAE3D6)' } : undefined
+                }
               >
-                <Icon className={cn('size-4', isActive && 'text-primary')} />
+                {isActive && (
+                  <span
+                    aria-hidden
+                    className="absolute inset-y-2 left-0 w-[3px] rounded-full"
+                    style={{ background: 'linear-gradient(#D6488C,#E08A3C)' }}
+                  />
+                )}
+                <Icon className="size-4" style={isActive ? { color: '#D6488C' } : undefined} />
                 {link.label}
               </Link>
             )
@@ -71,7 +81,11 @@ export function Sidebar({
         <div className="flex flex-col gap-2 border-t border-border pt-4">
           <p className="truncate px-2.5 text-sm font-medium">{businessName}</p>
           <form action={logout}>
-            <Button type="submit" variant="outline" className="w-full justify-start gap-2.5">
+            <Button
+              type="submit"
+              variant="outline"
+              className="w-full justify-start gap-2.5 hover:border-[rgba(200,71,46,.35)] hover:bg-[rgba(200,71,46,.07)] hover:text-[#C8472E]"
+            >
               <LogOut className="size-4" />
               Log out
             </Button>
