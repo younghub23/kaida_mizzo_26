@@ -26,7 +26,12 @@ export function NewsletterSignup() {
         aria-label="Email address"
         className="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
       />
-      <Button type="submit" size="sm">
+      <Button
+        type="submit"
+        size="sm"
+        className="border-0 text-white transition-[filter] hover:brightness-105"
+        style={{ background: 'linear-gradient(120deg,#D6488C,#C8472E,#E08A3C)' }}
+      >
         Subscribe
       </Button>
     </form>

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, Search, MessageCircle, User } from 'lucide-react'
+import { Menu, MessageCircle, User } from 'lucide-react'
 
 // Friendly names for the current-page label beside the logo.
 const PAGE_NAMES: Record<string, string> = {
@@ -23,16 +23,27 @@ function currentPageName(pathname: string): string | null {
   return match ? PAGE_NAMES[match] : null
 }
 
-const iconButton =
-  'flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground'
+// Round, hairline-bordered action buttons (see the design reference).
+const roundButton =
+  'flex size-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground'
 
-export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
+export function TopBar({
+  onToggleSidebar,
+  onToggleChat,
+}: {
+  onToggleSidebar: () => void
+  onToggleChat: () => void
+}) {
   const pathname = usePathname()
   const page = currentPageName(pathname)
 
   return (
     <header className="tala-theme sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-card px-3 text-foreground sm:px-4">
-      <button onClick={onToggleSidebar} aria-label="Toggle sidebar" className={iconButton}>
+      <button
+        onClick={onToggleSidebar}
+        aria-label="Toggle sidebar"
+        className="flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
         <Menu className="size-5" />
       </button>
 
@@ -45,22 +56,18 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
         )}
       </Link>
 
-      <div className="relative ml-2 hidden max-w-md flex-1 md:block">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          type="search"
-          placeholder="Search Tala…"
-          aria-label="Search"
-          className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-        />
-      </div>
-
-      <div className="ml-auto flex items-center gap-1">
-        <Link href="/ai" aria-label="AI quick chat" className={iconButton}>
-          <MessageCircle className="size-5" />
-        </Link>
-        <Link href="/profile" aria-label="Profile" className={iconButton}>
-          <User className="size-5" />
+      <div className="ml-auto flex items-center gap-2">
+        <button
+          type="button"
+          data-chat-toggle
+          onClick={onToggleChat}
+          aria-label="AI chat"
+          className="flex size-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:border-transparent hover:bg-[#DCF1F2] hover:text-[#1E7B82]"
+        >
+          <MessageCircle className="size-[18px]" />
+        </button>
+        <Link href="/profile" aria-label="Profile" className={roundButton}>
+          <User className="size-[18px]" />
         </Link>
       </div>
     </header>
