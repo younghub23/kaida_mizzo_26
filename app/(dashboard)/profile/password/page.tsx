@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { PasswordForm } from './password-form'
+import { PageHeading } from '../page-heading'
 
 export default async function PasswordPage() {
   const supabase = await createClient()
@@ -14,12 +15,10 @@ export default async function PasswordPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Tala Password</h1>
-        <p className="text-sm text-muted-foreground">
-          The password you use to sign in to Tala.
-        </p>
-      </div>
+      <PageHeading
+        title="Tala Password"
+        subtitle="The password you use to sign in to Tala."
+      />
       <PasswordForm />
     </div>
   )

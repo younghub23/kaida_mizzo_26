@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { LinkedAccounts, type ConnectedAccount } from './linked-accounts'
+import { PageHeading } from '../page-heading'
 
 const PROVIDER_LABELS: Record<string, string> = {
   email: 'Email & password',
@@ -42,12 +43,10 @@ export default async function LinkedAccountsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Linked Accounts</h1>
-        <p className="text-sm text-muted-foreground">
-          Social profiles and sign-in methods connected to Tala.
-        </p>
-      </div>
+      <PageHeading
+        title="Linked Accounts"
+        subtitle="Social profiles and sign-in methods connected to Tala."
+      />
 
       <Card>
         <CardHeader>

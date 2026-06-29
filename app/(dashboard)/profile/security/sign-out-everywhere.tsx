@@ -11,7 +11,7 @@ export function SignOutEverywhere() {
   return (
     <Button
       variant="outline"
-      className="gap-2"
+      className="gap-2 hover:border-[rgba(200,71,46,.35)] hover:bg-[rgba(200,71,46,.07)] hover:text-[#C8472E]"
       disabled={pending}
       onClick={() => startTransition(() => signOutEverywhere())}
     >

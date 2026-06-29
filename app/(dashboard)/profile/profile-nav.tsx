@@ -40,11 +40,28 @@ export function ProfileNav() {
             key={link.href}
             href={link.href}
             className={cn(
-              'flex shrink-0 items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted md:rounded-lg',
-              isActive && 'bg-muted text-foreground'
+              'relative flex shrink-0 items-center gap-3 rounded-full px-4 py-2.5 text-sm transition-colors md:rounded-lg',
+              isActive
+                ? 'font-semibold text-foreground'
+                : 'font-medium text-muted-foreground hover:bg-muted hover:text-foreground'
             )}
+            style={
+              isActive
+                ? { background: 'linear-gradient(100deg,#F9E4EE,#EAE3D6)' }
+                : undefined
+            }
           >
-            <Icon className="size-4 shrink-0" />
+            {isActive && (
+              <span
+                aria-hidden
+                className="absolute inset-y-2 left-0 w-[3px] rounded-full"
+                style={{ background: 'linear-gradient(#D6488C,#E08A3C)' }}
+              />
+            )}
+            <Icon
+              className="size-4 shrink-0"
+              style={isActive ? { color: '#D6488C' } : undefined}
+            />
             <span className="whitespace-nowrap">{link.label}</span>
           </Link>
         )

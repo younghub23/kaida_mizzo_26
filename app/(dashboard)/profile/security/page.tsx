@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { SignOutEverywhere } from './sign-out-everywhere'
+import { PageHeading } from '../page-heading'
 
 function formatDateTime(value: string | undefined) {
   if (!value) return 'Unknown'
@@ -40,12 +41,10 @@ export default async function SecurityPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Security &amp; Sign-In</h1>
-        <p className="text-sm text-muted-foreground">
-          Keep your account secure and manage how you sign in.
-        </p>
-      </div>
+      <PageHeading
+        title="Security & Sign-In"
+        subtitle="Keep your account secure and manage how you sign in."
+      />
 
       <Card>
         <CardHeader>

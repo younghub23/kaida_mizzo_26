@@ -200,3 +200,16 @@
   height: 5px;
   background-image: linear-gradient(90deg, #d6488c, #f4c96d, #36b6c0, #e08a3c);
 }
+
+/* ── Profile / Settings warm pass ─────────────────────────────────────────
+   Scoped to the Profile area (the layout root carries `profile-warm`), this
+   gives card titles the Fredoka editorial face and lifts each card with the
+   signature inset top-highlight — matching the dashboard's warm surfaces
+   without affecting the other tala-theme pages. */
+.profile-warm [data-slot="card-title"] {
+  font-family: var(--font-fredoka), sans-serif;
+  font-weight: 600;
+}
+.profile-warm [data-slot="card"] {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+}

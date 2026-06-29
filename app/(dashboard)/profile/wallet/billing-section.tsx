@@ -86,7 +86,7 @@ export function BillingSection({
   return (
     <section className="flex flex-col gap-4">
       <div>
-        <h2 className="text-lg font-semibold">Your Plan</h2>
+        <h2 className="font-fredoka text-xl font-semibold">Your Plan</h2>
         <p className="text-sm text-muted-foreground">
           Change your subscription tier or manage billing.
         </p>
@@ -142,7 +142,10 @@ export function BillingSection({
           return (
             <Card
               key={option.tier}
-              className={cn('flex flex-col', isCurrent && 'ring-2 ring-primary')}
+              className={cn(
+                'flex flex-col',
+                isCurrent && 'ring-2 ring-[#D6488C] ring-offset-2 ring-offset-background'
+              )}
             >
               <CardHeader>
                 <CardTitle className="flex items-center justify-between gap-2">
@@ -166,7 +169,7 @@ export function BillingSection({
               </CardContent>
               <CardFooter>
                 <Button
-                  variant={isCurrent ? 'secondary' : 'outline'}
+                  variant={isCurrent ? 'secondary' : 'default'}
                   className="w-full"
                   disabled={isCurrent || loading}
                   onClick={() =>
