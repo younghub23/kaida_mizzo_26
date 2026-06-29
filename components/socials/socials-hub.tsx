@@ -22,7 +22,7 @@ export function SocialsHub({
   businessName: string
   canSync: boolean
   contactCount: number
-  sources: string[]
+  sources: { name: string; count: number }[]
 }) {
   const [selected, setSelected] = useState<PlatformId | null>(null)
 

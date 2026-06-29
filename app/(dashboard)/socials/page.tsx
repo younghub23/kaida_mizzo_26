@@ -22,7 +22,11 @@ export default async function SocialsPage() {
   ])
 
   const canSync = canUseWebsiteSync(plan)
-  const sources = Array.from(new Set(contacts.map((c) => c.source))).filter(Boolean)
+  const sourceCounts = contacts.reduce<Record<string, number>>((acc, c) => {
+    if (c.source) acc[c.source] = (acc[c.source] ?? 0) + 1
+    return acc
+  }, {})
+  const sources = Object.entries(sourceCounts).map(([name, count]) => ({ name, count }))
   const businessName = profileRes.data?.full_name || 'yourbrand'
 
   return (
@@ -30,7 +34,7 @@ export default async function SocialsPage() {
       {/* header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-baloo text-4xl font-extrabold leading-[1.05] text-foreground sm:text-5xl">
+          <h1 className="font-fredoka text-4xl font-bold leading-[1.05] text-foreground sm:text-5xl">
             Socials
           </h1>
           <p className="mt-2 font-dm-serif text-lg italic text-muted-foreground sm:text-xl">

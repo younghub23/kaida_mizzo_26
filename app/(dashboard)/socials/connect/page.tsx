@@ -168,7 +168,7 @@ export default function ConnectAccountsPage() {
           <ArrowLeft className="size-4" />
           Back to Socials
         </Link>
-        <h1 className="mt-2 font-baloo text-3xl font-extrabold text-primary">Connect Your Accounts</h1>
+        <h1 className="mt-2 font-fredoka text-3xl font-bold text-primary">Connect Your Accounts</h1>
         <p className="text-sm text-muted-foreground">
           Link your social profiles to schedule and publish posts from Tala.
         </p>

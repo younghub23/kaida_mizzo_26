@@ -7,16 +7,16 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  /* Tala brand board faces: Poppins body, Baloo 2 display. The legacy
-     fredoka/dm-serif utilities are aliased onto the brand faces so existing
-     markup re-skins without edits. */
+  /* Tala faces: Poppins body, Fredoka 700 display, DM Serif Display italic
+     accent. The legacy --font-baloo utility is aliased onto Fredoka so markup
+     that used it keeps working. */
   --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
-  --font-baloo: var(--font-baloo), "Baloo 2", system-ui, sans-serif;
   --font-poppins: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
-  --font-fredoka: var(--font-baloo), "Baloo 2", system-ui, sans-serif;
+  --font-fredoka: var(--font-fredoka), "Fredoka", system-ui, sans-serif;
+  --font-baloo: var(--font-fredoka), "Fredoka", system-ui, sans-serif;
   --font-dm-serif: var(--font-dm-serif), "DM Serif Display", serif;
-  --font-heading: var(--font-baloo), "Baloo 2", system-ui, sans-serif;
+  --font-heading: var(--font-fredoka), "Fredoka", system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -56,11 +56,6 @@
 }
 
 :root {
-  /* Raw alias so inline `var(--font-fredoka)` consumers resolve to the Baloo 2
-     display face (the @theme tokens above only emit utilities, not custom
-     properties). `--font-dm-serif` is defined directly by next/font. */
-  --font-fredoka: var(--font-baloo), "Baloo 2", system-ui, sans-serif;
-
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -237,10 +232,10 @@
   font-weight: 600;
 }
 
-/* Themed card titles speak in the Baloo 2 display voice from the brand board. */
+/* Themed card titles speak in the Fredoka display voice. */
 .tala-theme [data-slot="card-title"] {
-  font-family: var(--font-baloo), "Baloo 2", system-ui, sans-serif;
-  font-weight: 600;
+  font-family: var(--font-fredoka), "Fredoka", system-ui, sans-serif;
+  font-weight: 700;
 }
 .profile-warm [data-slot="card"] {
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;

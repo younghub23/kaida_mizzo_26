@@ -106,7 +106,7 @@ export function ChannelComposer({
           <BrandLogo id={platform.id} />
         </span>
         <div className="min-w-0">
-          <h2 className="font-baloo text-lg font-bold leading-tight">{platform.label}</h2>
+          <h2 className="font-fredoka text-lg font-bold leading-tight">{platform.label}</h2>
           <p className="truncate text-xs text-muted-foreground">
             Posting to @{username} · Feed post
           </p>

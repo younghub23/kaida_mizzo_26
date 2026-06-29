@@ -49,10 +49,10 @@ export function Sidebar({
       <div className="flex h-full w-64 flex-col overflow-y-auto p-4">
         {/* logo */}
         <Link href="/dashboard" className="flex items-center gap-2.5 px-1.5 py-1">
-          <span className="tala-grad flex size-9 items-center justify-center rounded-xl font-baloo text-lg font-extrabold lowercase text-white shadow-sm">
+          <span className="tala-grad flex size-9 items-center justify-center rounded-xl font-fredoka text-lg font-bold lowercase text-white shadow-sm">
             t
           </span>
-          <span className="font-baloo text-2xl font-extrabold text-foreground">Tala</span>
+          <span className="font-fredoka text-2xl font-bold text-foreground">Tala</span>
         </Link>
 
         <p className="mt-7 px-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -97,7 +97,7 @@ export function Sidebar({
         <div className="mt-auto flex flex-col gap-3 pt-4">
           <div className="flex items-center gap-2.5 rounded-xl border border-border bg-secondary/40 p-2.5">
             <span
-              className="tala-grad-soft flex size-9 shrink-0 items-center justify-center rounded-lg font-baloo text-base font-extrabold text-white"
+              className="tala-grad-soft flex size-9 shrink-0 items-center justify-center rounded-lg font-fredoka text-base font-bold text-white"
             >
               {initial}
             </span>

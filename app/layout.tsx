@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Baloo_2, Poppins, DM_Serif_Display } from "next/font/google";
+import { Geist_Mono, Fredoka, Poppins, DM_Serif_Display } from "next/font/google";
 import Script from "next/script";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -14,14 +14,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Tala brand board typography: Baloo 2 is the rounded display face (logo,
-// headings); Poppins is the body face with a light-italic accent. The legacy
-// --font-fredoka / --font-dm-serif utilities are aliased onto these in
-// globals.css so existing markup picks up the brand fonts automatically.
-const baloo = Baloo_2({
+// Tala typography: Fredoka 700 is the rounded display face (logo, headings);
+// Poppins is the body face. The legacy --font-baloo utility is aliased onto
+// Fredoka in globals.css so existing markup picks up the display font.
+const fredoka = Fredoka({
   subsets: ["latin"],
-  weight: ["500", "700", "800"],
-  variable: "--font-baloo",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-fredoka",
   display: "swap",
 });
 
@@ -55,7 +54,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${poppins.variable} ${baloo.variable} ${dmSerif.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${poppins.variable} ${fredoka.variable} ${dmSerif.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}

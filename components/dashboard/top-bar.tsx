@@ -87,7 +87,7 @@ export function TopBar({
         <Link
           href="/profile"
           aria-label="Profile"
-          className="tala-grad flex size-9 items-center justify-center rounded-full font-baloo text-sm font-extrabold text-white shadow-sm"
+          className="tala-grad flex size-9 items-center justify-center rounded-full font-fredoka text-sm font-bold text-white shadow-sm"
         >
           {initial}
         </Link>
