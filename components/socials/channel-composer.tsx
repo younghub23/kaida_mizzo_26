@@ -2,10 +2,9 @@
 
 import { useActionState, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { ImagePlus, Loader2, Sparkles, Calendar, Clock, X } from 'lucide-react'
+import { ImagePlus, Loader2, Sparkles, Clock, X, Send, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { AIAssistant } from '@/components/ai/AIAssistant'
 import { savePost, getPosts, deletePost, type ScheduledPost, type SocialActionState } from '@/app/actions/social'
@@ -18,8 +17,9 @@ import { GenericPreview } from '@/components/socials/previews/generic-preview'
 
 const INITIAL: SocialActionState = { error: null, success: false }
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'))
-const MINUTES = ['00', '15', '30', '45']
+const fieldLabel = 'font-fredoka text-[12.5px] font-medium text-foreground'
+const warmInput =
+  'w-full rounded-[11px] border border-[rgba(164,141,120,0.34)] bg-card px-[13px] py-2.5 text-[13.5px] text-foreground outline-none transition-[border-color,box-shadow] focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-[rgba(164,141,120,0.15)]'
 
 export function ChannelComposer({
   platform,
@@ -37,11 +37,13 @@ export function ChannelComposer({
   const [mediaUrl, setMediaUrl] = useState('')
   const [uploading, setUploading] = useState(false)
   const [date, setDate] = useState('')
-  const [hour, setHour] = useState('09')
-  const [minute, setMinute] = useState('00')
+  const [time, setTime] = useState('09:00')
   const [timezone, setTimezone] = useState<string>(TIMEZONES[0].value)
   const [intent, setIntent] = useState<'draft' | 'schedule' | 'now'>('schedule')
   const [aiOpen, setAiOpen] = useState(false)
+  // Presentational-only fields — not part of savePost's contract.
+  const [firstComment, setFirstComment] = useState('')
+  const [hashtags, setHashtags] = useState('')
 
   const [posts, setPosts] = useState<ScheduledPost[]>([])
 
@@ -91,174 +93,275 @@ export function ChannelComposer({
   }
 
   const overLimit = platform.charLimit !== null && caption.length > platform.charLimit
-  const previewData = { username, caption, mediaUrl }
+  const previewData = { username, caption, mediaUrl, accent: platform.ring }
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* header */}
-      <div className="flex items-center gap-3">
+    <div className="overflow-hidden rounded-[14px] border border-border bg-card shadow-[0_1px_0_rgba(255,255,255,.6)_inset]">
+      {/* ── Composer top bar ── */}
+      <div className="flex items-center gap-3 border-b border-border px-[22px] py-4">
         <span
-          className="flex size-7 items-center justify-center rounded-lg p-1 text-white"
+          className="flex size-10 items-center justify-center rounded-[11px] text-white shadow-[0_4px_14px_rgba(58,46,34,.16)]"
           style={{ background: platform.gradient }}
         >
-          <BrandLogo id={platform.id} />
+          <span className="size-[21px]">
+            <BrandLogo id={platform.id} />
+          </span>
         </span>
-        <h2 className="text-xl font-semibold">{platform.label}</h2>
+        <div className="min-w-0">
+          <div className="font-fredoka text-base font-semibold leading-tight">{platform.label}</div>
+          <div className="truncate text-xs text-muted-foreground">
+            Posting to @{username} · {platform.postType}
+          </div>
+        </div>
         {onClose && (
-          <Button variant="ghost" size="sm" onClick={onClose} className="ml-auto gap-1.5">
-            <X className="size-4" />
-            Close
-          </Button>
+          <button
+            type="button"
+            onClick={onClose}
+            title="Close"
+            className="ml-auto flex size-9 items-center justify-center rounded-[10px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <X className="size-5" />
+          </button>
         )}
       </div>
 
-      <form className="grid gap-6 lg:grid-cols-2">
-        {/* ---------- live preview ---------- */}
-        <div className="flex flex-col gap-3">
-          <p className="text-sm font-medium text-muted-foreground">Live preview</p>
-          <div className="rounded-2xl bg-muted/40 p-4 sm:p-6">
-            {platform.id === 'instagram' && <InstagramPreview {...previewData} />}
-            {platform.id === 'x' && <XPreview {...previewData} />}
-            {platform.id === 'linkedin' && <LinkedInPreview {...previewData} />}
-            {!platform.dedicated && <GenericPreview {...previewData} label={platform.label} />}
-          </div>
-        </div>
-
-        {/* ---------- editor ---------- */}
-        <div className="flex flex-col gap-4">
-          {/* media */}
-          <div className="flex flex-col gap-1.5">
-            <Label>Visual content</Label>
-            <div className="flex items-center gap-3">
-              <Button type="button" variant="outline" size="sm" asChild className="gap-1.5">
-                <label className="cursor-pointer">
-                  {uploading ? <Loader2 className="size-3.5 animate-spin" /> : <ImagePlus className="size-3.5" />}
-                  Upload image / video
-                  <input type="file" accept="image/*,video/*" className="hidden" onChange={handleUpload} />
-                </label>
-              </Button>
-              {mediaUrl && (
-                <button
-                  type="button"
-                  onClick={() => setMediaUrl('')}
-                  className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive"
-                >
-                  <X className="size-3.5" /> Remove
-                </button>
-              )}
-            </div>
-          </div>
-
+      {/* ── Body: compose | live preview ── */}
+      <form className="grid grid-cols-1 lg:grid-cols-[1fr_360px]">
+        {/* compose column */}
+        <div className="flex flex-col gap-4 p-[22px]">
           {/* caption */}
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="caption">Caption</Label>
+          <div>
+            <div className="mb-[7px] flex items-center justify-between">
+              <span className={fieldLabel}>Caption</span>
               {platform.charLimit !== null && (
-                <span className={cn('text-xs text-muted-foreground', overLimit && 'font-medium text-destructive')}>
-                  {caption.length} / {platform.charLimit}
+                <span
+                  className={cn(
+                    'text-xs text-muted-foreground',
+                    overLimit && 'font-medium text-destructive'
+                  )}
+                >
+                  {caption.length.toLocaleString()} / {platform.charLimit.toLocaleString()}
                 </span>
               )}
             </div>
-            <textarea
-              id="caption"
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              rows={6}
-              placeholder={`Write your ${platform.label} caption…`}
-              className="w-full resize-none rounded-lg border border-input bg-transparent p-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-            />
-            <Button type="button" variant="outline" size="sm" className="w-fit gap-1.5" onClick={() => setAiOpen(true)}>
-              <Sparkles className="size-3.5" />
-              AI Assist
-            </Button>
-          </div>
-
-          {/* schedule */}
-          <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
-            <p className="flex items-center gap-1.5 text-sm font-medium">
-              <Calendar className="size-4" /> Schedule
-            </p>
-            <div className="flex flex-wrap items-end gap-3">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="date" className="text-xs">Date</Label>
-                <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label className="flex items-center gap-1 text-xs"><Clock className="size-3" /> Time</Label>
-                <div className="flex gap-1.5">
-                  <select value={hour} onChange={(e) => setHour(e.target.value)} className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm">
-                    {HOURS.map((h) => <option key={h} value={h}>{h}</option>)}
-                  </select>
-                  <span className="self-center">:</span>
-                  <select value={minute} onChange={(e) => setMinute(e.target.value)} className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm">
-                    {MINUTES.map((m) => <option key={m} value={m}>{m}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Timezone</Label>
-                <select value={timezone} onChange={(e) => setTimezone(e.target.value)} className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm">
-                  {TIMEZONES.map((tz) => <option key={tz.value} value={tz.value}>{tz.label}</option>)}
-                </select>
-              </div>
+            <div className="relative">
+              <textarea
+                id="caption"
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                placeholder={`Write your post…\n\nShare what's new with your followers — a product drop, a behind-the-scenes moment, an offer.`}
+                className="min-h-[128px] w-full resize-y rounded-[12px] border border-[rgba(164,141,120,0.34)] bg-card px-4 py-3.5 text-sm leading-[1.55] text-foreground outline-none transition-[border-color,box-shadow] focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-[rgba(164,141,120,0.15)]"
+              />
+              <button
+                type="button"
+                onClick={() => setAiOpen(true)}
+                className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-[9px] border border-[rgba(214,72,140,0.25)] bg-[linear-gradient(120deg,rgba(214,72,140,.12),rgba(224,138,60,.12))] px-2.5 py-1.5 font-fredoka text-xs font-medium text-[#A82C66] transition-[transform,background] hover:-translate-y-px hover:bg-[linear-gradient(120deg,rgba(214,72,140,.2),rgba(224,138,60,.2))]"
+              >
+                <Sparkles className="size-3.5" />
+                Draft with AI
+              </button>
             </div>
           </div>
 
-          {/* hidden fields submitted to savePost */}
+          {/* media dropzone */}
+          <label className="flex cursor-pointer items-center gap-3.5 rounded-[12px] border-[1.5px] border-dashed border-[rgba(164,141,120,0.34)] bg-[rgba(234,227,214,0.3)] p-[22px] transition-colors hover:border-primary hover:bg-[rgba(234,227,214,0.55)]">
+            <span className="flex size-[42px] shrink-0 items-center justify-center rounded-[11px] border border-border bg-card">
+              {uploading ? (
+                <Loader2 className="size-[21px] animate-spin text-primary" />
+              ) : (
+                <ImagePlus className="size-[21px] text-primary" strokeWidth={1.7} />
+              )}
+            </span>
+            <span className="min-w-0">
+              <span className="block font-fredoka text-[13.5px] font-medium">
+                {mediaUrl ? 'Media added' : 'Add media'}
+              </span>
+              <span className="block truncate text-xs text-muted-foreground">
+                {mediaUrl
+                  ? 'Click to replace your upload'
+                  : 'Drag & drop or click to upload — JPG, PNG, MP4 up to 50MB'}
+              </span>
+            </span>
+            {mediaUrl && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault()
+                  setMediaUrl('')
+                }}
+                className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-destructive"
+              >
+                <X className="size-3.5" /> Remove
+              </button>
+            )}
+            <input
+              type="file"
+              accept="image/*,video/*"
+              className="hidden"
+              onChange={handleUpload}
+            />
+          </label>
+
+          {/* optional fields (presentational) */}
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <div>
+              <div className="mb-[7px]">
+                <span className={fieldLabel}>
+                  First comment{' '}
+                  <span className="font-normal text-muted-foreground">(optional)</span>
+                </span>
+              </div>
+              <input
+                value={firstComment}
+                onChange={(e) => setFirstComment(e.target.value)}
+                placeholder={`@${username}`}
+                className={warmInput}
+              />
+            </div>
+            <div>
+              <div className="mb-[7px]">
+                <span className={fieldLabel}>
+                  Hashtags <span className="font-normal text-muted-foreground">(optional)</span>
+                </span>
+              </div>
+              <input
+                value={hashtags}
+                onChange={(e) => setHashtags(e.target.value)}
+                placeholder="#smallbiz #behindthescenes"
+                className={warmInput}
+              />
+            </div>
+          </div>
+
+          <div className="h-px bg-border" />
+
+          {/* schedule */}
+          <div>
+            <div className="mb-[7px]">
+              <span className={fieldLabel}>Schedule</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-[1.3fr_1fr_1.2fr]">
+              <Input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className={warmInput}
+              />
+              <Input
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className={warmInput}
+              />
+              <select
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                className={cn(warmInput, 'col-span-2 sm:col-span-1')}
+              >
+                {TIMEZONES.map((tz) => (
+                  <option key={tz.value} value={tz.value}>
+                    {tz.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* hidden fields submitted to savePost (unchanged contract) */}
           <input type="hidden" name="platform" value={platform.id} />
           <input type="hidden" name="content" value={caption} />
           <input type="hidden" name="imageUrl" value={mediaUrl} />
           <input type="hidden" name="date" value={date} />
-          <input type="hidden" name="time" value={`${hour}:${minute}`} />
+          <input type="hidden" name="time" value={time} />
           <input type="hidden" name="timezone" value={timezone} />
           <input type="hidden" name="intent" value={intent} />
 
           {/* actions */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
             <Button
               type="submit"
               formAction={formAction}
               disabled={isPending || overLimit}
-              onClick={() => setIntent('schedule')}
+              onClick={() => setIntent('now')}
+              className="h-9 gap-2 px-4 font-fredoka max-sm:w-full"
             >
-              {isPending && intent === 'schedule' ? <Loader2 className="size-4 animate-spin" /> : 'Schedule Post'}
+              {isPending && intent === 'now' ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <>
+                  <Send className="size-4" />
+                  Post now
+                </>
+              )}
             </Button>
             <Button
               type="submit"
               variant="outline"
               formAction={formAction}
               disabled={isPending || overLimit}
-              onClick={() => setIntent('draft')}
+              onClick={() => setIntent('schedule')}
+              className="h-9 gap-2 px-4 font-fredoka max-sm:w-full"
             >
-              {isPending && intent === 'draft' ? <Loader2 className="size-4 animate-spin" /> : 'Save Draft'}
+              {isPending && intent === 'schedule' ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <>
+                  <Clock className="size-4" />
+                  Schedule
+                </>
+              )}
             </Button>
             <Button
               type="submit"
               variant="ghost"
               formAction={formAction}
               disabled={isPending || overLimit}
-              onClick={() => setIntent('now')}
+              onClick={() => setIntent('draft')}
+              className="h-9 px-4 font-fredoka max-sm:w-full"
             >
-              {isPending && intent === 'now' ? <Loader2 className="size-4 animate-spin" /> : 'Post now'}
+              {isPending && intent === 'draft' ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                'Save draft'
+              )}
             </Button>
           </div>
         </div>
+
+        {/* live preview column */}
+        <div className="flex flex-col gap-3.5 border-t border-border bg-[linear-gradient(180deg,rgba(234,227,214,.4),rgba(234,227,214,.18))] p-[22px] lg:border-l lg:border-t-0">
+          <span className="font-fredoka text-[10.5px] font-semibold uppercase tracking-[0.18em] text-primary">
+            Live preview
+          </span>
+          {platform.id === 'instagram' && <InstagramPreview {...previewData} />}
+          {platform.id === 'x' && <XPreview {...previewData} />}
+          {platform.id === 'linkedin' && <LinkedInPreview {...previewData} />}
+          {!platform.dedicated && <GenericPreview {...previewData} label={platform.label} />}
+          <p className="text-center font-dm-serif text-[11.5px] italic text-muted-foreground">
+            {platform.previewFootnote}
+          </p>
+        </div>
       </form>
 
-      {/* scheduled & drafts for this channel */}
+      {/* ── Scheduled & drafts for this channel ── */}
       {posts.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <h2 className="text-sm font-medium text-muted-foreground">Scheduled & drafts</h2>
+        <div className="flex flex-col gap-2 border-t border-border p-[22px]">
+          <span className="font-fredoka text-[10.5px] font-semibold uppercase tracking-[0.18em] text-primary">
+            Scheduled &amp; drafts
+          </span>
           <div className="flex flex-col gap-2">
             {posts.map((post) => (
-              <div key={post.id} className="flex items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm">
+              <div
+                key={post.id}
+                className="flex items-center gap-3 rounded-[11px] border border-border bg-card px-3 py-2 text-sm"
+              >
                 <span
                   className={cn(
-                    'rounded-full px-2 py-0.5 text-xs font-medium',
-                    post.status === 'draft' && 'bg-muted text-muted-foreground',
-                    post.status === 'scheduled' && 'bg-blue-100 text-blue-700',
-                    post.status === 'published' && 'bg-green-100 text-green-700',
-                    post.status === 'failed' && 'bg-red-100 text-red-700'
+                    'rounded-full px-2 py-0.5 text-xs font-medium capitalize',
+                    post.status === 'draft' && 'bg-accent text-muted-foreground',
+                    post.status === 'scheduled' && 'bg-[#F9E4EE] text-[#A82C66]',
+                    post.status === 'published' && 'bg-[#DCF1F2] text-[#1E7B82]',
+                    post.status === 'failed' && 'bg-[#FBE7E0] text-[#B5604A]'
                   )}
                 >
                   {post.status}
@@ -276,9 +379,9 @@ export function ChannelComposer({
                       void refresh()
                     } else toast.error(res.error ?? 'Failed to delete')
                   }}
-                  className="text-muted-foreground hover:text-destructive"
+                  className="text-muted-foreground transition-colors hover:text-destructive"
                 >
-                  <X className="size-4" />
+                  <Trash2 className="size-4" />
                 </button>
               </div>
             ))}
@@ -286,7 +389,12 @@ export function ChannelComposer({
         </div>
       )}
 
-      <AIAssistant isOpen={aiOpen} onClose={() => setAiOpen(false)} onSelect={(t) => setCaption(t)} defaultType="social" />
+      <AIAssistant
+        isOpen={aiOpen}
+        onClose={() => setAiOpen(false)}
+        onSelect={(t) => setCaption(t)}
+        defaultType="social"
+      />
     </div>
   )
 }
