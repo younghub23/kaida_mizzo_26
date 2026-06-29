@@ -22,6 +22,9 @@ export type PlatformMeta = {
   /** Single text field char limit for the composer (null = generous/none). */
   charLimit: number | null
   dedicated: boolean
+  /** Whether this channel can be posted to from the Socials hub. Google is
+   *  connected for Analytics only, not posting. */
+  postable: boolean
 }
 
 export const PLATFORMS: Record<PlatformId, PlatformMeta> = {
@@ -32,6 +35,7 @@ export const PLATFORMS: Record<PlatformId, PlatformMeta> = {
     gradient: 'linear-gradient(135deg,#feda75,#fa7e1e,#d62976,#962fbf,#4f5bd5)',
     charLimit: 2200,
     dedicated: true,
+    postable: true,
   },
   x: {
     id: 'x',
@@ -40,6 +44,7 @@ export const PLATFORMS: Record<PlatformId, PlatformMeta> = {
     gradient: 'linear-gradient(135deg,#1a1a1a,#000000)',
     charLimit: 280,
     dedicated: true,
+    postable: true,
   },
   linkedin: {
     id: 'linkedin',
@@ -48,6 +53,7 @@ export const PLATFORMS: Record<PlatformId, PlatformMeta> = {
     gradient: 'linear-gradient(135deg,#0a66c2,#004182)',
     charLimit: 3000,
     dedicated: true,
+    postable: true,
   },
   facebook: {
     id: 'facebook',
@@ -56,6 +62,7 @@ export const PLATFORMS: Record<PlatformId, PlatformMeta> = {
     gradient: 'linear-gradient(135deg,#1877F2,#0a4bc2)',
     charLimit: null,
     dedicated: false,
+    postable: true,
   },
   tiktok: {
     id: 'tiktok',
@@ -64,6 +71,7 @@ export const PLATFORMS: Record<PlatformId, PlatformMeta> = {
     gradient: 'linear-gradient(135deg,#25F4EE,#000000,#FE2C55)',
     charLimit: 2200,
     dedicated: false,
+    postable: true,
   },
   google: {
     id: 'google',
@@ -72,6 +80,7 @@ export const PLATFORMS: Record<PlatformId, PlatformMeta> = {
     gradient: 'linear-gradient(135deg,#4285F4,#34A853)',
     charLimit: null,
     dedicated: false,
+    postable: false,
   },
 }
 

@@ -71,7 +71,6 @@ const PLATFORMS: Platform[] = [
     label: 'X',
     color: '#000000',
     description: 'Post and track engagement on X (formerly Twitter).',
-    comingSoon: true,
   },
   {
     id: 'other',
@@ -137,6 +136,7 @@ export default function ConnectAccountsPage() {
       linkedin: '/api/social/linkedin/connect',
       tiktok: '/api/social/tiktok/connect',
       google: '/api/social/google/connect',
+      x: '/api/social/x/connect',
     }
     const route = routes[platformId]
     if (route) {
