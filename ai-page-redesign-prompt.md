@@ -1,13 +1,79 @@
 # Prompt for Claude Code — Apply the Tala warm design + color scheme to the AI page
 
-Restyle the **AI Assistant page** to match the warm, colorful Tala design language we just
-applied to the dashboard (see `dashboard.html` / its `README.md` design reference, and the
-shipped dashboard in `app/(dashboard)/dashboard/page.tsx` + `components/dashboard/dashboard-chat.tsx`).
-This is a **re-skin only** — change layout, markup, styling, color, and typography; **do not
-change any data, server actions, streaming logic, modes, plan gating, or conversation CRUD.**
-Stack: Next.js 16 App Router, React 19, Tailwind v4, shadcn, `lucide-react`. Read
-`node_modules/next/dist/docs/` before using any Next.js API (per `AGENTS.md`, this Next
-version has breaking changes).
+Restyle the **AI Assistant page** to match the warm, colorful Tala design language already
+applied to the dashboard. This is a **re-skin only** — change layout, markup, styling, color,
+and typography; **do not change any data, server actions, streaming logic, modes, plan gating,
+or conversation CRUD.** Read `node_modules/next/dist/docs/` before using any Next.js API (per
+`AGENTS.md`, this Next version has breaking changes).
+
+---
+
+## About Tala (context for a fresh session)
+
+**Tala** is a content-marketing app for small-business owners and solo marketers — it helps
+them plan and publish **social posts**, run **email campaigns**, build **content plans**, and
+read **analytics** across channels, with an **AI assistant** for content strategy and
+competitor research. The aesthetic is calm, warm, and editorial: a cream "paper" base with
+soft-brown ink, lifted with category-colored accents, gradient action buttons, and colorful
+charts.
+
+**Tech stack**
+- **Next.js 16** (App Router, React Server Components) + **React 19**, **TypeScript**.
+- **Tailwind CSS v4** + **shadcn/ui** primitives (`components/ui/*`); `cn()` helper in
+  `lib/utils`. Icons: **`lucide-react`**.
+- **Supabase** (auth + Postgres, RLS) — data via server actions in `app/actions/*` and
+  `lib/supabase/*`.
+- **Anthropic SDK** (`@anthropic-ai/sdk`, `lib/anthropic.ts`) powers the AI features;
+  streaming chat lives at `app/api/ai/chat/route.ts`.
+- Deployed on Cloudflare via OpenNext. ⚠️ This is a modified Next.js — **read
+  `node_modules/next/dist/docs/` before using any Next API.**
+
+**Where things live**
+- Dashboard routes are under `app/(dashboard)/*`, wrapped by `app/(dashboard)/layout.tsx`,
+  which renders the shared chrome in `components/dashboard/dashboard-shell.tsx`
+  (`top-bar.tsx` + `sidebar.tsx`).
+- The AI page: route `app/(dashboard)/ai/page.tsx` → client UI
+  `components/ai/chat/ai-chat.tsx`.
+
+**The design system (warm "tala-theme")**
+- A scoped CSS theme lives in `app/globals.css` under the **`.tala-theme`** class. Any
+  element (or ancestor) with that class makes the shadcn token utilities — `bg-background`,
+  `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`, `text-primary`,
+  etc. — resolve to the warm palette below. **The rest of the app stays on the default
+  neutral theme**, so warm styling is opt-in via this class.
+- **Color tokens** (`.tala-theme`): page `#F4F1EA`, surface/card `#FAF9F6`, ink/foreground
+  `#3A2E22`, muted text `#A4977F`, accent/primary brown `#A48D78` (hover `#8A715C`), soft
+  fill `#EAE3D6`, hairline border `rgba(164,141,120,.2)`.
+- **Vivid accent palette** (for gradients/charts, used as inline hex): bougainvillea
+  `#D6488C`, turquoise `#36B7C0`, sky blue `#9AC6E0`, blush `#EFB0A0`, lemon `#F4C96D`, rust
+  `#C8472E`, tangerine `#E08A3C`.
+- **Category colors** (dot / tint / text), defined in
+  `app/(dashboard)/calendar/categories.ts`: social `#D6498C`/`#F9E4EE`/`#A82C66` · email
+  `#F4C96D`/`#FBF0D2`/`#9A6E16` · content `#36B7C0`/`#DCF1F2`/`#1E7B82` · personal · work
+  `#9AC6E0`/`#E4F0F8`/`#3A6E92` · other.
+- **Typography** (loaded in `app/layout.tsx`): **Fredoka** 600 for logo/headings/labels/big
+  numbers (`font-fredoka`); **DM Serif Display** italic for subtitles & taglines
+  (`font-dm-serif`); Helvetica/system for body. "Micro-label" header style:
+  `text-[10.5px] font-semibold uppercase tracking-[0.18em] text-primary`.
+- **Cards**: `border-radius:14px`, hairline border, inset top highlight
+  (`shadow-[0_1px_0_rgba(255,255,255,.6)_inset]`), hover lift
+  (`hover:-translate-y-px hover:shadow-[0_6px_22px_rgba(58,46,34,.1)]`).
+
+**Reference implementations to copy from (already shipped, warm-themed):**
+- `app/(dashboard)/dashboard/page.tsx` — greeting, cards, KPIs, charts, quick-view tiles,
+  footer.
+- `components/dashboard/dashboard-chat.tsx` — the popup AI chat: **gradient message bubbles,
+  circular gradient send button, warm header, quick-reply chips** — the closest existing
+  pattern to what this AI page should become. Mirror it.
+- `components/dashboard/sidebar.tsx` — the **active-item treatment** (soft gradient band + a
+  3px left accent bar) to reuse for the conversation sidebar and mode tabs.
+- `components/dashboard/newsletter-signup.tsx` — gradient button pattern.
+
+If the original design files are handy, the `dashboard.html` prototype + its `README.md`
+handoff are the source of truth for exact spacing/values; but the shipped dashboard above
+already encodes all of it, so matching those files is sufficient.
+
+---
 
 ## Files
 - `components/ai/chat/ai-chat.tsx` — the entire AI chat UI (conversation sidebar, mode
