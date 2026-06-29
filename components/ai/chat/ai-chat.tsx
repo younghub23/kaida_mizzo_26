@@ -31,6 +31,18 @@ const MODE_ICON: Record<AiMode, typeof Sparkles> = {
   data_analyst: BarChart3,
 }
 
+// Per-mode accent ink (Strategist = social, Analyst = content).
+const MODE_ACCENT: Record<AiMode, string> = {
+  content_strategist: '#A82C66',
+  data_analyst: '#1E7B82',
+}
+
+// Brand gradients (the vivid palette — see the design reference / dashboard-chat).
+const GRAD_WARM = 'linear-gradient(135deg,#D6488C,#E08A3C)' // avatar / send button
+const GRAD_USER = 'linear-gradient(120deg,#D6488C,#C8472E,#E08A3C)' // user bubble
+const GRAD_BAND = 'linear-gradient(100deg,#F9E4EE,#EAE3D6)' // soft active band
+const GRAD_BAR = 'linear-gradient(#D6488C,#E08A3C)' // 3px active accent bar
+
 type Props = {
   initialConversations: ConversationSummary[]
   canStrategist: boolean
@@ -197,9 +209,9 @@ export function AiChat({ initialConversations, canStrategist, canAnalyst }: Prop
   }
 
   return (
-    <div className="flex h-screen">
+    <div className="tala-theme flex h-screen bg-background text-foreground">
       {/* Conversation sidebar */}
-      <aside className="hidden w-72 shrink-0 flex-col border-r border-border md:flex">
+      <aside className="hidden w-72 shrink-0 flex-col border-r border-border bg-card md:flex">
         <div className="p-3">
           <Button onClick={startNew} className="w-full justify-start gap-2">
             <Plus className="size-4" />
@@ -240,16 +252,29 @@ export function AiChat({ initialConversations, canStrategist, canAnalyst }: Prop
                     ) : (
                       <div
                         className={cn(
-                          'group flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm hover:bg-muted',
-                          isActive && 'bg-muted'
+                          'group relative flex items-center gap-2 overflow-hidden rounded-lg px-2.5 py-2 text-sm',
+                          isActive
+                            ? 'font-semibold text-foreground'
+                            : 'hover:bg-muted'
                         )}
+                        style={isActive ? { background: GRAD_BAND } : undefined}
                       >
+                        {isActive && (
+                          <span
+                            aria-hidden
+                            className="absolute inset-y-1.5 left-0 w-[3px] rounded-full"
+                            style={{ background: GRAD_BAR }}
+                          />
+                        )}
                         <button
                           onClick={() => openConversation(c)}
                           className="flex min-w-0 flex-1 items-center gap-2 text-left"
                           title={c.title}
                         >
-                          <Icon className="size-4 shrink-0 text-muted-foreground" />
+                          <Icon
+                            className={cn('size-4 shrink-0', !isActive && 'text-muted-foreground')}
+                            style={isActive ? { color: MODE_ACCENT[c.mode] } : undefined}
+                          />
                           <span className="truncate">{c.title}</span>
                         </button>
                         <button
@@ -279,8 +304,8 @@ export function AiChat({ initialConversations, canStrategist, canAnalyst }: Prop
       {/* Chat column */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Top bar: role switcher */}
-        <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-          <div className="inline-flex rounded-lg border border-border bg-muted/40 p-1">
+        <header className="flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
+          <div className="inline-flex rounded-lg border border-border bg-background/60 p-1">
             {AI_MODES.map((m) => {
               const Icon = MODE_ICON[m.value]
               const active = m.value === mode
@@ -290,20 +315,26 @@ export function AiChat({ initialConversations, canStrategist, canAnalyst }: Prop
                   key={m.value}
                   onClick={() => switchMode(m.value)}
                   className={cn(
-                    'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                    'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors',
                     active
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
+                      ? 'font-semibold text-foreground'
+                      : 'font-medium text-muted-foreground hover:text-foreground'
                   )}
+                  style={active ? { background: GRAD_BAND } : undefined}
                 >
-                  <Icon className="size-4" />
+                  <Icon
+                    className="size-4"
+                    style={active ? { color: MODE_ACCENT[m.value] } : undefined}
+                  />
                   {m.label}
                   {!allowed && <Lock className="size-3" />}
                 </button>
               )
             })}
           </div>
-          <p className="hidden text-sm text-muted-foreground sm:block">{modeMeta.tagline}</p>
+          <p className="hidden font-dm-serif text-sm italic text-muted-foreground sm:block">
+            {modeMeta.tagline}
+          </p>
         </header>
 
         {/* Thread */}
@@ -335,7 +366,7 @@ export function AiChat({ initialConversations, canStrategist, canAnalyst }: Prop
         </div>
 
         {/* Composer */}
-        <div className="border-t border-border p-4">
+        <div className="border-t border-border bg-card p-4">
           <div className="mx-auto max-w-3xl">
             {currentAllowed ? (
               <form
@@ -343,7 +374,7 @@ export function AiChat({ initialConversations, canStrategist, canAnalyst }: Prop
                   e.preventDefault()
                   send()
                 }}
-                className="flex items-end gap-2 rounded-xl border border-input bg-transparent p-2 focus-within:border-ring"
+                className="flex items-end gap-2 rounded-2xl border border-input bg-background p-2 focus-within:border-primary"
               >
                 <textarea
                   value={input}
@@ -358,9 +389,15 @@ export function AiChat({ initialConversations, canStrategist, canAnalyst }: Prop
                   placeholder={`Message the ${getModeMeta(mode).label}…`}
                   className="max-h-40 min-h-9 flex-1 resize-none bg-transparent px-2 py-1.5 text-sm outline-none"
                 />
-                <Button type="submit" size="icon" disabled={sending || !input.trim()}>
+                <button
+                  type="submit"
+                  disabled={sending || !input.trim()}
+                  aria-label="Send"
+                  className="flex size-9 shrink-0 items-center justify-center rounded-full text-white transition-[filter] hover:brightness-105 disabled:opacity-50"
+                  style={{ background: GRAD_WARM }}
+                >
                   {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-                </Button>
+                </button>
               </form>
             ) : (
               <LockedComposer mode={mode} />
@@ -385,11 +422,14 @@ function EmptyState({
   const Icon = MODE_ICON[mode]
   return (
     <div className="flex flex-col items-center gap-4 py-12 text-center">
-      <div className="flex size-12 items-center justify-center rounded-xl bg-muted">
-        <Icon className="size-6 text-foreground" />
+      <div
+        className="flex size-12 items-center justify-center rounded-xl text-white"
+        style={{ background: GRAD_WARM }}
+      >
+        <Icon className="size-6" />
       </div>
       <div className="space-y-1">
-        <h2 className="text-lg font-semibold">{meta.label}</h2>
+        <h2 className="font-fredoka text-lg font-semibold">{meta.label}</h2>
         <p className="mx-auto max-w-md text-sm text-muted-foreground">{meta.intro}</p>
       </div>
       {!disabled && (
@@ -398,7 +438,7 @@ function EmptyState({
             <button
               key={s}
               onClick={() => onPick(s)}
-              className="rounded-lg border border-border p-3 text-left text-sm transition-colors hover:bg-muted"
+              className="rounded-lg border border-border bg-card p-3 text-left text-sm transition-colors hover:border-[#D6498C] hover:bg-[#F9E4EE] hover:text-[#A82C66]"
             >
               {s}
             </button>
@@ -416,8 +456,11 @@ function MessageBubble({ message }: { message: ChatMessage }) {
       <div
         className={cn(
           'max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm',
-          isUser ? 'bg-foreground text-background' : 'bg-muted text-foreground'
+          isUser
+            ? 'rounded-br-[5px] text-white'
+            : 'rounded-bl-[5px] border border-border bg-card text-foreground'
         )}
+        style={isUser ? { background: GRAD_USER } : undefined}
       >
         {message.content}
       </div>
@@ -428,8 +471,8 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 function LockedComposer({ mode }: { mode: AiMode }) {
   const meta = getModeMeta(mode)
   return (
-    <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border p-4 text-center">
-      <div className="flex items-center gap-2 text-sm font-medium">
+    <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-input bg-card p-4 text-center">
+      <div className="flex items-center gap-2 font-fredoka text-sm font-semibold">
         <Lock className="size-4" />
         {meta.label} is a Pro &amp; Agency feature
       </div>
