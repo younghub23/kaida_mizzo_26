@@ -479,7 +479,12 @@ function LockedComposer({ mode }: { mode: AiMode }) {
       <p className="text-sm text-muted-foreground">
         Upgrade your plan to unlock competitor intelligence and inspiration from your field.
       </p>
-      <Button asChild size="sm" className="mt-1">
+      <Button
+        asChild
+        size="sm"
+        className="mt-1 border-0 text-white transition-[filter] hover:brightness-105"
+        style={{ background: 'linear-gradient(120deg,#D6488C,#C8472E,#E08A3C)' }}
+      >
         <Link href="/plan">Upgrade plan</Link>
       </Button>
     </div>
