@@ -114,7 +114,12 @@ function PostRowCells({ post }: { post: PostRow }) {
       <TableCell className="text-right tabular-nums">{formatCompact(post.likes)}</TableCell>
       <TableCell className="text-right tabular-nums">{formatCompact(post.comments)}</TableCell>
       <TableCell className="text-right tabular-nums">{formatCompact(post.shares)}</TableCell>
-      <TableCell className="text-right font-medium tabular-nums">{formatPercent(post.engagementRate)}</TableCell>
+      <TableCell
+        className="text-right font-fredoka font-semibold tabular-nums"
+        style={{ color: '#1E7B82' }}
+      >
+        {formatPercent(post.engagementRate)}
+      </TableCell>
     </TableRow>
   )
 }

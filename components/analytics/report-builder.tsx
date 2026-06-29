@@ -30,7 +30,7 @@ export function ReportBuilder() {
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Widgets</CardTitle>
+            <CardTitle className="font-fredoka font-semibold">Widgets</CardTitle>
             <CardDescription>Choose what appears in the exported report.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-2">
@@ -47,7 +47,7 @@ export function ReportBuilder() {
                   type="checkbox"
                   checked={enabled[w.id]}
                   onChange={() => setEnabled((s) => ({ ...s, [w.id]: !s[w.id] }))}
-                  className="size-4 accent-[var(--chart-5)]"
+                  className="size-4 accent-[#D6498C]"
                 />
                 <span className="flex-1">{w.label}</span>
               </label>
@@ -57,7 +57,7 @@ export function ReportBuilder() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Export</CardTitle>
+            <CardTitle className="font-fredoka font-semibold">Export</CardTitle>
             <CardDescription>Download a snapshot of the selected widgets.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
@@ -81,7 +81,7 @@ export function ReportBuilder() {
                 type="checkbox"
                 checked={whiteLabel}
                 onChange={() => setWhiteLabel((v) => !v)}
-                className="size-4 accent-[var(--chart-5)]"
+                className="size-4 accent-[#D6498C]"
               />
             </label>
           </CardContent>

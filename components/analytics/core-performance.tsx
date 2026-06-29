@@ -2,9 +2,26 @@ import { TrendingUp, TrendingDown, Activity } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardDescription, CardTitle } from '@/components/ui/card'
 import { Section, EmptyState } from '@/components/analytics/data-source'
 import { LineChart } from '@/components/analytics/charts'
-import { type Kpi, type TrendPoint } from '@/app/(dashboard)/analytics/mock-data'
+import { type Kpi, type MetricKey, type TrendPoint } from '@/app/(dashboard)/analytics/mock-data'
 import { formatCompact, formatPercent, formatDelta, sourceSuffix, type SectionSource } from '@/lib/analytics/format'
-import { cn } from '@/lib/utils'
+
+// Category-tinted KPI numbers, echoing the dashboard's warm palette. Keyed by
+// metric, with a vivid fallback cycle for anything unmapped.
+const KPI_COLOR: Partial<Record<MetricKey, string>> = {
+  followers: '#A82C66', // social
+  engagementRate: '#1E7B82', // content
+  reach: '#E08A3C', // tangerine
+  impressions: '#3A6E92', // work / blue
+  followerGrowth: '#1E7B82',
+  clicks: '#3A6E92',
+  likes: '#A82C66',
+  comments: '#1E7B82',
+  shares: '#E08A3C',
+}
+const KPI_FALLBACK = ['#A82C66', '#1E7B82', '#E08A3C', '#3A6E92']
+// Up = warm olive-green, down = rust — matching the dashboard's delta colours.
+const DELTA_UP = '#4C6633'
+const DELTA_DOWN = '#C8472E'
 
 export function CorePerformance({
   kpis,
@@ -31,13 +48,19 @@ export function CorePerformance({
       ) : (
       <>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {kpis.map((kpi) => {
+        {kpis.map((kpi, i) => {
           const up = kpi.deltaPct !== null && kpi.deltaPct >= 0
+          const color = KPI_COLOR[kpi.key] ?? KPI_FALLBACK[i % KPI_FALLBACK.length]
           return (
             <Card key={kpi.key} size="sm">
               <CardHeader>
-                <CardDescription>{kpi.label}</CardDescription>
-                <CardTitle className="text-2xl tabular-nums">
+                <CardDescription className="text-[10.5px] font-semibold uppercase tracking-[0.12em]">
+                  {kpi.label}
+                </CardDescription>
+                <CardTitle
+                  className="font-fredoka text-[28px] font-semibold leading-[1.1] tabular-nums"
+                  style={{ color }}
+                >
                   {kpi.format === 'percent' ? formatPercent(kpi.value) : formatCompact(kpi.value)}
                 </CardTitle>
               </CardHeader>
@@ -46,10 +69,8 @@ export function CorePerformance({
                     live data has none yet, so we omit it rather than fake it. */}
                 {kpi.deltaPct !== null && (
                   <span
-                    className={cn(
-                      'inline-flex items-center gap-1 text-xs font-medium',
-                      up ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'
-                    )}
+                    className="inline-flex items-center gap-1 text-xs font-medium"
+                    style={{ color: up ? DELTA_UP : DELTA_DOWN }}
                   >
                     {up ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
                     {formatDelta(kpi.deltaPct)}
@@ -65,15 +86,15 @@ export function CorePerformance({
       {trend.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Engagement &amp; reach</CardTitle>
+            <CardTitle className="font-fredoka font-semibold">Engagement &amp; reach</CardTitle>
             <CardDescription>Last 30 days · time series {sourceSuffix(trendSource)}</CardDescription>
           </CardHeader>
           <CardContent>
             <LineChart
               labels={trend.map((p) => p.label)}
               series={[
-                { label: 'Engagement', color: 'var(--chart-3)', values: trend.map((p) => p.engagement) },
-                { label: 'Reach', color: 'var(--chart-1)', values: trend.map((p) => p.reach) },
+                { label: 'Engagement', color: '#D6498C', values: trend.map((p) => p.engagement) },
+                { label: 'Reach', color: '#36B7C0', values: trend.map((p) => p.reach) },
               ]}
             />
           </CardContent>

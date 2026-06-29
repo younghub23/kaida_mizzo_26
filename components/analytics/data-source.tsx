@@ -1,8 +1,7 @@
 import Link from 'next/link'
-import { Database, TriangleAlert, PlugZap } from 'lucide-react'
+import { Database, TriangleAlert, PlugZap, Plug, ArrowUpRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 
 /**
  * Small, consistent "Source:" caption shown on every analytics widget so it is
@@ -13,7 +12,7 @@ export function DataSource({ label, className }: { label: string; className?: st
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground',
+        'inline-flex items-center gap-1 rounded-full border border-border bg-secondary/60 px-2 py-0.5 text-[10.5px] font-medium text-muted-foreground',
         className
       )}
     >
@@ -40,19 +39,22 @@ export function DemoBanner({
 
   if (!allowMock) {
     return (
-      <div className="flex items-start gap-2.5 rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm">
-        <PlugZap className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+      <div className="flex items-start gap-2.5 rounded-[14px] border border-border bg-card px-4 py-3 text-sm shadow-[0_1px_0_rgba(255,255,255,.6)_inset]">
+        <PlugZap className="mt-0.5 size-4 shrink-0 text-primary" />
         {isLive ? (
           <p>
-            Showing <span className="font-semibold">live data</span> from{' '}
+            Showing <span className="font-semibold text-foreground">live data</span> from{' '}
             {livePlatforms.join(', ')}. Sections without a connected source stay
             empty until you connect them.
           </p>
         ) : (
           <p>
-            <span className="font-semibold">No connected accounts yet.</span>{' '}
+            <span className="font-semibold text-foreground">No connected accounts yet.</span>{' '}
             Connect a social account to start seeing your analytics —{' '}
-            <Link href="/socials/connect" className="font-medium underline underline-offset-2">
+            <Link
+              href="/socials/connect"
+              className="font-semibold text-primary underline underline-offset-2 hover:text-foreground"
+            >
               connect now
             </Link>
             .
@@ -62,8 +64,13 @@ export function DemoBanner({
     )
   }
 
+  // Dev-only mock notice — kept distinct as a "notice", warmed to the email/lemon
+  // category palette so it still reads on-brand next to the cream cards.
   return (
-    <div className="flex items-start gap-2.5 rounded-xl border border-amber-300/60 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-200">
+    <div
+      className="flex items-start gap-2.5 rounded-[14px] border px-4 py-3 text-sm"
+      style={{ background: '#FBF0D2', borderColor: 'rgba(244,201,109,.6)', color: '#9A6E16' }}
+    >
       <TriangleAlert className="mt-0.5 size-4 shrink-0" />
       {isLive ? (
         <p>
@@ -82,24 +89,36 @@ export function DemoBanner({
   )
 }
 
-/** Shown in place of a section's content when there's no connected data source. */
+/**
+ * Shown in place of a section's content when there's no connected data source.
+ * Mirrors the dashboard's "ConnectEmpty": a dashed warm card, a Plug glyph in a
+ * soft-sand chip, and an accent CTA that links to the connect flow.
+ */
 export function EmptyState({
   message = 'Not connected yet — connect an account to see this.',
 }: {
   message?: string
 }) {
   return (
-    <Card>
-      <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-        <div className="flex size-9 items-center justify-center rounded-full bg-muted">
-          <PlugZap className="size-4 text-muted-foreground" />
-        </div>
-        <p className="max-w-sm text-sm text-muted-foreground">{message}</p>
-        <Button asChild variant="outline" size="sm">
-          <Link href="/socials/connect">Connect an account</Link>
-        </Button>
-      </CardContent>
-    </Card>
+    <div className="flex flex-col items-center gap-3 rounded-[14px] border border-dashed border-border bg-card px-4 py-10 text-center shadow-[0_1px_0_rgba(255,255,255,.6)_inset]">
+      <span
+        className="flex size-10 items-center justify-center rounded-full"
+        style={{ background: '#EAE3D6', color: '#A48D78' }}
+      >
+        <Plug className="size-5" />
+      </span>
+      <p className="max-w-sm text-sm text-muted-foreground">{message}</p>
+      <Button
+        asChild
+        size="sm"
+        className="border-0 text-white transition-[filter] hover:brightness-105"
+        style={{ background: 'linear-gradient(120deg,#D6488C,#C8472E,#E08A3C)' }}
+      >
+        <Link href="/socials/connect" className="inline-flex items-center gap-1">
+          Connect an account <ArrowUpRight className="size-3.5" />
+        </Link>
+      </Button>
+    </div>
   )
 }
 
@@ -122,10 +141,12 @@ export function Section({
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            {Icon && <Icon className="size-4 text-muted-foreground" />}
-            <h2 className="text-lg font-semibold font-heading">{title}</h2>
+        <div className="flex flex-col gap-1.5">
+          <div className="flex flex-wrap items-center gap-2.5">
+            {Icon && <Icon className="size-4 text-primary" />}
+            <h2 className="font-fredoka text-lg font-semibold leading-none tracking-[-0.01em] text-foreground">
+              {title}
+            </h2>
             <DataSource label={source} />
           </div>
           {description && (

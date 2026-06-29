@@ -25,18 +25,25 @@ export default async function AnalyticsPage() {
   const data = await loadAnalytics()
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">Analytics</h1>
-          <p className="text-sm text-muted-foreground">
-            Unified performance across all your connected channels.
-          </p>
+    <div className="tala-theme analytics-page min-h-[calc(100vh-3.5rem)] bg-background font-sans text-foreground">
+      <div className="mx-auto flex max-w-[1100px] flex-col gap-8 px-8 pb-14 pt-8">
+        {/* ── Header ── */}
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="font-fredoka text-[34px] font-semibold leading-[1.05] tracking-[-0.01em]">
+              Analytics
+            </h1>
+            <p className="mt-1.5 font-dm-serif text-lg italic text-muted-foreground">
+              Unified performance across all your connected channels.
+            </p>
+          </div>
+          <Badge variant="secondary" className="font-fredoka">
+            {PLAN_LABELS[plan]} plan
+          </Badge>
         </div>
-        <Badge variant="secondary">{PLAN_LABELS[plan]} plan</Badge>
-      </div>
 
-      <AnalyticsDashboard data={data} socialListeningUnlocked={socialListeningUnlocked} />
+        <AnalyticsDashboard data={data} socialListeningUnlocked={socialListeningUnlocked} />
+      </div>
     </div>
   )
 }

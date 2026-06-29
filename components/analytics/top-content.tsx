@@ -30,7 +30,12 @@ export function TopContent({ posts, source }: { posts: PostRow[]; source: Sectio
             <Card key={post.id}>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <Badge variant={i === 0 ? 'default' : 'secondary'}>#{i + 1}</Badge>
+                  <Badge
+                    variant={i === 0 ? 'default' : 'secondary'}
+                    className={i === 0 ? 'font-fredoka text-white' : 'font-fredoka'}
+                  >
+                    #{i + 1}
+                  </Badge>
                   <span className="text-xs text-muted-foreground">{NETWORK_LABEL[post.platform]}</span>
                 </div>
                 <CardTitle className="line-clamp-2 text-sm">{post.caption}</CardTitle>
@@ -38,7 +43,9 @@ export function TopContent({ posts, source }: { posts: PostRow[]; source: Sectio
               <CardContent className="flex flex-col gap-3">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">{post.format}</span>
-                  <span className="font-semibold">{formatPercent(post.engagementRate)} eng.</span>
+                  <span className="font-fredoka font-semibold" style={{ color: '#1E7B82' }}>
+                    {formatPercent(post.engagementRate)} eng.
+                  </span>
                 </div>
                 <div className="grid grid-cols-4 gap-1 text-xs text-muted-foreground">
                   <Metric icon={Eye} value={post.views} />
