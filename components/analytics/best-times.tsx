@@ -40,7 +40,7 @@ export function BestTimes({
         <Card>
           <CardContent className="flex flex-col gap-4">
             <p className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-              <Sparkles className="size-4" />
+              <Sparkles className="size-4 text-primary" />
               Recommended posting windows for{' '}
               <span className="font-medium text-foreground">{networkLabel}</span>, from your real engagement:
             </p>
@@ -50,9 +50,9 @@ export function BestTimes({
                 const Icon = NETWORK_ICON[p]
                 const slots = bestTimesByNetwork[p].slots
                 return (
-                  <div key={p} className="flex flex-col gap-2.5 rounded-lg border border-border p-3">
+                  <div key={p} className="flex flex-col gap-2.5 rounded-lg border border-border bg-card p-3">
                     <div className="flex items-center gap-2 text-sm font-medium">
-                      <Icon className="size-4" />
+                      <Icon className="size-4 text-primary" />
                       {NETWORK_LABEL[p]}
                     </div>
                     <div className="flex flex-col gap-2">
@@ -63,8 +63,11 @@ export function BestTimes({
                           </span>
                           <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
                             <div
-                              className="h-full rounded-full bg-[var(--chart-3)]"
-                              style={{ width: `${slot.score}%` }}
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${slot.score}%`,
+                                background: 'linear-gradient(90deg,#D6498C,#E08A3C)',
+                              }}
                             />
                           </div>
                           <span className="w-8 shrink-0 text-right text-xs tabular-nums text-muted-foreground">

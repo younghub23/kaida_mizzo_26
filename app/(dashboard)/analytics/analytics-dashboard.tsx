@@ -48,11 +48,17 @@ export function AnalyticsDashboard({
         allowMock={data.allowMock}
       />
 
-      {/* Section 6 — cross-network filter that drives every section below. */}
+      {/* Section 6 — cross-network filter that drives every section below.
+          Pills mirror the dashboard sidebar's active item: a soft pink→sand
+          gradient band + ink (see .analytics-page rules in globals.css). */}
       <Tabs value={network} onValueChange={(v) => setNetwork(v as Network)}>
-        <TabsList className="flex-wrap">
+        <TabsList className="h-auto flex-wrap justify-start gap-1.5 bg-transparent p-0">
           {NETWORKS.map((n) => (
-            <TabsTrigger key={n.id} value={n.id}>
+            <TabsTrigger
+              key={n.id}
+              value={n.id}
+              className="rounded-full border border-border bg-card px-3.5 py-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground data-[state=active]:font-semibold"
+            >
               {n.label}
             </TabsTrigger>
           ))}

@@ -73,7 +73,12 @@ export function RoiAttribution({
                     </TableCell>
                     <TableCell className="text-right tabular-nums">{formatCompact(r.clicks)}</TableCell>
                     <TableCell className="text-right tabular-nums">{r.conversions}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatCurrency(r.revenue)}</TableCell>
+                    <TableCell
+                      className="text-right font-medium tabular-nums"
+                      style={{ color: '#1E7B82' }}
+                    >
+                      {formatCurrency(r.revenue)}
+                    </TableCell>
                   </TableRow>
                 ))}
                 {rows.length === 0 && (
@@ -87,10 +92,17 @@ export function RoiAttribution({
               {rows.length > 0 && (
                 <TableFooter>
                   <TableRow>
-                    <TableCell colSpan={3}>Total</TableCell>
+                    <TableCell colSpan={3} className="font-fredoka font-semibold">
+                      Total
+                    </TableCell>
                     <TableCell className="text-right tabular-nums">{formatCompact(totals.clicks)}</TableCell>
                     <TableCell className="text-right tabular-nums">{totals.conversions}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatCurrency(totals.revenue)}</TableCell>
+                    <TableCell
+                      className="text-right font-fredoka font-semibold tabular-nums"
+                      style={{ color: '#1E7B82' }}
+                    >
+                      {formatCurrency(totals.revenue)}
+                    </TableCell>
                   </TableRow>
                 </TableFooter>
               )}

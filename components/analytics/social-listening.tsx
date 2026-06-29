@@ -7,14 +7,13 @@ import { Section, EmptyState } from '@/components/analytics/data-source'
 import { type Mention, type ListeningData } from '@/app/(dashboard)/analytics/mock-data'
 import { formatCompact, formatDelta, sourceSuffix, type SectionSource } from '@/lib/analytics/format'
 import { PLAN_LABELS, PLAN_FEATURES } from '@/lib/analytics/plan'
-import { cn } from '@/lib/utils'
 
 const TIER_NAMES = PLAN_FEATURES.socialListening.tiers.map((t) => PLAN_LABELS[t]).join(' & ')
 
 const SENTIMENT_META = {
-  positive: { label: 'Positive', icon: Smile, color: 'var(--chart-3)' },
-  neutral: { label: 'Neutral', icon: Meh, color: 'var(--chart-1)' },
-  negative: { label: 'Negative', icon: Frown, color: 'var(--destructive)' },
+  positive: { label: 'Positive', icon: Smile, color: '#4C6633' }, // warm olive green
+  neutral: { label: 'Neutral', icon: Meh, color: '#9AC6E0' }, // sky blue
+  negative: { label: 'Negative', icon: Frown, color: '#C8472E' }, // rust
 } as const
 
 export function SocialListening({
@@ -56,11 +55,18 @@ function UnlockedListening({ data }: { data: ListeningData | null }) {
     <div className="grid gap-4 lg:grid-cols-3">
       <Card>
         <CardHeader>
-          <CardDescription>Total mentions</CardDescription>
-          <CardTitle className="text-2xl tabular-nums">{formatCompact(data.totalMentions)}</CardTitle>
+          <CardDescription className="text-[10.5px] font-semibold uppercase tracking-[0.12em]">
+            Total mentions
+          </CardDescription>
+          <CardTitle
+            className="font-fredoka text-[28px] font-semibold leading-[1.1] tabular-nums"
+            style={{ color: '#A82C66' }}
+          >
+            {formatCompact(data.totalMentions)}
+          </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-1 text-sm">
-          <span className={cn(up ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive')}>
+          <span style={{ color: up ? '#4C6633' : '#C8472E' }}>
             {formatDelta(data.deltaPct)} vs last period
           </span>
           <span className="text-muted-foreground">{data.shareOfVoicePct}% share of voice</span>
@@ -69,7 +75,7 @@ function UnlockedListening({ data }: { data: ListeningData | null }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Sentiment</CardTitle>
+          <CardTitle className="font-fredoka font-semibold">Sentiment</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <div className="flex h-2.5 overflow-hidden rounded-full">
@@ -94,7 +100,7 @@ function UnlockedListening({ data }: { data: ListeningData | null }) {
 
       <Card className="lg:col-span-3">
         <CardHeader>
-          <CardTitle>Recent mentions</CardTitle>
+          <CardTitle className="font-fredoka font-semibold">Recent mentions</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
           {data.mentions.map((m) => (
@@ -148,12 +154,16 @@ function LockedListening() {
             <Lock className="size-5 text-muted-foreground" />
           </div>
           <div>
-            <p className="font-medium">Available on {TIER_NAMES}</p>
+            <p className="font-fredoka text-base font-semibold">Available on {TIER_NAMES}</p>
             <p className="max-w-sm text-sm text-muted-foreground">
               Social listening &amp; sentiment is an enterprise feature. Upgrade to monitor brand mentions and track sentiment across the web.
             </p>
           </div>
-          <Button asChild>
+          <Button
+            asChild
+            className="border-0 text-white transition-[filter] hover:brightness-105"
+            style={{ background: 'linear-gradient(120deg,#D6488C,#C8472E,#E08A3C)' }}
+          >
             <Link href="/plan">Upgrade</Link>
           </Button>
         </div>

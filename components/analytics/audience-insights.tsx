@@ -39,11 +39,11 @@ export function AudienceInsights({
           {hasLocations && (
             <Card>
               <CardHeader>
-                <CardTitle>Top locations</CardTitle>
+                <CardTitle className="font-fredoka font-semibold">Top locations</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col gap-2.5">
                 {audience.locations.map((l) => (
-                  <BarRow key={l.country} label={l.country} value={l.pct} max={maxLoc} color="var(--chart-2)" />
+                  <BarRow key={l.country} label={l.country} value={l.pct} max={maxLoc} color="#36B7C0" />
                 ))}
               </CardContent>
             </Card>
@@ -52,7 +52,7 @@ export function AudienceInsights({
           {hasAges && (
             <Card>
               <CardHeader>
-                <CardTitle>Age ranges</CardTitle>
+                <CardTitle className="font-fredoka font-semibold">Age ranges</CardTitle>
                 {audience.topGender.label && (
                   <CardDescription>
                     {audience.topGender.pct}% {audience.topGender.label.toLowerCase()}
@@ -61,7 +61,7 @@ export function AudienceInsights({
               </CardHeader>
               <CardContent className="flex flex-col gap-2.5">
                 {audience.ageRanges.map((a) => (
-                  <BarRow key={a.range} label={a.range} value={a.pct} max={maxAge} color="var(--chart-4)" />
+                  <BarRow key={a.range} label={a.range} value={a.pct} max={maxAge} color="#D6498C" />
                 ))}
               </CardContent>
             </Card>
@@ -70,7 +70,7 @@ export function AudienceInsights({
           {hasHours && (
             <Card>
               <CardHeader>
-                <CardTitle>Active hours</CardTitle>
+                <CardTitle className="font-fredoka font-semibold">Active hours</CardTitle>
                 <CardDescription>When your audience is online (darker = more active)</CardDescription>
               </CardHeader>
               <CardContent>
@@ -82,11 +82,11 @@ export function AudienceInsights({
           {hasFollowers && (
             <Card>
               <CardHeader>
-                <CardTitle>Follower growth</CardTitle>
+                <CardTitle className="font-fredoka font-semibold">Follower growth</CardTitle>
                 <CardDescription>Last 6 months</CardDescription>
               </CardHeader>
               <CardContent>
-                <ColumnChart data={audience.followerSeries} />
+                <ColumnChart data={audience.followerSeries} color="#E08A3C" />
               </CardContent>
             </Card>
           )}
@@ -111,7 +111,7 @@ function Heatmap({
               <div
                 key={h}
                 className={cn('h-4 flex-1 rounded-[2px]')}
-                style={{ backgroundColor: `color-mix(in oklch, var(--chart-5) ${intensity}%, var(--muted))` }}
+                style={{ backgroundColor: `color-mix(in oklch, #D6498C ${intensity}%, var(--muted))` }}
                 title={`${heatmap.days[d]} ${h}:00 — ${intensity}`}
               />
             ))}

@@ -46,7 +46,7 @@ export function LineChart({
                 <polygon
                   points={`0,100 ${pts} 100,100`}
                   fill={s.color}
-                  opacity={0.08}
+                  opacity={0.14}
                 />
               )}
               <polyline
@@ -85,7 +85,7 @@ export function BarRow({
   value,
   max,
   suffix = '%',
-  color = 'var(--chart-2)',
+  color = '#36B7C0',
 }: {
   label: string
   value: number
@@ -112,7 +112,7 @@ export function BarRow({
 export function ColumnChart({
   data,
   height = 120,
-  color = 'var(--chart-3)',
+  color = '#E08A3C',
 }: {
   data: { label: string; value: number }[]
   height?: number
@@ -123,9 +123,13 @@ export function ColumnChart({
     <div className="flex items-end gap-2" style={{ height }}>
       {data.map((d) => (
         <div key={d.label} className="flex flex-1 flex-col items-center justify-end gap-1">
+          {/* Soft vertical gradient on each column, matching the dashboard bars. */}
           <div
             className="w-full rounded-t"
-            style={{ height: `${(d.value / max) * 100}%`, backgroundColor: color }}
+            style={{
+              height: `${(d.value / max) * 100}%`,
+              background: `linear-gradient(180deg, ${color}, ${color}bb)`,
+            }}
             title={`${d.label}: ${d.value.toLocaleString()}`}
           />
           <span className="text-[10px] text-muted-foreground">{d.label}</span>

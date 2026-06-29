@@ -82,11 +82,13 @@ export function CrossChannelFollowers({
               label="Potential people"
               value={visible.length}
               hint="appear to follow you on 2+ networks"
+              color="#A82C66"
             />
             <SummaryCard
               label="Linked accounts"
               value={linkedAccounts}
               hint="across all matched people"
+              color="#1E7B82"
             />
           </div>
 
@@ -104,8 +106,8 @@ export function CrossChannelFollowers({
 /** Honest, prominent framing: inferred from public signals, not confirmed. */
 function PotentialMatchBanner() {
   return (
-    <div className="flex items-start gap-2.5 rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm">
-      <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+    <div className="flex items-start gap-2.5 rounded-[14px] border border-border bg-card px-4 py-3 text-sm shadow-[0_1px_0_rgba(255,255,255,.6)_inset]">
+      <Info className="mt-0.5 size-4 shrink-0 text-primary" />
       <p>
         <span className="font-semibold">Potential matches.</span> These people are
         inferred from public profile signals (handle, name, bio) — they are{' '}
@@ -116,12 +118,29 @@ function PotentialMatchBanner() {
   )
 }
 
-function SummaryCard({ label, value, hint }: { label: string; value: number; hint: string }) {
+function SummaryCard({
+  label,
+  value,
+  hint,
+  color,
+}: {
+  label: string
+  value: number
+  hint: string
+  color: string
+}) {
   return (
     <Card size="sm">
       <CardHeader>
-        <CardDescription>{label}</CardDescription>
-        <CardTitle className="text-2xl tabular-nums">{value}</CardTitle>
+        <CardDescription className="text-[10.5px] font-semibold uppercase tracking-[0.12em]">
+          {label}
+        </CardDescription>
+        <CardTitle
+          className="font-fredoka text-[28px] font-semibold leading-[1.1] tabular-nums"
+          style={{ color }}
+        >
+          {value}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <span className="text-xs text-muted-foreground">{hint}</span>

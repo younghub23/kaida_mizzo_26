@@ -39,7 +39,7 @@ export function CompetitorBenchmark({
         <div className="grid gap-4 lg:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Engagement &amp; follower growth</CardTitle>
+              <CardTitle className="font-fredoka font-semibold">Engagement &amp; follower growth</CardTitle>
             </CardHeader>
             <CardContent className="px-0">
               <Table>
@@ -72,7 +72,7 @@ export function CompetitorBenchmark({
 
           <Card>
             <CardHeader>
-              <CardTitle>Share of voice</CardTitle>
+              <CardTitle className="font-fredoka font-semibold">Share of voice</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-2.5">
               {rows.map((c) => (
@@ -81,7 +81,8 @@ export function CompetitorBenchmark({
                   label={c.name}
                   value={c.shareOfVoicePct}
                   max={maxSov}
-                  color={c.isYou ? 'var(--chart-5)' : 'var(--chart-1)'}
+                  // You = bougainvillea so your bar pops; rivals stay soft sky-blue.
+                  color={c.isYou ? '#D6498C' : '#9AC6E0'}
                 />
               ))}
             </CardContent>
