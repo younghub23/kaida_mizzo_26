@@ -6,28 +6,24 @@ import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { BrandLogo } from '@/components/socials/brand-logo'
+import { PLATFORMS, type PlatformId } from '@/lib/socials/platforms'
 import { disconnectAccount } from '@/app/actions/profile'
+import { card, chipPalettes } from '../ui'
 
 export type ConnectedAccount = { platform: string; username: string | null }
 
-const PLATFORM_LABELS: Record<string, string> = {
-  facebook: 'Facebook',
-  instagram: 'Instagram',
-  linkedin: 'LinkedIn',
-  tiktok: 'TikTok',
-  google: 'Google',
-}
+// Platforms surfaced here all map to a brand glyph + gradient in PLATFORMS.
+const ALL_PLATFORMS: PlatformId[] = [
+  'instagram',
+  'facebook',
+  'linkedin',
+  'tiktok',
+  'google',
+]
 
-const PLATFORM_COLORS: Record<string, string> = {
-  facebook: '#1877F2',
-  instagram: '#E1306C',
-  linkedin: '#0A66C2',
-  tiktok: '#000000',
-  google: '#4285F4',
-}
-
-const ALL_PLATFORMS = ['instagram', 'facebook', 'linkedin', 'tiktok', 'google']
+// Warm "connected" status pill — reuses the turquoise category palette.
+const connectedPill = chipPalettes[2]
 
 export function LinkedAccounts({
   connected,
@@ -38,12 +34,12 @@ export function LinkedAccounts({
   const [pendingPlatform, setPendingPlatform] = useState<string | null>(null)
   const [, startTransition] = useTransition()
 
-  function handleDisconnect(platform: string) {
+  function handleDisconnect(platform: PlatformId) {
     setPendingPlatform(platform)
     startTransition(async () => {
       const result = await disconnectAccount(platform)
       if (result.success) {
-        toast.success(`${PLATFORM_LABELS[platform] ?? platform} disconnected`)
+        toast.success(`${PLATFORMS[platform].label} disconnected`)
         router.refresh()
       } else {
         toast.error(result.error ?? 'Failed to disconnect')
@@ -53,20 +49,20 @@ export function LinkedAccounts({
   }
 
   return (
-    <div className="flex flex-col divide-y">
+    <div className="flex flex-col gap-3">
       {ALL_PLATFORMS.map((platform) => {
         const account = connected.find((a) => a.platform === platform)
-        const label = PLATFORM_LABELS[platform] ?? platform
+        const meta = PLATFORMS[platform]
         return (
-          <div key={platform} className="flex items-center gap-4 py-3">
+          <div key={platform} className={`flex items-center gap-4 ${card} p-4`}>
             <span
-              className="flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-              style={{ backgroundColor: PLATFORM_COLORS[platform] }}
+              className="flex size-11 shrink-0 items-center justify-center rounded-[12px] p-2.5 text-white"
+              style={{ backgroundImage: meta.gradient }}
             >
-              {label[0]}
+              <BrandLogo id={platform} />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium">{label}</p>
+              <p className="font-fredoka text-base font-semibold">{meta.label}</p>
               {account ? (
                 <p className="truncate text-sm text-muted-foreground">
                   {account.username ?? 'Connected'}
@@ -77,7 +73,16 @@ export function LinkedAccounts({
             </div>
             {account ? (
               <div className="flex items-center gap-3">
-                <Badge variant="secondary">Connected</Badge>
+                <span
+                  className="rounded-full border px-2.5 py-0.5 text-xs font-medium"
+                  style={{
+                    background: connectedPill.bg,
+                    borderColor: connectedPill.border,
+                    color: connectedPill.text,
+                  }}
+                >
+                  Connected
+                </span>
                 <Button
                   variant="outline"
                   size="sm"
@@ -88,7 +93,7 @@ export function LinkedAccounts({
                 </Button>
               </div>
             ) : (
-              <Button asChild variant="outline" size="sm" className="gap-1.5">
+              <Button asChild size="sm" className="gap-1.5">
                 <Link href="/socials/connect">
                   <Plus className="size-3.5" />
                   Connect

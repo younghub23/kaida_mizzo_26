@@ -18,6 +18,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { SignOutEverywhere } from './sign-out-everywhere'
 import { PageHeading } from '../page-heading'
+import { microLabel } from '../ui'
 
 function formatDateTime(value: string | undefined) {
   if (!value) return 'Unknown'
@@ -48,6 +49,7 @@ export default async function SecurityPage() {
 
       <Card>
         <CardHeader>
+          <span className={microLabel}>Sign-in</span>
           <CardTitle className="text-base">How You Sign In to Tala</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col divide-y">
@@ -88,6 +90,7 @@ export default async function SecurityPage() {
 
       <Card>
         <CardHeader>
+          <span className={microLabel}>Protection</span>
           <CardTitle className="flex items-center gap-2 text-base">
             <ShieldCheck className="size-4" />
             2-Step Verification
@@ -102,6 +105,7 @@ export default async function SecurityPage() {
 
       <Card>
         <CardHeader>
+          <span className={microLabel}>Sessions</span>
           <CardTitle className="text-base">Active Sessions</CardTitle>
           <CardDescription>
             Signed out somewhere you don&apos;t recognize? Sign out of every

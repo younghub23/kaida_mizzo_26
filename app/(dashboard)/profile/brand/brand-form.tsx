@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { updateBrandProfile } from '@/app/actions/profile'
 import { PageHeading } from '../page-heading'
+import { fieldLabel, microLabel, chipPalettes, type ChipPalette } from '../ui'
 import {
   type BrandProfile,
   BRAND_TYPES,
@@ -45,7 +46,7 @@ const INDUSTRIES = [
 ]
 
 const selectClass =
-  'h-9 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30'
+  'h-9 w-full min-w-0 rounded-[11px] border border-input bg-transparent px-2.5 py-1 text-sm outline-none transition-colors focus-visible:border-[#a48d78] focus-visible:ring-[3px] focus-visible:ring-[rgba(164,141,120,.15)] dark:bg-input/30'
 
 const OTHER = '__other__'
 
@@ -101,17 +102,21 @@ function SelectWithOther({
   )
 }
 
-// Multi-select chips with the ability to add custom values.
+// Multi-select chips with the ability to add custom values. Each group rotates
+// one warm category palette: selected chips fill with that palette, unselected
+// chips sit on the soft beige `--accent` fill and pick up a faint tint on hover.
 function ChipGroup({
   options,
   selected,
   onToggle,
   onAdd,
+  palette,
 }: {
   options: string[]
   selected: string[]
   onToggle: (value: string) => void
   onAdd: (value: string) => void
+  palette: ChipPalette
 }) {
   const [draft, setDraft] = useState('')
   const custom = selected.filter((s) => !options.includes(s))
@@ -135,11 +140,16 @@ function ChipGroup({
               key={option}
               type="button"
               onClick={() => onToggle(option)}
+              style={
+                active
+                  ? { background: palette.bg, borderColor: palette.border, color: palette.text }
+                  : ({ '--chip-tint': palette.bg } as React.CSSProperties)
+              }
               className={cn(
                 'rounded-full border px-3 py-1 text-sm transition-colors',
                 active
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-input text-muted-foreground hover:bg-muted'
+                  ? 'font-medium'
+                  : 'border-border bg-accent text-muted-foreground hover:bg-[var(--chip-tint)] hover:text-foreground'
               )}
             >
               {option}
@@ -181,7 +191,9 @@ function Field({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <Label htmlFor={htmlFor}>{label}</Label>
+      <Label htmlFor={htmlFor} className={fieldLabel}>
+        {label}
+      </Label>
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
       {children}
     </div>
@@ -309,6 +321,7 @@ export function BrandForm({
       {/* Basics */}
       <Card>
         <CardHeader>
+          <span className={microLabel}>Identity</span>
           <CardTitle>Basics</CardTitle>
           <CardDescription>Your business identity and branding.</CardDescription>
         </CardHeader>
@@ -418,7 +431,7 @@ export function BrandForm({
               value={brand.description}
               onChange={(e) => setField('description', e.target.value)}
               rows={4}
-              className={cn(selectClass, 'h-auto py-2')}
+              className={cn(selectClass, 'h-auto rounded-[12px] py-2')}
               placeholder="Tell us about your products, services, and what makes you different."
             />
           </Field>
@@ -457,6 +470,7 @@ export function BrandForm({
       {/* Audience */}
       <Card>
         <CardHeader>
+          <span className={microLabel}>Reach</span>
           <CardTitle>Audience</CardTitle>
           <CardDescription>Who are you trying to reach?</CardDescription>
         </CardHeader>
@@ -467,6 +481,7 @@ export function BrandForm({
               selected={brand.targetAgeRanges}
               onToggle={(v) => toggleArray('targetAgeRanges', v)}
               onAdd={(v) => addToArray('targetAgeRanges', v)}
+              palette={chipPalettes[0]}
             />
           </Field>
           <Field label="Target genders">
@@ -475,6 +490,7 @@ export function BrandForm({
               selected={brand.targetGenders}
               onToggle={(v) => toggleArray('targetGenders', v)}
               onAdd={(v) => addToArray('targetGenders', v)}
+              palette={chipPalettes[1]}
             />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -501,6 +517,7 @@ export function BrandForm({
       {/* Positioning */}
       <Card>
         <CardHeader>
+          <span className={microLabel}>Voice</span>
           <CardTitle>Positioning &amp; Goals</CardTitle>
           <CardDescription>How your brand sounds and what success looks like.</CardDescription>
         </CardHeader>
@@ -511,6 +528,7 @@ export function BrandForm({
               selected={brand.brandVoice}
               onToggle={(v) => toggleArray('brandVoice', v)}
               onAdd={(v) => addToArray('brandVoice', v)}
+              palette={chipPalettes[2]}
             />
           </Field>
           <Field label="Brand values">
@@ -519,6 +537,7 @@ export function BrandForm({
               selected={brand.brandValues}
               onToggle={(v) => toggleArray('brandValues', v)}
               onAdd={(v) => addToArray('brandValues', v)}
+              palette={chipPalettes[3]}
             />
           </Field>
           <Field label="Primary goals">
@@ -527,6 +546,7 @@ export function BrandForm({
               selected={brand.primaryGoals}
               onToggle={(v) => toggleArray('primaryGoals', v)}
               onAdd={(v) => addToArray('primaryGoals', v)}
+              palette={chipPalettes[4]}
             />
           </Field>
           <Field label="Preferred platforms">
@@ -535,6 +555,7 @@ export function BrandForm({
               selected={brand.preferredPlatforms}
               onToggle={(v) => toggleArray('preferredPlatforms', v)}
               onAdd={(v) => addToArray('preferredPlatforms', v)}
+              palette={chipPalettes[5]}
             />
           </Field>
           <Field label="Content topics" htmlFor="contentTopics" hint="Comma-separated themes you post about.">
@@ -559,7 +580,7 @@ export function BrandForm({
               value={brand.uniqueSellingPoint}
               onChange={(e) => setField('uniqueSellingPoint', e.target.value)}
               rows={3}
-              className={cn(selectClass, 'h-auto py-2')}
+              className={cn(selectClass, 'h-auto rounded-[12px] py-2')}
             />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">

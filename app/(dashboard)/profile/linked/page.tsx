@@ -11,6 +11,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { LinkedAccounts, type ConnectedAccount } from './linked-accounts'
 import { PageHeading } from '../page-heading'
+import { microLabel } from '../ui'
 
 const PROVIDER_LABELS: Record<string, string> = {
   email: 'Email & password',
@@ -50,6 +51,7 @@ export default async function LinkedAccountsPage() {
 
       <Card>
         <CardHeader>
+          <span className={microLabel}>Channels</span>
           <CardTitle className="text-base">Social Accounts</CardTitle>
           <CardDescription>
             Connect channels to schedule and publish from Tala.
@@ -62,6 +64,7 @@ export default async function LinkedAccountsPage() {
 
       <Card>
         <CardHeader>
+          <span className={microLabel}>Access</span>
           <CardTitle className="text-base">Sign-In Methods</CardTitle>
           <CardDescription>How you sign in to your Tala account.</CardDescription>
         </CardHeader>

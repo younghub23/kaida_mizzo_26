@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { changePassword, type FormState } from '@/app/actions/profile'
+import { fieldLabel, microLabel } from '../ui'
 
 const initialState: FormState = { error: null, success: false }
 
@@ -33,6 +34,7 @@ export function PasswordForm() {
   return (
     <Card>
       <CardHeader>
+        <span className={microLabel}>Security</span>
         <CardTitle className="text-base">Change Password</CardTitle>
         <CardDescription>
           Enter your current password, then choose a new one (at least 8
@@ -42,7 +44,9 @@ export function PasswordForm() {
       <form action={formAction} ref={formRef}>
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="currentPassword">Current password</Label>
+            <Label htmlFor="currentPassword" className={fieldLabel}>
+              Current password
+            </Label>
             <Input
               id="currentPassword"
               name="currentPassword"
@@ -52,7 +56,9 @@ export function PasswordForm() {
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="newPassword">New password</Label>
+            <Label htmlFor="newPassword" className={fieldLabel}>
+              New password
+            </Label>
             <Input
               id="newPassword"
               name="newPassword"
@@ -63,7 +69,9 @@ export function PasswordForm() {
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="confirmPassword">Confirm new password</Label>
+            <Label htmlFor="confirmPassword" className={fieldLabel}>
+              Confirm new password
+            </Label>
             <Input
               id="confirmPassword"
               name="confirmPassword"

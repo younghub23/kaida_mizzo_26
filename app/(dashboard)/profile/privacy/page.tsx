@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/card'
 import { ExportDataButton, DeleteAccountButton } from './privacy-actions'
 import { PageHeading } from '../page-heading'
+import { microLabel } from '../ui'
 
 export default async function PrivacyPage() {
   const supabase = await createClient()
@@ -29,6 +30,7 @@ export default async function PrivacyPage() {
 
       <Card>
         <CardHeader>
+          <span className={microLabel}>Your data</span>
           <CardTitle className="text-base">Export Your Data</CardTitle>
           <CardDescription>
             Download a copy of your profile, brand info, and connected accounts
@@ -42,6 +44,9 @@ export default async function PrivacyPage() {
 
       <Card className="border-destructive/30">
         <CardHeader>
+          <span className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-destructive">
+            Danger
+          </span>
           <CardTitle className="text-base text-destructive">Danger Zone</CardTitle>
           <CardDescription>
             Permanently delete your account and all associated data. This cannot
