@@ -28,12 +28,12 @@ export async function POST(req: NextRequest) {
   const platforms: string[] = post.platforms ?? []
   const results: Record<string, 'published' | 'failed'> = {}
 
-  for (const platform of ['facebook', 'instagram', 'linkedin', 'tiktok'] as const) {
+  for (const platform of ['facebook', 'instagram', 'linkedin', 'tiktok', 'x'] as const) {
     if (!platforms.includes(platform)) continue
 
     const { data: account, error: acctErr } = await admin
       .from('social_accounts')
-      .select('access_token, account_name')
+      .select('access_token, refresh_token')
       .eq('user_id', post.user_id)
       .eq('platform', platform)
       .single()
@@ -178,6 +178,67 @@ export async function POST(req: NextRequest) {
 
         if (!initData.data?.publish_id) {
           logError('social/publish', 'TikTok publish failed', undefined, { initData, postId })
+          results[platform] = 'failed'
+        } else {
+          results[platform] = 'published'
+        }
+      } else if (platform === 'x') {
+        // X access tokens expire (~2h), so refresh before posting. The refresh
+        // token rotates on each use — persist the new one. (Text only for now;
+        // X media upload uses a separate chunked-upload flow.)
+        const clientId = process.env.X_CLIENT_ID
+        const clientSecret = process.env.X_CLIENT_SECRET
+
+        if (!clientId || !clientSecret || !account.refresh_token) {
+          logError('social/publish', 'X not configured or missing refresh token', undefined, { postId })
+          results[platform] = 'failed'
+          continue
+        }
+
+        const refreshRes = await fetch('https://api.twitter.com/2/oauth2/token', {
+          method: 'POST',
+          headers: {
+            Authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            grant_type: 'refresh_token',
+            refresh_token: account.refresh_token,
+            client_id: clientId,
+          }),
+        })
+        const refreshData = (await refreshRes.json()) as {
+          access_token?: string
+          refresh_token?: string
+        }
+
+        if (!refreshData.access_token) {
+          logError('social/publish', 'X token refresh failed', undefined, { postId })
+          results[platform] = 'failed'
+          continue
+        }
+
+        await admin
+          .from('social_accounts')
+          .update({
+            access_token: refreshData.access_token,
+            refresh_token: refreshData.refresh_token ?? account.refresh_token,
+          })
+          .eq('user_id', post.user_id)
+          .eq('platform', 'x')
+
+        const tweetRes = await fetch('https://api.twitter.com/2/tweets', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${refreshData.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ text: post.content }),
+        })
+
+        if (!tweetRes.ok) {
+          const errBody = await tweetRes.text()
+          logError('social/publish', 'X publish failed', undefined, { errBody, postId })
           results[platform] = 'failed'
         } else {
           results[platform] = 'published'

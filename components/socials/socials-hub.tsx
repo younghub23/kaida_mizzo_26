@@ -26,6 +26,9 @@ export function SocialsHub({
 }) {
   const [selected, setSelected] = useState<PlatformId | null>(null)
 
+  // Google connects for Analytics only, not posting — keep it off the hub.
+  const postableAccounts = accounts.filter((a) => PLATFORMS[a.platform].postable)
+
   const usernameFor = (id: PlatformId) =>
     accounts.find((a) => a.platform === id)?.username || businessName
 
@@ -35,7 +38,7 @@ export function SocialsHub({
       <section className="flex flex-col gap-4">
         <h2 className="text-xl font-semibold">Your channels</h2>
 
-        {accounts.length === 0 ? (
+        {postableAccounts.length === 0 ? (
           <div className="flex flex-col items-start gap-3 rounded-xl border border-dashed border-border p-8">
             <p className="text-sm text-muted-foreground">
               You haven’t connected any social accounts yet. Connect one to start posting.
@@ -49,7 +52,7 @@ export function SocialsHub({
           </div>
         ) : (
           <div className="flex flex-wrap gap-5">
-            {accounts.map((account) => {
+            {postableAccounts.map((account) => {
               const meta = PLATFORMS[account.platform]
               const isActive = selected === account.platform
               return (
