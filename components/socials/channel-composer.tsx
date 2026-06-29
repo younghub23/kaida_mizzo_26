@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { ImagePlus, Loader2, Sparkles, Calendar, Clock, X } from 'lucide-react'
+import { ImagePlus, Loader2, Sparkles, CalendarDays, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -18,9 +18,6 @@ import { GenericPreview } from '@/components/socials/previews/generic-preview'
 
 const INITIAL: SocialActionState = { error: null, success: false }
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'))
-const MINUTES = ['00', '15', '30', '45']
-
 export function ChannelComposer({
   platform,
   username,
@@ -28,17 +25,18 @@ export function ChannelComposer({
 }: {
   platform: PlatformMeta
   username: string
-  /** Collapse the inline composer back to just the logos. */
+  /** Collapse the inline composer back to just the channel cards. */
   onClose?: () => void
 }) {
   const [state, formAction, isPending] = useActionState(savePost, INITIAL)
 
   const [caption, setCaption] = useState('')
+  const [firstComment, setFirstComment] = useState('')
+  const [hashtags, setHashtags] = useState('')
   const [mediaUrl, setMediaUrl] = useState('')
   const [uploading, setUploading] = useState(false)
   const [date, setDate] = useState('')
-  const [hour, setHour] = useState('09')
-  const [minute, setMinute] = useState('00')
+  const [time, setTime] = useState('09:30')
   const [timezone, setTimezone] = useState<string>(TIMEZONES[0].value)
   const [intent, setIntent] = useState<'draft' | 'schedule' | 'now'>('schedule')
   const [aiOpen, setAiOpen] = useState(false)
@@ -63,6 +61,8 @@ export function ChannelComposer({
       )
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setCaption('')
+      setFirstComment('')
+      setHashtags('')
       setMediaUrl('')
       setDate('')
       void refresh()
@@ -92,63 +92,40 @@ export function ChannelComposer({
 
   const overLimit = platform.charLimit !== null && caption.length > platform.charLimit
   const previewData = { username, caption, mediaUrl }
+  // Hashtags ride along in the saved content; the live preview shows the caption.
+  const content = [caption, hashtags.trim()].filter(Boolean).join('\n\n')
 
   return (
     <div className="flex flex-col gap-6">
       {/* header */}
       <div className="flex items-center gap-3">
         <span
-          className="flex size-7 items-center justify-center rounded-lg p-1 text-white"
+          className="flex size-10 items-center justify-center rounded-xl p-2 text-white shadow-sm"
           style={{ background: platform.gradient }}
         >
           <BrandLogo id={platform.id} />
         </span>
-        <h2 className="text-xl font-semibold">{platform.label}</h2>
+        <div className="min-w-0">
+          <h2 className="font-baloo text-lg font-bold leading-tight">{platform.label}</h2>
+          <p className="truncate text-xs text-muted-foreground">
+            Posting to @{username} · Feed post
+          </p>
+        </div>
         {onClose && (
-          <Button variant="ghost" size="sm" onClick={onClose} className="ml-auto gap-1.5">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close composer"
+            className="ml-auto flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
             <X className="size-4" />
-            Close
-          </Button>
+          </button>
         )}
       </div>
 
-      <form className="grid gap-6 lg:grid-cols-2">
-        {/* ---------- live preview ---------- */}
-        <div className="flex flex-col gap-3">
-          <p className="text-sm font-medium text-muted-foreground">Live preview</p>
-          <div className="rounded-2xl bg-muted/40 p-4 sm:p-6">
-            {platform.id === 'instagram' && <InstagramPreview {...previewData} />}
-            {platform.id === 'x' && <XPreview {...previewData} />}
-            {platform.id === 'linkedin' && <LinkedInPreview {...previewData} />}
-            {!platform.dedicated && <GenericPreview {...previewData} label={platform.label} />}
-          </div>
-        </div>
-
+      <form className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
         {/* ---------- editor ---------- */}
-        <div className="flex flex-col gap-4">
-          {/* media */}
-          <div className="flex flex-col gap-1.5">
-            <Label>Visual content</Label>
-            <div className="flex items-center gap-3">
-              <Button type="button" variant="outline" size="sm" asChild className="gap-1.5">
-                <label className="cursor-pointer">
-                  {uploading ? <Loader2 className="size-3.5 animate-spin" /> : <ImagePlus className="size-3.5" />}
-                  Upload image / video
-                  <input type="file" accept="image/*,video/*" className="hidden" onChange={handleUpload} />
-                </label>
-              </Button>
-              {mediaUrl && (
-                <button
-                  type="button"
-                  onClick={() => setMediaUrl('')}
-                  className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive"
-                >
-                  <X className="size-3.5" /> Remove
-                </button>
-              )}
-            </div>
-          </div>
-
+        <div className="flex flex-col gap-5">
           {/* caption */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
@@ -159,57 +136,108 @@ export function ChannelComposer({
                 </span>
               )}
             </div>
-            <textarea
-              id="caption"
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              rows={6}
-              placeholder={`Write your ${platform.label} caption…`}
-              className="w-full resize-none rounded-lg border border-input bg-transparent p-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-            />
-            <Button type="button" variant="outline" size="sm" className="w-fit gap-1.5" onClick={() => setAiOpen(true)}>
-              <Sparkles className="size-3.5" />
-              AI Assist
-            </Button>
+            <div className="relative">
+              <textarea
+                id="caption"
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                rows={5}
+                placeholder={`Write your post…\nShare what's new with your followers — a product drop, a behind-the-scenes moment, an offer.`}
+                className="w-full resize-none rounded-xl border border-input bg-transparent p-3 pb-14 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              />
+              <button
+                type="button"
+                onClick={() => setAiOpen(true)}
+                className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full border border-[rgba(214,72,140,.3)] bg-[#F9E4EE] px-3 py-1.5 text-xs font-medium text-[#A82C66] transition-colors hover:bg-[#f6d9e8]"
+              >
+                <Sparkles className="size-3.5" />
+                Draft with AI
+              </button>
+            </div>
+          </div>
+
+          {/* add media */}
+          {mediaUrl ? (
+            <div className="relative overflow-hidden rounded-xl border border-border">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={mediaUrl} alt="Upload preview" className="max-h-56 w-full object-cover" />
+              <button
+                type="button"
+                onClick={() => setMediaUrl('')}
+                className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-1 text-xs font-medium text-white hover:bg-black/70"
+              >
+                <X className="size-3.5" /> Remove
+              </button>
+            </div>
+          ) : (
+            <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/30 px-6 py-8 text-center transition-colors hover:bg-muted/50">
+              <span className="flex size-11 items-center justify-center rounded-xl bg-card text-muted-foreground shadow-sm">
+                {uploading ? <Loader2 className="size-5 animate-spin" /> : <ImagePlus className="size-5" />}
+              </span>
+              <span className="text-sm font-medium">Add media</span>
+              <span className="text-xs text-muted-foreground">
+                Drag &amp; drop or click to upload — JPG, PNG, MP4 up to 50MB
+              </span>
+              <input type="file" accept="image/*,video/*" className="hidden" onChange={handleUpload} />
+            </label>
+          )}
+
+          {/* first comment + hashtags */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="first-comment">
+                First comment <span className="font-normal text-muted-foreground">(optional)</span>
+              </Label>
+              <Input
+                id="first-comment"
+                value={firstComment}
+                onChange={(e) => setFirstComment(e.target.value)}
+                placeholder={`@${username}`}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="hashtags">
+                Hashtags <span className="font-normal text-muted-foreground">(optional)</span>
+              </Label>
+              <Input
+                id="hashtags"
+                value={hashtags}
+                onChange={(e) => setHashtags(e.target.value)}
+                placeholder="#yourbrand #smallbiz"
+              />
+            </div>
           </div>
 
           {/* schedule */}
-          <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
+          <div className="flex flex-col gap-2">
             <p className="flex items-center gap-1.5 text-sm font-medium">
-              <Calendar className="size-4" /> Schedule
+              <CalendarDays className="size-4" /> Schedule
             </p>
-            <div className="flex flex-wrap items-end gap-3">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="date" className="text-xs">Date</Label>
-                <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label className="flex items-center gap-1 text-xs"><Clock className="size-3" /> Time</Label>
-                <div className="flex gap-1.5">
-                  <select value={hour} onChange={(e) => setHour(e.target.value)} className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm">
-                    {HOURS.map((h) => <option key={h} value={h}>{h}</option>)}
-                  </select>
-                  <span className="self-center">:</span>
-                  <select value={minute} onChange={(e) => setMinute(e.target.value)} className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm">
-                    {MINUTES.map((m) => <option key={m} value={m}>{m}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Timezone</Label>
-                <select value={timezone} onChange={(e) => setTimezone(e.target.value)} className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm">
-                  {TIMEZONES.map((tz) => <option key={tz.value} value={tz.value}>{tz.label}</option>)}
-                </select>
-              </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="Date" />
+              <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} aria-label="Time" />
+              <select
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                aria-label="Timezone"
+                className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm"
+              >
+                {TIMEZONES.map((tz) => (
+                  <option key={tz.value} value={tz.value}>
+                    {tz.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
           {/* hidden fields submitted to savePost */}
           <input type="hidden" name="platform" value={platform.id} />
-          <input type="hidden" name="content" value={caption} />
+          <input type="hidden" name="content" value={content} />
+          <input type="hidden" name="firstComment" value={firstComment} />
           <input type="hidden" name="imageUrl" value={mediaUrl} />
           <input type="hidden" name="date" value={date} />
-          <input type="hidden" name="time" value={`${hour}:${minute}`} />
+          <input type="hidden" name="time" value={time} />
           <input type="hidden" name="timezone" value={timezone} />
           <input type="hidden" name="intent" value={intent} />
 
@@ -243,12 +271,25 @@ export function ChannelComposer({
             </Button>
           </div>
         </div>
+
+        {/* ---------- live preview ---------- */}
+        <div className="flex flex-col gap-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Live preview
+          </p>
+          <div className="rounded-2xl border border-border bg-muted/30 p-4 sm:p-5">
+            {platform.id === 'instagram' && <InstagramPreview {...previewData} />}
+            {platform.id === 'x' && <XPreview {...previewData} />}
+            {platform.id === 'linkedin' && <LinkedInPreview {...previewData} />}
+            {!platform.dedicated && <GenericPreview {...previewData} label={platform.label} />}
+          </div>
+        </div>
       </form>
 
       {/* scheduled & drafts for this channel */}
       {posts.length > 0 && (
         <div className="flex flex-col gap-2">
-          <h2 className="text-sm font-medium text-muted-foreground">Scheduled & drafts</h2>
+          <h2 className="text-sm font-medium text-muted-foreground">Scheduled &amp; drafts</h2>
           <div className="flex flex-col gap-2">
             {posts.map((post) => (
               <div key={post.id} className="flex items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm">

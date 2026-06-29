@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Baloo_2, Poppins } from "next/font/google";
+import { Geist_Mono, Baloo_2, Poppins, DM_Serif_Display } from "next/font/google";
 import Script from "next/script";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -33,6 +33,15 @@ const poppins = Poppins({
   display: "swap",
 });
 
+// Editorial serif used italic for page sub-headings ("Pick a channel…").
+const dmSerif = DM_Serif_Display({
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
+  variable: "--font-dm-serif",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Tala",
   description: "Small business marketing platform",
@@ -46,7 +55,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${poppins.variable} ${baloo.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${poppins.variable} ${baloo.variable} ${dmSerif.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}
