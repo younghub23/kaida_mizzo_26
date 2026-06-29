@@ -69,11 +69,13 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  /* Tala accent chart palette (was grayscale) — see components/analytics/palette.ts.
+     sky · turquoise · vine green · sunset orange · bougainvillea. */
+  --chart-1: #9ac6e0;
+  --chart-2: #36b6c0;
+  --chart-3: #6e8f4e;
+  --chart-4: #e8843f;
+  --chart-5: #d6488c;
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
@@ -104,11 +106,11 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --chart-1: #9ac6e0;
+  --chart-2: #36b6c0;
+  --chart-3: #6e8f4e;
+  --chart-4: #e8843f;
+  --chart-5: #d6488c;
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -212,4 +214,12 @@
 }
 .profile-warm [data-slot="card"] {
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+}
+/* The default footer ships a `bg-muted/50` strip; on warm cards that grey band
+   blends with the cream page and makes the footer (and its submit button) read
+   as detached/cut off below the card. Keep the footer on the card surface so it
+   reads as one continuous panel — the warm hairline `border-t` still divides it
+   from the body. */
+.profile-warm [data-slot="card-footer"] {
+  background-color: transparent;
 }

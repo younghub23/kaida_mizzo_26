@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Section, EmptyState } from '@/components/analytics/data-source'
 import { NETWORKS, REAL_NETWORKS, type Network, type TimeSlot } from '@/app/(dashboard)/analytics/mock-data'
 import { NETWORK_LABEL, NETWORK_ICON } from '@/components/analytics/network-meta'
+import { NETWORK_COLOR } from '@/components/analytics/palette'
 import { sourceSuffix, type SectionSource } from '@/lib/analytics/format'
 
 export function BestTimes({
@@ -49,10 +50,11 @@ export function BestTimes({
               {visible.map((p) => {
                 const Icon = NETWORK_ICON[p]
                 const slots = bestTimesByNetwork[p].slots
+                const tint = NETWORK_COLOR[p]
                 return (
                   <div key={p} className="flex flex-col gap-2.5 rounded-lg border border-border p-3">
                     <div className="flex items-center gap-2 text-sm font-medium">
-                      <Icon className="size-4" />
+                      <Icon className="size-4" style={{ color: tint }} />
                       {NETWORK_LABEL[p]}
                     </div>
                     <div className="flex flex-col gap-2">
@@ -63,8 +65,8 @@ export function BestTimes({
                           </span>
                           <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
                             <div
-                              className="h-full rounded-full bg-[var(--chart-3)]"
-                              style={{ width: `${slot.score}%` }}
+                              className="h-full rounded-full"
+                              style={{ width: `${slot.score}%`, backgroundColor: tint }}
                             />
                           </div>
                           <span className="w-8 shrink-0 text-right text-xs tabular-nums text-muted-foreground">

@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Section, EmptyState } from '@/components/analytics/data-source'
 import { NETWORK_ICON, NETWORK_LABEL } from '@/components/analytics/network-meta'
+import { NETWORK_COLOR } from '@/components/analytics/palette'
 import { sourceSuffix, type SectionSource } from '@/lib/analytics/format'
 import type { Network } from '@/app/(dashboard)/analytics/mock-data'
 import type {
@@ -164,7 +165,7 @@ function PersonRow({ person }: { person: MatchedPerson }) {
                 className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs"
                 title={`${NETWORK_LABEL[account.platform]} · ${account.name}`}
               >
-                <Icon className="size-3.5 text-muted-foreground" />
+                <Icon className="size-3.5" style={{ color: NETWORK_COLOR[account.platform] }} />
                 <span className="text-muted-foreground">{NETWORK_LABEL[account.platform]}</span>
                 <span className="font-medium">{atHandle(account.handle)}</span>
               </span>
