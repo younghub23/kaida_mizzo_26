@@ -48,9 +48,11 @@ export function TopBar({
       </button>
 
       <Link href="/dashboard" className="flex items-baseline gap-2">
-        <span className="font-fredoka text-xl font-semibold lowercase text-primary">tala</span>
+        <span className="font-baloo text-2xl font-extrabold lowercase tracking-tight text-primary">
+          tala
+        </span>
         {page && (
-          <span className="hidden font-dm-serif text-base italic text-muted-foreground sm:inline">
+          <span className="hidden font-poppins text-base font-light italic text-muted-foreground sm:inline">
             · {page}
           </span>
         )}
@@ -62,7 +64,7 @@ export function TopBar({
           data-chat-toggle
           onClick={onToggleChat}
           aria-label="AI chat"
-          className="flex size-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:border-transparent hover:bg-[#DCF1F2] hover:text-[#1E7B82]"
+          className="flex size-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:border-transparent hover:bg-[#F6E9A8] hover:text-[#C4753F]"
         >
           <MessageCircle className="size-[18px]" />
         </button>

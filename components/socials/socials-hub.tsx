@@ -36,10 +36,10 @@ export function SocialsHub({
     <div className="flex flex-col gap-8">
       {/* channels */}
       <section className="flex flex-col gap-4">
-        <h2 className="text-xl font-semibold">Your channels</h2>
+        <h2 className="font-baloo text-2xl font-bold text-primary">Your channels</h2>
 
         {postableAccounts.length === 0 ? (
-          <div className="flex flex-col items-start gap-3 rounded-xl border border-dashed border-border p-8">
+          <div className="flex flex-col items-start gap-3 rounded-2xl border border-dashed border-border bg-card p-8">
             <p className="text-sm text-muted-foreground">
               You haven’t connected any social accounts yet. Connect one to start posting.
             </p>

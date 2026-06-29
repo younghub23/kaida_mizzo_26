@@ -61,17 +61,17 @@ export function Sidebar({
                     : 'font-medium text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
                 style={
-                  isActive ? { background: 'linear-gradient(100deg,#F9E4EE,#EAE3D6)' } : undefined
+                  isActive ? { background: 'linear-gradient(100deg,#F6E9A8,#E3CBA0)' } : undefined
                 }
               >
                 {isActive && (
                   <span
                     aria-hidden
                     className="absolute inset-y-2 left-0 w-[3px] rounded-full"
-                    style={{ background: 'linear-gradient(#D6488C,#E08A3C)' }}
+                    style={{ background: 'linear-gradient(#D98B5F,#C4753F)' }}
                   />
                 )}
-                <Icon className="size-4" style={isActive ? { color: '#D6488C' } : undefined} />
+                <Icon className="size-4" style={isActive ? { color: '#C4753F' } : undefined} />
                 {link.label}
               </Link>
             )
@@ -84,7 +84,7 @@ export function Sidebar({
             <Button
               type="submit"
               variant="outline"
-              className="w-full justify-start gap-2.5 hover:border-[rgba(200,71,46,.35)] hover:bg-[rgba(200,71,46,.07)] hover:text-[#C8472E]"
+              className="w-full justify-start gap-2.5 hover:border-[rgba(194,96,63,.4)] hover:bg-[rgba(194,96,63,.08)] hover:text-[#C2603F]"
             >
               <LogOut className="size-4" />
               Log out

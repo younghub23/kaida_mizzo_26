@@ -11,5 +11,9 @@ export default async function EmailListPage() {
   if (!user) redirect('/login')
 
   const [contacts, plan] = await Promise.all([getContacts(), getCurrentPlan()])
-  return <EmailListManager initialContacts={contacts} canSync={canUseWebsiteSync(plan)} />
+  return (
+    <div className="tala-theme min-h-[calc(100vh-3.5rem)] bg-background text-foreground">
+      <EmailListManager initialContacts={contacts} canSync={canUseWebsiteSync(plan)} />
+    </div>
+  )
 }

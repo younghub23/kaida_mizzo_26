@@ -24,5 +24,9 @@ export default async function ConnectWebsitePage() {
 
   const syncedCount = contacts.filter((c) => c.source !== 'manual').length
 
-  return <ConnectWizard initialToken={token} endpoint={endpoint} syncedCount={syncedCount} />
+  return (
+    <div className="tala-theme min-h-[calc(100vh-3.5rem)] bg-background text-foreground">
+      <ConnectWizard initialToken={token} endpoint={endpoint} syncedCount={syncedCount} />
+    </div>
+  )
 }

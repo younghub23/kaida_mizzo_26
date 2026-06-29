@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Fredoka, DM_Serif_Display } from "next/font/google";
+import { Geist_Mono, Baloo_2, Poppins } from "next/font/google";
 import Script from "next/script";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -9,28 +9,27 @@ import "./globals.css";
 const GA_MEASUREMENT_ID =
   process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-64MMZ0T9Y2";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
 
-const fredoka = Fredoka({
+// Tala brand board typography: Baloo 2 is the rounded display face (logo,
+// headings); Poppins is the body face with a light-italic accent. The legacy
+// --font-fredoka / --font-dm-serif utilities are aliased onto these in
+// globals.css so existing markup picks up the brand fonts automatically.
+const baloo = Baloo_2({
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-fredoka",
+  weight: ["500", "700", "800"],
+  variable: "--font-baloo",
   display: "swap",
 });
 
-const dmSerif = DM_Serif_Display({
+const poppins = Poppins({
   subsets: ["latin"],
-  weight: ["400"],
+  weight: ["300", "400", "500", "600"],
   style: ["normal", "italic"],
-  variable: "--font-dm-serif",
+  variable: "--font-poppins",
   display: "swap",
 });
 
@@ -47,7 +46,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${fredoka.variable} ${dmSerif.variable} h-full antialiased`}
+      className={`${poppins.variable} ${baloo.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}

@@ -65,9 +65,9 @@ export function EmailsSection({
 
   return (
     <section className="flex flex-col gap-4">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 text-primary">
         <Mail className="size-5" />
-        <h2 className="text-xl font-semibold">Emails</h2>
+        <h2 className="font-baloo text-2xl font-bold">Emails</h2>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">

@@ -161,13 +161,14 @@ export default function ConnectAccountsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="tala-theme min-h-[calc(100vh-3.5rem)] bg-background text-foreground">
+      <div className="mx-auto flex max-w-6xl flex-col gap-6 p-6">
       <div>
         <Link href="/socials" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="size-4" />
           Back to Socials
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold">Connect Your Accounts</h1>
+        <h1 className="mt-2 font-baloo text-3xl font-extrabold text-primary">Connect Your Accounts</h1>
         <p className="text-sm text-muted-foreground">
           Link your social profiles to schedule and publish posts from Tala.
         </p>
@@ -207,6 +208,7 @@ export default function ConnectAccountsPage() {
             </Card>
           )
         })}
+      </div>
       </div>
     </div>
   )

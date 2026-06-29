@@ -7,11 +7,16 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  /* Tala brand board faces: Poppins body, Baloo 2 display. The legacy
+     fredoka/dm-serif utilities are aliased onto the brand faces so existing
+     markup re-skins without edits. */
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
-  --font-fredoka: var(--font-fredoka), sans-serif;
-  --font-dm-serif: var(--font-dm-serif), serif;
-  --font-heading: var(--font-sans);
+  --font-baloo: var(--font-baloo), "Baloo 2", system-ui, sans-serif;
+  --font-poppins: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  --font-fredoka: var(--font-baloo), "Baloo 2", system-ui, sans-serif;
+  --font-dm-serif: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-baloo), "Baloo 2", system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -51,6 +56,12 @@
 }
 
 :root {
+  /* Raw aliases so inline `var(--font-fredoka)` / `var(--font-dm-serif)`
+     consumers resolve to the brand faces (the @theme tokens above only emit
+     utilities, not custom properties). */
+  --font-fredoka: var(--font-baloo), "Baloo 2", system-ui, sans-serif;
+  --font-dm-serif: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -138,54 +149,54 @@
    resolve to these earthy values inside the scope, so the calendar gets its
    cream-and-brown identity without touching the rest of the app. */
 .tala-theme {
-  --background: #f4f1ea; /* page */
-  --foreground: #3a2e22; /* primary ink */
-  --card: #faf9f6; /* surfaces */
+  --background: #f7f0df; /* soft cream-sand page wash */
+  --foreground: #3a2e22; /* espresso ink */
+  --card: #fffdf7; /* warm near-white surfaces */
   --card-foreground: #3a2e22;
-  --popover: #faf9f6;
+  --popover: #fffdf7;
   --popover-foreground: #3a2e22;
-  --primary: #a48d78; /* accent brown */
-  --primary-foreground: #faf9f6;
-  --secondary: #ede6d9;
+  --primary: #d98b5f; /* terracotta — CTAs & active accents */
+  --primary-foreground: #fffaf0;
+  --secondary: #f6e9a8; /* sunshine cream */
   --secondary-foreground: #3a2e22;
-  --muted: #efeae0; /* soft warm fill */
-  --muted-foreground: #a4977f; /* muted text */
-  --accent: #eae3d6; /* selected / soft fill */
+  --muted: #efe6cf; /* soft warm fill */
+  --muted-foreground: #8a7a61; /* muted espresso */
+  --accent: #e3cba0; /* warm sand — selected / soft fill */
   --accent-foreground: #3a2e22;
-  --destructive: #b5604a; /* warm clay */
-  --border: rgba(164, 141, 120, 0.2); /* hairlines */
-  --input: rgba(164, 141, 120, 0.3);
-  --ring: #a48d78;
-  /* Crisp ~3px button corners; cards keep their ~14px via rounded-xl. */
-  --radius-md: 0.1875rem;
+  --destructive: #c2603f; /* deep clay */
+  --border: rgba(58, 46, 34, 0.12); /* espresso hairlines */
+  --input: rgba(58, 46, 34, 0.18);
+  --ring: #d98b5f;
+  /* Soft, friendly corners to match Baloo 2's rounded brand voice. */
+  --radius-md: 0.5rem;
 }
 
-/* A touch warmer accent on primary-button hover, matching the spec (#8A715C). */
+/* A deeper terracotta on primary-button hover. */
 .tala-theme .bg-primary:is(button):hover {
-  background-color: #8a715c;
+  background-color: #c4753f;
 }
 
 /* ── Tala gradient accents ────────────────────────────────────────────────
-   The mockup leans on two warm gradients: a 3-stop pink→rust→tangerine for
-   solid CTAs and a softer 2-stop pink→tangerine for active toggle pills. */
+   The brand board leans warm: a terracotta wash for solid CTAs and a softer
+   cream→sand band for active toggle pills. */
 .tala-grad {
-  background-image: linear-gradient(120deg, #d6488c 0%, #c8472e 60%, #e08a3c 100%);
+  background-image: linear-gradient(120deg, #e0a172 0%, #d98b5f 55%, #c4753f 100%);
 }
 .tala-grad-soft {
-  background-image: linear-gradient(120deg, #d6488c, #e08a3c);
+  background-image: linear-gradient(120deg, #f6e9a8, #e3cba0);
 }
 
-/* Primary shadcn buttons inside the calendar (Add event, dialog Save/Add,
-   To-do "Add") pick up the solid gradient + soft pink glow from the spec. */
+/* Primary shadcn buttons inside themed pages (Add event, dialog Save/Add,
+   To-do "Add") pick up the solid terracotta wash + soft glow. */
 .tala-theme button[data-variant="default"] {
   background-color: transparent;
-  background-image: linear-gradient(120deg, #d6488c 0%, #c8472e 60%, #e08a3c 100%);
+  background-image: linear-gradient(120deg, #e0a172 0%, #d98b5f 55%, #c4753f 100%);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(214, 72, 140, 0.28);
+  box-shadow: 0 2px 8px rgba(217, 139, 95, 0.3);
 }
 .tala-theme button[data-variant="default"]:hover {
-  background-image: linear-gradient(120deg, #d6488c 0%, #c8472e 60%, #e08a3c 100%);
-  filter: brightness(1.05);
+  background-image: linear-gradient(120deg, #e0a172 0%, #d98b5f 55%, #c4753f 100%);
+  filter: brightness(1.04);
 }
 
 /* ── Analytics page (warm Tala re-skin) ───────────────────────────────────
@@ -199,7 +210,7 @@
 }
 .analytics-page [data-slot="tabs-trigger"][data-state="active"] {
   background-color: transparent;
-  background-image: linear-gradient(100deg, #f9e4ee, #eae3d6);
+  background-image: linear-gradient(100deg, #f6e9a8, #e3cba0);
   color: #3a2e22;
   box-shadow: none;
 }
@@ -214,7 +225,7 @@
   position: absolute;
   inset: 0 0 auto 0;
   height: 5px;
-  background-image: linear-gradient(90deg, #d6488c, #f4c96d, #36b6c0, #e08a3c);
+  background-image: linear-gradient(90deg, #d98b5f, #f6e9a8, #e3cba0, #d98b5f);
 }
 
 /* ── Profile / Settings warm pass ─────────────────────────────────────────
@@ -224,6 +235,12 @@
    without affecting the other tala-theme pages. */
 .profile-warm [data-slot="card-title"] {
   font-family: var(--font-fredoka), sans-serif;
+  font-weight: 600;
+}
+
+/* Themed card titles speak in the Baloo 2 display voice from the brand board. */
+.tala-theme [data-slot="card-title"] {
+  font-family: var(--font-baloo), "Baloo 2", system-ui, sans-serif;
   font-weight: 600;
 }
 .profile-warm [data-slot="card"] {
