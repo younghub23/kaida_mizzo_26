@@ -12,6 +12,7 @@ import {
   CardContent,
 } from '@/components/ui/card'
 import { BillingSection, type PlanOption } from './billing-section'
+import { PageHeading } from '../page-heading'
 
 const PLANS: PlanOption[] = [
   {
@@ -162,12 +163,10 @@ export default async function WalletPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Wallet &amp; Subscriptions</h1>
-        <p className="text-sm text-muted-foreground">
-          Your plan, payment method, and billing history.
-        </p>
-      </div>
+      <PageHeading
+        title="Wallet & Subscriptions"
+        subtitle="Your plan, payment method, and billing history."
+      />
 
       <BillingSection
         plan={profile?.plan ?? 'free'}

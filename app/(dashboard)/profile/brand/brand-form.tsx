@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { updateBrandProfile } from '@/app/actions/profile'
+import { PageHeading } from '../page-heading'
 import {
   type BrandProfile,
   BRAND_TYPES,
@@ -281,23 +282,23 @@ export function BrandForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Brand Info</h1>
-        <p className="text-sm text-muted-foreground">
-          Tell us about your brand. The more we know, the better Tala can market
-          for you.
-        </p>
-      </div>
+      <PageHeading
+        title="Brand Info"
+        subtitle="Tell us about your brand. The more we know, the better Tala can market for you."
+      />
 
       <div
         className={cn(
-          'flex items-start gap-2 rounded-lg border p-3 text-sm',
+          'flex items-start gap-2 rounded-[12px] border p-3 text-sm',
           aiEnabled
-            ? 'border-primary/30 bg-primary/5'
+            ? 'border-[rgba(214,73,140,.3)] bg-[#F9E4EE]/60 text-foreground'
             : 'border-input bg-muted/40 text-muted-foreground'
         )}
       >
-        <Sparkles className="mt-0.5 size-4 shrink-0" />
+        <Sparkles
+          className="mt-0.5 size-4 shrink-0"
+          style={aiEnabled ? { color: '#D6488C' } : undefined}
+        />
         <p>
           {aiEnabled
             ? 'This information is used as context for your AI assistant and your public marketplace brand profile.'

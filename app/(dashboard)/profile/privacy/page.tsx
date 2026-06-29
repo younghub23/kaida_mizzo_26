@@ -8,6 +8,7 @@ import {
   CardContent,
 } from '@/components/ui/card'
 import { ExportDataButton, DeleteAccountButton } from './privacy-actions'
+import { PageHeading } from '../page-heading'
 
 export default async function PrivacyPage() {
   const supabase = await createClient()
@@ -21,12 +22,10 @@ export default async function PrivacyPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Data &amp; Privacy</h1>
-        <p className="text-sm text-muted-foreground">
-          Control your data and your account.
-        </p>
-      </div>
+      <PageHeading
+        title="Data & Privacy"
+        subtitle="Control your data and your account."
+      />
 
       <Card>
         <CardHeader>
