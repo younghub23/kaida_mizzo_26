@@ -13,6 +13,8 @@ export function TopContent({ posts, source }: { posts: PostRow[]; source: Sectio
     <Section
       title="Top content"
       icon={Trophy}
+      iconColor="#E08A3C"
+      eyebrow="Highlights"
       source={`scheduled_posts + per-network insights ${sourceSuffix(source)}`}
       description="Your highest-engagement posts — surfacing which formats, captions, and times performed best."
     >

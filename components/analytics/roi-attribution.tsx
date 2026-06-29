@@ -40,6 +40,8 @@ export function RoiAttribution({
     <Section
       title="ROI &amp; conversion attribution"
       icon={DollarSign}
+      iconColor="#4C6633"
+      eyebrow="Revenue"
       source={`UTM via GA4 + revenue ${sourceSuffix(source)}`}
       description="UTM-tagged clicks, conversions, and revenue attributed back to the campaign that drove them."
     >
@@ -67,7 +69,7 @@ export function RoiAttribution({
                     </TableCell>
                     <TableCell>{NETWORK_LABEL[r.platform]}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="font-mono text-[11px]">
+                      <Badge variant="outline" className="!font-mono text-[11px]">
                         {r.utmCampaign}
                       </Badge>
                     </TableCell>

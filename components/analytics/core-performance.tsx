@@ -40,6 +40,8 @@ export function CorePerformance({
     <Section
       title="Core performance"
       icon={Activity}
+      iconColor="#D6498C"
+      eyebrow="Overview"
       source={`Meta / LinkedIn / TikTok / Google APIs ${sourceSuffix(source)}`}
       description="Unified KPIs across every connected account — one view instead of toggling each native dashboard."
     >
