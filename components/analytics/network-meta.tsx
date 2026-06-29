@@ -14,7 +14,10 @@ export const NETWORK_LABEL: Record<RealNetwork, string> = {
 
 // This lucide-react version dropped brand logos (trademark policy), so we use
 // neutral stand-in glyphs per network.
-export const NETWORK_ICON: Record<RealNetwork, React.ComponentType<{ className?: string }>> = {
+export const NETWORK_ICON: Record<
+  RealNetwork,
+  React.ComponentType<{ className?: string; style?: React.CSSProperties }>
+> = {
   instagram: Camera,
   facebook: Megaphone,
   linkedin: Briefcase,

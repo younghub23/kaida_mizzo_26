@@ -108,24 +108,36 @@ export function BarRow({
   )
 }
 
-/** Vertical mini bar chart (monthly follower growth). */
+/**
+ * Vertical mini bar chart (monthly follower growth). Pass `colors` to tint each
+ * column from a cycling palette (used to spread the full Tala accent set across
+ * the bars); otherwise every column uses the single `color`.
+ */
 export function ColumnChart({
   data,
   height = 120,
   color = 'var(--chart-3)',
+  colors,
 }: {
   data: { label: string; value: number }[]
   height?: number
   color?: string
+  colors?: readonly string[]
 }) {
   const max = Math.max(1, ...data.map((d) => d.value))
   return (
-    <div className="flex items-end gap-2" style={{ height }}>
-      {data.map((d) => (
+    // `items-stretch` so each column fills the chart height — the bars'
+    // percentage heights resolve against it (otherwise columns shrink to their
+    // label and the bars collapse to zero).
+    <div className="flex items-stretch gap-2" style={{ height }}>
+      {data.map((d, i) => (
         <div key={d.label} className="flex flex-1 flex-col items-center justify-end gap-1">
           <div
             className="w-full rounded-t"
-            style={{ height: `${(d.value / max) * 100}%`, backgroundColor: color }}
+            style={{
+              height: `${(d.value / max) * 100}%`,
+              backgroundColor: colors && colors.length ? colors[i % colors.length] : color,
+            }}
             title={`${d.label}: ${d.value.toLocaleString()}`}
           />
           <span className="text-[10px] text-muted-foreground">{d.label}</span>

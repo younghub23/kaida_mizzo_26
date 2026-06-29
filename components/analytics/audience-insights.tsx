@@ -2,6 +2,7 @@ import { Users } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Section, EmptyState } from '@/components/analytics/data-source'
 import { BarRow, ColumnChart } from '@/components/analytics/charts'
+import { ACCENTS } from '@/components/analytics/palette'
 import { type AudienceData } from '@/app/(dashboard)/analytics/mock-data'
 import { sourceSuffix, type SectionSource } from '@/lib/analytics/format'
 import { cn } from '@/lib/utils'
@@ -86,7 +87,7 @@ export function AudienceInsights({
                 <CardDescription>Last 6 months</CardDescription>
               </CardHeader>
               <CardContent>
-                <ColumnChart data={audience.followerSeries} />
+                <ColumnChart data={audience.followerSeries} colors={ACCENTS} />
               </CardContent>
             </Card>
           )}
