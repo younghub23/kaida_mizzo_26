@@ -229,3 +229,24 @@
 .profile-warm [data-slot="card"] {
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
 }
+
+/* ── Socials page (warm Tala re-skin) ─────────────────────────────────────
+   Scoped to the Socials route via the `socials-page` marker class. Cards pick
+   up the signature inset top-highlight, and the composer animates in with the
+   reference's slideDown reveal when a channel is selected. */
+.socials-page [data-slot="card"] {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+}
+@keyframes socials-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.socials-reveal {
+  animation: socials-slide-down 0.3s ease;
+}
