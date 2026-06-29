@@ -80,7 +80,7 @@ export const PLATFORMS: Record<PlatformId, PlatformMeta> = {
     postType: 'Feed post',
     previewFootnote: 'Facebook feed · link + image',
     charLimit: null,
-    dedicated: false,
+    dedicated: true,
     postable: true,
   },
   tiktok: {
@@ -92,7 +92,7 @@ export const PLATFORMS: Record<PlatformId, PlatformMeta> = {
     postType: 'Video',
     previewFootnote: 'TikTok · 9:16 video',
     charLimit: 2200,
-    dedicated: false,
+    dedicated: true,
     postable: true,
   },
   google: {

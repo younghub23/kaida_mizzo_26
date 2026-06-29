@@ -13,6 +13,8 @@ import { BrandLogo } from '@/components/socials/brand-logo'
 import { InstagramPreview } from '@/components/socials/previews/instagram-preview'
 import { XPreview } from '@/components/socials/previews/x-preview'
 import { LinkedInPreview } from '@/components/socials/previews/linkedin-preview'
+import { FacebookPreview } from '@/components/socials/previews/facebook-preview'
+import { TikTokPreview } from '@/components/socials/previews/tiktok-preview'
 import { GenericPreview } from '@/components/socials/previews/generic-preview'
 
 const INITIAL: SocialActionState = { error: null, success: false }
@@ -336,6 +338,8 @@ export function ChannelComposer({
           {platform.id === 'instagram' && <InstagramPreview {...previewData} />}
           {platform.id === 'x' && <XPreview {...previewData} />}
           {platform.id === 'linkedin' && <LinkedInPreview {...previewData} />}
+          {platform.id === 'facebook' && <FacebookPreview {...previewData} />}
+          {platform.id === 'tiktok' && <TikTokPreview {...previewData} />}
           {!platform.dedicated && <GenericPreview {...previewData} label={platform.label} />}
           <p className="text-center font-dm-serif text-[11.5px] italic text-muted-foreground">
             {platform.previewFootnote}
