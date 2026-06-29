@@ -224,9 +224,16 @@ export function EventDialog({
                     type="button"
                     onClick={() => setCategory(c.key)}
                     className={cn(
-                      'flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors',
-                      active ? 'border-foreground/30 bg-muted' : 'border-border hover:bg-muted'
+                      'flex items-center gap-1.5 rounded-full border-[1.5px] px-3 py-1 text-xs font-medium transition-colors',
+                      active
+                        ? 'shadow-[0_1px_5px_rgba(0,0,0,0.08)]'
+                        : 'border-transparent bg-background text-[#5a5042] hover:bg-muted'
                     )}
+                    style={
+                      active
+                        ? { backgroundColor: c.tint, borderColor: c.color, color: c.text }
+                        : undefined
+                    }
                   >
                     <span className="size-2.5 rounded-full" style={{ backgroundColor: c.color }} />
                     {c.label}
