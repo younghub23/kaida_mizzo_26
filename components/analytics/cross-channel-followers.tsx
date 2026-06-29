@@ -18,12 +18,13 @@ const SIGNAL_REASON: Record<MatchSignal, string> = {
   bio: 'Overlapping bio keywords',
 }
 
-// Confidence band → Badge style. High leans on the primary colour; lower bands
-// stay quieter so the page never overstates an inferred (unconfirmed) match.
-const CONFIDENCE_VARIANT: Record<ConfidenceLabel, 'default' | 'secondary' | 'outline'> = {
-  High: 'default',
-  Medium: 'secondary',
-  Low: 'outline',
+// Confidence band → warm category pill. High reads as a confident olive-green,
+// the lower bands cool to lemon then blush so the page never overstates an
+// inferred (unconfirmed) match.
+const CONFIDENCE_STYLE: Record<ConfidenceLabel, { background: string; color: string }> = {
+  High: { background: '#E8EFDB', color: '#4C6633' },
+  Medium: { background: '#FBF0D2', color: '#9A6E16' },
+  Low: { background: '#FBE7E0', color: '#B5604A' },
 }
 
 /** Always show handles with a leading @, regardless of how the roster stored them. */
@@ -56,6 +57,8 @@ export function CrossChannelFollowers({
     <Section
       title="Cross-channel followers"
       icon={Fingerprint}
+      iconColor="#A82C66"
+      eyebrow="Identity"
       source={`Cross-platform identity match ${sourceSuffix(source)}`}
       description="People who appear to follow you on more than one network under slightly different handles — surfaced as potential matches, not confirmed identities."
     >
@@ -159,7 +162,11 @@ function PersonRow({ person }: { person: MatchedPerson }) {
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-2">
               <span className="font-medium">{person.canonicalName}</span>
-              <Badge variant="outline" className="gap-1 font-normal">
+              <Badge
+                variant="secondary"
+                className="gap-1 border-transparent font-normal"
+                style={{ background: '#E4F0F8', color: '#3A6E92' }}
+              >
                 <Link2 className="size-3" />
                 {person.platforms.length} channels
               </Badge>
@@ -169,7 +176,15 @@ function PersonRow({ person }: { person: MatchedPerson }) {
             </span>
           </div>
 
-          <Badge variant={CONFIDENCE_VARIANT[person.confidenceLabel]} className="shrink-0">
+          <Badge
+            variant="secondary"
+            className="shrink-0 gap-1.5 border-transparent"
+            style={CONFIDENCE_STYLE[person.confidenceLabel]}
+          >
+            <span
+              className="size-1.5 rounded-full"
+              style={{ background: CONFIDENCE_STYLE[person.confidenceLabel].color }}
+            />
             {person.confidenceLabel} · {pct}% likely
           </Badge>
         </div>

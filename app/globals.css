@@ -204,6 +204,43 @@
   box-shadow: none;
 }
 
+/* Card titles wear the Fredoka editorial face (matching the dashboard / profile
+   pages) without having to touch every component. */
+.analytics-page [data-slot="card-title"] {
+  font-family: var(--font-fredoka), sans-serif;
+  font-weight: 600;
+}
+
+/* Warm the shadcn data tables (content performance, competitor, ROI): a
+   micro-label header in the Fredoka face, a soft warm row hover, and an
+   --accent-tinted totals/footer row — so no table reads as default-grey. */
+.analytics-page [data-slot="table-head"] {
+  font-family: var(--font-fredoka), sans-serif;
+  font-weight: 600;
+  font-size: 10.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+.analytics-page [data-slot="table-body"] [data-slot="table-row"]:hover {
+  background-color: rgba(164, 141, 120, 0.06);
+}
+.analytics-page [data-slot="table-footer"] {
+  background-color: var(--accent);
+}
+.analytics-page [data-slot="table-footer"] [data-slot="table-cell"] {
+  color: var(--accent-foreground);
+}
+
+/* Badges in the analytics scope keep their pill shape but adopt the warm
+   Fredoka label face used across the rest of the page. Per-instance inline
+   tints (plan-gate → email, source → content, …) layer on top of this. */
+.analytics-page [data-slot="badge"] {
+  font-family: var(--font-fredoka), sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+}
+
 /* Rainbow ribbon along the top of every Tala dialog, matching `.dialog-top`. */
 .tala-theme[data-slot="dialog-content"] {
   overflow: hidden;

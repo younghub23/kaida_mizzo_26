@@ -12,9 +12,11 @@ export function DataSource({ label, className }: { label: string; className?: st
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-full border border-border bg-secondary/60 px-2 py-0.5 text-[10.5px] font-medium text-muted-foreground',
+        'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10.5px] font-medium',
         className
       )}
+      // Source/live pill → content/teal tint from the category palette.
+      style={{ background: '#DCF1F2', color: '#1E7B82', borderColor: 'rgba(54,183,192,.4)' }}
     >
       <Database className="size-3 shrink-0" />
       Source: {label}
@@ -128,13 +130,19 @@ export function Section({
   description,
   source,
   icon: Icon,
+  iconColor,
+  eyebrow,
   action,
   children,
 }: {
   title: string
   description?: string
   source: string
-  icon?: React.ComponentType<{ className?: string }>
+  icon?: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
+  /** Category color from the palette — tints the icon and micro-label eyebrow. */
+  iconColor?: string
+  /** Short uppercase micro-label shown above the section title. */
+  eyebrow?: string
   action?: React.ReactNode
   children: React.ReactNode
 }) {
@@ -142,8 +150,16 @@ export function Section({
     <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1.5">
+          {eyebrow && (
+            <span
+              className="font-fredoka text-[10.5px] font-semibold uppercase tracking-[0.14em]"
+              style={{ color: iconColor ?? 'var(--primary)' }}
+            >
+              {eyebrow}
+            </span>
+          )}
           <div className="flex flex-wrap items-center gap-2.5">
-            {Icon && <Icon className="size-4 text-primary" />}
+            {Icon && <Icon className="size-4" style={{ color: iconColor ?? 'var(--primary)' }} />}
             <h2 className="font-fredoka text-lg font-semibold leading-none tracking-[-0.01em] text-foreground">
               {title}
             </h2>

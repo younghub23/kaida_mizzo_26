@@ -98,7 +98,11 @@ export function BarRow({
     <div className="flex items-center gap-3 text-sm">
       <span className="w-28 shrink-0 truncate text-muted-foreground">{label}</span>
       <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
-        <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
+        {/* Soft horizontal gradient on the fill, matching the dashboard bars. */}
+        <div
+          className="h-full rounded-full"
+          style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${color}, ${color}bb)` }}
+        />
       </div>
       <span className="w-12 shrink-0 text-right tabular-nums">
         {value}

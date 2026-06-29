@@ -30,10 +30,18 @@ export function SocialListening({
     <Section
       title="Social listening &amp; sentiment"
       icon={Ear}
+      iconColor="#B5604A"
+      eyebrow="Listening"
       source={`Listening provider + Claude sentiment ${sourceSuffix(unlocked ? source : 'empty')}`}
       description="Brand-mention monitoring and sentiment across the web."
       action={
-        <Badge variant={unlocked ? 'secondary' : 'outline'}>
+        // Tier / plan-gate pill → warm email/lemon tint, with a colored dot.
+        <Badge
+          variant="secondary"
+          className="gap-1.5 border-transparent"
+          style={{ background: '#FBF0D2', color: '#9A6E16' }}
+        >
+          <span className="size-1.5 rounded-full" style={{ background: '#9A6E16' }} />
           Enterprise · {TIER_NAMES}
         </Badge>
       }

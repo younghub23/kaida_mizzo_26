@@ -30,6 +30,8 @@ export function CompetitorBenchmark({
     <Section
       title="Competitor benchmark"
       icon={Swords}
+      iconColor="#3A6E92"
+      eyebrow="Competitive"
       source={`Competitive intel provider ${sourceSuffix(source)}`}
       description="How your engagement and follower growth stack up against rivals, plus share of voice."
     >
@@ -56,7 +58,11 @@ export function CompetitorBenchmark({
                       <TableCell className="font-medium">
                         {c.name}
                         {c.isYou && (
-                          <Badge variant="default" className="ml-2">
+                          <Badge
+                            variant="secondary"
+                            className="ml-2 border-transparent"
+                            style={{ background: '#F9E4EE', color: '#A82C66' }}
+                          >
                             You
                           </Badge>
                         )}

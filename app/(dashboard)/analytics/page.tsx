@@ -37,7 +37,12 @@ export default async function AnalyticsPage() {
               Unified performance across all your connected channels.
             </p>
           </div>
-          <Badge variant="secondary" className="font-fredoka">
+          {/* Plan-gate pill → warm email/lemon tint from the category palette. */}
+          <Badge
+            variant="secondary"
+            className="border-transparent"
+            style={{ background: '#FBF0D2', color: '#9A6E16' }}
+          >
             {PLAN_LABELS[plan]} plan
           </Badge>
         </div>
