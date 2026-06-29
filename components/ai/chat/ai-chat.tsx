@@ -209,7 +209,7 @@ export function AiChat({ initialConversations, canStrategist, canAnalyst }: Prop
   }
 
   return (
-    <div className="tala-theme flex h-[calc(100vh-3.5rem)] bg-background text-foreground">
+    <div className="tala-theme flex h-[calc(100dvh-3.5rem)] min-h-0 overflow-hidden bg-background text-foreground">
       {/* Conversation sidebar */}
       <aside className="hidden w-72 shrink-0 flex-col border-r border-border bg-card md:flex">
         <div className="p-3">
