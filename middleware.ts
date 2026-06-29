@@ -23,11 +23,24 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
+  const { pathname } = request.nextUrl
+
+  // Public / server-to-server endpoints that authenticate themselves and must
+  // be reachable without a user session: Stripe webhooks (signature-verified),
+  // the website contact-ingestion API (API-key auth), and the scheduled-post
+  // publish endpoints (service-role, idempotent). Without this, the auth
+  // redirect below would bounce these to /login.
+  const isPublicApi =
+    pathname.startsWith('/api/webhooks') ||
+    pathname.startsWith('/api/public') ||
+    pathname.startsWith('/api/social/publish')
+
   if (
     !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/signup') &&
-    !request.nextUrl.pathname.startsWith('/auth')
+    !isPublicApi &&
+    !pathname.startsWith('/login') &&
+    !pathname.startsWith('/signup') &&
+    !pathname.startsWith('/auth')
   ) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
