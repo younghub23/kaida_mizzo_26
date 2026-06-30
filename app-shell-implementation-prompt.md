@@ -114,14 +114,18 @@ shell renders real values (keep graceful fallbacks):
   with shadow `0 0 40px rgba(58,46,34,.2)`. Hide "Today" ≤640px. (Add this — the
   current shell has no drawer.)
 - **Logout, nav routes, active-route highlight** — unchanged behavior.
-- **AI chat:** the reference top bar has **no chat button**. The app currently has
-  a top-bar chat toggle that opens the `DashboardChat` popover. To stay exact, the
-  top bar shows only hamburger+breadcrumb (left) and Today+avatar (right). **Keep
-  the AI reachable** — the sidebar's "AI Assistant" item already routes to `/ai`.
-  If you want to retain the popover, keep `DashboardChat` mounted and trigger it
-  some other way; **do not delete the `DashboardChat` component or the `/ai`
-  route.** (If unsure whether to drop the top-bar chat entry point, ask — but the
-  exact reference has no chat button there.)
+- **AI chat — KEEP IT.** The app has a top-bar chat toggle that opens the
+  `DashboardChat` popover. **Keep the chat button and the `DashboardChat`
+  popover** (the reference omits a chat button, but we are intentionally keeping
+  it). Add the chat icon-button to the top bar's right cluster so it sits cleanly
+  with the "Today · {date}" text and the avatar — same `icon-button`/avatar sizing
+  and warm hover treatment as the rest of the bar — and keep its existing toggle
+  wiring to `DashboardChat`. **Also restyle `DashboardChat` itself to the warm Tala
+  design system** (cream/ink surfaces, `--surface` cards, hairline `--line`
+  borders, Fredoka headings, gradient send button, `--cat-social`/category accents
+  — mirror the `/ai` chat styling in `components/ai/chat/ai-chat.tsx`) so the
+  popover matches the new look. Do not delete `DashboardChat` or the `/ai` route;
+  keep its real streaming/conversation behavior unchanged — restyle only.
 
 ## Tokens / fonts
 
@@ -145,7 +149,8 @@ chevrons, log-out, door-arrow).
 - [ ] Business name, foot sub-line (`industry · plan`), both avatar initials, the
       date, the breadcrumb, and the active item are all **real** — no "Bloom & Co /
       Florist · Pro plan / Maya / M / Mon, Jun 29" literals.
-- [ ] Logout, all nav routes, and the `/ai` route still work; `DashboardChat` not
-      deleted.
+- [ ] Logout, all nav routes, and the `/ai` route still work; the top-bar **chat
+      button + `DashboardChat` popover are kept** and restyled to the warm system
+      (real chat behavior unchanged).
 - [ ] Every authenticated page renders inside this one shared shell — no per-page
       shell markup.
