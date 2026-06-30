@@ -81,7 +81,7 @@ const SECTIONS: LegalSection[] = [
     heading: '6. Your rights and choices',
     body: [
       'Depending on where you live, you may have rights to access, correct, export, or delete your personal information, to object to or restrict certain processing, and to withdraw consent. Tala provides self-service tools in the Data & Privacy section of your profile to export your data and to permanently delete your account.',
-      'To exercise other rights, contact us at privacy@tala.com. We will respond as required by applicable law (such as GDPR or CCPA/CPRA). You may also disconnect any linked account at any time from Linked Accounts in your profile.',
+      'To exercise other rights, contact us at ycaproject.marketing@gmail.com. We will respond as required by applicable law (such as GDPR or CCPA/CPRA). You may also disconnect any linked account at any time from Linked Accounts in your profile.',
     ],
   },
   {
@@ -117,7 +117,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '12. Contact',
     body: [
-      'Questions about this Policy or your data? Contact us at privacy@tala.com.',
+      'Questions about this Policy or your data? Contact us at ycaproject.marketing@gmail.com.',
     ],
   },
 ]
