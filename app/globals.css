@@ -267,6 +267,38 @@
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
 }
 
+/* Warm form controls: every text input / textarea / native select in the
+   Profile forms gets the soft-paper radius and the gentle warm focus ring used
+   by the Socials composer — replacing the default-grey shadcn focus glow so the
+   forms read in the same cream-and-ink language as the cards around them. */
+.profile-warm input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.profile-warm textarea,
+.profile-warm select {
+  border-radius: 11px;
+}
+.profile-warm textarea {
+  border-radius: 12px;
+}
+.profile-warm input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus-visible,
+.profile-warm textarea:focus-visible,
+.profile-warm select:focus-visible {
+  border-color: #a48d78;
+  box-shadow: 0 0 0 3px rgba(164, 141, 120, 0.15);
+  outline: none;
+}
+
+/* Destructive buttons (delete account, sign out everywhere) read in warm clay
+   with a slightly deeper rust hover — applied systematically here instead of as
+   per-component hardcoded hover classes. */
+.profile-warm button[data-variant="destructive"] {
+  background-color: rgba(181, 96, 74, 0.1);
+  color: #b5604a;
+}
+.profile-warm button[data-variant="destructive"]:hover {
+  background-color: rgba(200, 71, 46, 0.16);
+  color: #c8472e;
+}
+
 /* ── Socials page (warm Tala re-skin) ─────────────────────────────────────
    Scoped to the Socials route via the `socials-page` marker class. Cards pick
    up the signature inset top-highlight, and the composer animates in with the

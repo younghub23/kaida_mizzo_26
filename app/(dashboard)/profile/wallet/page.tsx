@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card'
 import { BillingSection, type PlanOption } from './billing-section'
 import { PageHeading } from '../page-heading'
+import { microLabel } from '../ui'
 
 const PLANS: PlanOption[] = [
   {
@@ -177,6 +178,7 @@ export default async function WalletPage() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
+            <span className={microLabel}>Billing</span>
             <CardTitle className="flex items-center gap-2 text-base">
               <CreditCard className="size-4" />
               Payment Method
@@ -202,6 +204,7 @@ export default async function WalletPage() {
 
         <Card>
           <CardHeader>
+            <span className={microLabel}>Billing</span>
             <CardTitle className="flex items-center gap-2 text-base">
               <MapPin className="size-4" />
               Billing Address
@@ -235,6 +238,7 @@ export default async function WalletPage() {
 
       <Card>
         <CardHeader>
+          <span className={microLabel}>History</span>
           <CardTitle className="flex items-center gap-2 text-base">
             <Receipt className="size-4" />
             Payment History
@@ -245,36 +249,52 @@ export default async function WalletPage() {
           {overview.invoices.length === 0 ? (
             <p className="text-sm text-muted-foreground">No invoices yet.</p>
           ) : (
-            <div className="flex flex-col divide-y">
-              {overview.invoices.map((inv) => (
-                <div
-                  key={inv.id}
-                  className="flex items-center justify-between gap-4 py-2.5 text-sm"
-                >
-                  <div className="min-w-0">
-                    <p className="font-medium">
-                      {inv.number ?? 'Invoice'}{' '}
-                      <span className="font-normal text-muted-foreground capitalize">
-                        · {inv.status}
-                      </span>
-                    </p>
-                    <p className="text-muted-foreground">{formatDate(inv.created)}</p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span>{formatMoney(inv.amountPaid, inv.currency)}</span>
-                    {inv.url && (
-                      <a
-                        href={inv.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        Receipt
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ))}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left">
+                    <th className={`pb-2 pr-4 ${microLabel}`}>Invoice</th>
+                    <th className={`pb-2 pr-4 ${microLabel}`}>Date</th>
+                    <th className={`pb-2 pr-4 text-right ${microLabel}`}>Amount</th>
+                    <th className={`pb-2 text-right ${microLabel}`}>Receipt</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {overview.invoices.map((inv) => (
+                    <tr
+                      key={inv.id}
+                      className="transition-colors hover:bg-[#F9E4EE]/30"
+                    >
+                      <td className="py-2.5 pr-4">
+                        <span className="font-medium">{inv.number ?? 'Invoice'}</span>{' '}
+                        <span className="text-muted-foreground capitalize">
+                          · {inv.status}
+                        </span>
+                      </td>
+                      <td className="py-2.5 pr-4 text-muted-foreground">
+                        {formatDate(inv.created)}
+                      </td>
+                      <td className="py-2.5 pr-4 text-right tabular-nums">
+                        {formatMoney(inv.amountPaid, inv.currency)}
+                      </td>
+                      <td className="py-2.5 text-right">
+                        {inv.url ? (
+                          <a
+                            href={inv.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-primary hover:underline"
+                          >
+                            Receipt
+                          </a>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </CardContent>

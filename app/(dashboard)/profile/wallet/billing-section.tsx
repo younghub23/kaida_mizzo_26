@@ -14,6 +14,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { card, cardLink, microLabel, chipPalettes } from '../ui'
 
 export type PlanOption = {
   name: string
@@ -86,6 +87,7 @@ export function BillingSection({
   return (
     <section className="flex flex-col gap-4">
       <div>
+        <span className={microLabel}>Subscription</span>
         <h2 className="font-fredoka text-xl font-semibold">Your Plan</h2>
         <p className="text-sm text-muted-foreground">
           Change your subscription tier or manage billing.
@@ -134,16 +136,19 @@ export function BillingSection({
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {plans.map((option) => {
+        {plans.map((option, i) => {
           const isCurrent = option.tier === currentTier
           const loading = isSubscriber
             ? openingPortal
             : checkoutTier === option.tier
+          const palette = chipPalettes[i % chipPalettes.length]
           return (
             <Card
               key={option.tier}
               className={cn(
                 'flex flex-col',
+                card,
+                cardLink,
                 isCurrent && 'ring-2 ring-[#D6488C] ring-offset-2 ring-offset-background'
               )}
             >
@@ -161,7 +166,10 @@ export function BillingSection({
                       key={f}
                       className="flex items-start gap-2 text-sm text-muted-foreground"
                     >
-                      <Check className="mt-0.5 size-4 shrink-0 text-foreground" />
+                      <Check
+                        className="mt-0.5 size-4 shrink-0"
+                        style={{ color: palette.text }}
+                      />
                       {f}
                     </li>
                   ))}

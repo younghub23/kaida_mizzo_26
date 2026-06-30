@@ -67,7 +67,7 @@ export function ExportDataButton() {
   }
 
   return (
-    <Button variant="outline" className="gap-2" onClick={handleExport} disabled={loading}>
+    <Button className="gap-2" onClick={handleExport} disabled={loading}>
       <Download className="size-4" />
       {loading ? 'Preparing…' : 'Download your data'}
     </Button>
@@ -96,7 +96,7 @@ export function DeleteAccountButton() {
           Delete account
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="profile-warm tala-theme">
         <DialogHeader>
           <DialogTitle>Delete your account?</DialogTitle>
           <DialogDescription>
