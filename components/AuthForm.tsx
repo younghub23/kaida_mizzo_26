@@ -4,6 +4,11 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { logError } from '@/lib/log'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { microLabel } from '@/app/(dashboard)/profile/ui'
 
 type Mode = 'login' | 'signup'
 type AccountType = 'business' | 'creator'
@@ -11,9 +16,6 @@ type AccountType = 'business' | 'creator'
 interface Props {
   initialMode?: Mode
 }
-
-const ACCENT = '#C13A77'
-const BG = '#FBF0CE'
 
 export default function AuthForm({ initialMode = 'login' }: Props) {
   const router = useRouter()
@@ -114,398 +116,221 @@ export default function AuthForm({ initialMode = 'login' }: Props) {
     }
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    background: 'transparent',
-    border: 'none',
-    borderBottom: `1.2px solid ${ACCENT}`,
-    borderRadius: 0,
-    padding: '13px 2px',
-    outline: 'none',
-    fontFamily: 'var(--font-fredoka)',
-    fontWeight: 400,
-    fontSize: '15px',
-    letterSpacing: '0.04em',
-    color: ACCENT,
-  }
+  const fieldInput =
+    'h-auto rounded-[11px] bg-card px-[14px] py-3 text-[14.5px] md:text-[14.5px] ' +
+    'focus-visible:ring-[3px] focus-visible:ring-ring/15'
+  const fieldLabel = 'font-fredoka text-[12.5px] font-medium text-foreground'
 
   return (
-    <>
-      <style>{`
-        .tala-input::placeholder {
-          color: #CC6E9B;
-          text-transform: uppercase;
-          letter-spacing: 0.2em;
-          font-size: 13px;
-          font-family: var(--font-fredoka);
-        }
-        .tala-input:focus {
-          border-bottom-width: 2px;
-          transition: border-bottom-width 0.15s;
-        }
-        .tala-submit:hover:not(:disabled) {
-          background: ${ACCENT};
-          color: ${BG};
-        }
-        .tala-google:hover:not(:disabled) {
-          background: ${ACCENT}0F;
-        }
-        .tala-toggle-link:hover {
-          opacity: 0.75;
-        }
-      `}</style>
-
+    <div className="tala-theme flex min-h-screen flex-col items-center justify-center bg-background px-6 py-12 font-sans text-foreground">
       <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '64px 24px',
-          background: BG,
-        }}
+        className={cn(
+          'flex w-full max-w-[600px] flex-col items-center',
+          'rounded-[18px] border border-border bg-card',
+          'px-10 pt-[42px] pb-[34px]',
+          'shadow-[0_1px_0_rgba(255,255,255,.6)_inset,0_12px_40px_rgba(58,46,34,.08)]',
+          'max-[480px]:rounded-2xl max-[480px]:px-6 max-[480px]:pt-8 max-[480px]:pb-7'
+        )}
       >
-        <div
-          style={{
-            width: '100%',
-            maxWidth: '500px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-          }}
-        >
-          {/* Wordmark */}
-          <span
-            style={{
-              fontFamily: 'var(--font-fredoka)',
-              fontWeight: 700,
-              fontSize: '72px',
-              letterSpacing: '-0.03em',
-              lineHeight: 0.9,
-              color: ACCENT,
-            }}
+        {/* Logo */}
+        <div className="mb-[30px] flex items-center gap-3">
+          <div
+            className="flex size-[38px] flex-none items-center justify-center rounded-[11px] font-fredoka text-[20px] font-bold text-white shadow-[0_2px_8px_rgba(214,72,140,.3)]"
+            style={{ background: 'linear-gradient(135deg,#D6488C,#E08A3C)' }}
+            aria-hidden="true"
           >
-            tala
+            t
+          </div>
+          <span className="font-fredoka text-[27px] font-semibold tracking-[-0.01em] text-foreground">
+            Tala
           </span>
+        </div>
 
-          {/* Heading */}
-          <h1
-            style={{
-              fontFamily: 'var(--font-fredoka)',
-              fontWeight: 400,
-              fontSize: '27px',
-              letterSpacing: '0.01em',
-              whiteSpace: 'nowrap',
-              color: ACCENT,
-              margin: '46px 0 30px',
-            }}
-          >
-            {mode === 'login' ? 'Sign in' : 'Sign up'}
-          </h1>
+        {/* Heading */}
+        <h1 className="mb-1 self-start font-fredoka text-[26px] font-semibold text-foreground">
+          {mode === 'login' ? 'Sign in' : 'Sign up'}
+        </h1>
+        <p className="mb-7 self-start font-dm-serif text-base italic text-primary">
+          {mode === 'login'
+            ? "Welcome back — let's get to work."
+            : 'Start marketing like the big brands.'}
+        </p>
 
-          {/* Form */}
-          <form
-            onSubmit={handleSubmit}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '30px',
-              width: '100%',
-            }}
-          >
-            {/* Account type — signup only */}
-            {mode === 'signup' && (
-              <div>
-                <p
-                  style={{
-                    fontFamily: 'var(--font-fredoka)',
-                    fontSize: '13px',
-                    letterSpacing: '0.2em',
-                    textTransform: 'uppercase',
-                    color: ACCENT,
-                    opacity: 0.85,
-                    marginBottom: '12px',
-                  }}
-                >
-                  Account type
-                </p>
-                <div style={{ display: 'flex', gap: '14px' }}>
-                  {(['business', 'creator'] as AccountType[]).map((type) => (
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="flex w-full flex-col gap-[18px]">
+          {/* Account type — signup only */}
+          {mode === 'signup' && (
+            <div className="flex flex-col gap-2">
+              <span className={microLabel}>Account type</span>
+              <div className="grid grid-cols-2 gap-[10px]">
+                {(['business', 'creator'] as AccountType[]).map((type) => {
+                  const active = accountType === type
+                  return (
                     <button
                       key={type}
                       type="button"
                       onClick={() => setAccountType(type)}
-                      style={{
-                        flex: 1,
-                        padding: '14px 10px',
-                        borderRadius: '2px',
-                        fontFamily: 'var(--font-fredoka)',
-                        fontSize: '13px',
-                        letterSpacing: '0.2em',
-                        textTransform: 'uppercase',
-                        border: `1.4px solid ${ACCENT}`,
-                        background: accountType === type ? ACCENT : 'transparent',
-                        color: accountType === type ? BG : ACCENT,
-                        cursor: 'pointer',
-                        transition: 'all 0.15s',
-                      }}
+                      className={cn(
+                        'rounded-[11px] border border-input p-[13px] font-fredoka text-sm font-medium transition-all',
+                        active
+                          ? 'border-primary bg-primary text-white shadow-[0_2px_8px_rgba(164,141,120,.3)]'
+                          : 'bg-card text-foreground hover:bg-accent'
+                      )}
                     >
                       {type === 'business' ? 'Business' : 'Creator'}
                     </button>
-                  ))}
-                </div>
+                  )
+                })}
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Business name — signup + business only */}
-            {showBusinessName && (
-              <input
-                className="tala-input"
+          {/* Business name — signup + business only */}
+          {showBusinessName && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="auth-business-name" className={fieldLabel}>
+                Business name
+              </Label>
+              <Input
+                id="auth-business-name"
                 type="text"
-                placeholder="Business name"
+                placeholder="Bloom & Co"
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
-                style={inputStyle}
+                className={fieldInput}
               />
-            )}
+            </div>
+          )}
 
-            {/* Email */}
-            <input
-              className="tala-input"
+          {/* Email */}
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="auth-email" className={fieldLabel}>
+              Email
+            </Label>
+            <Input
+              id="auth-email"
               type="email"
-              placeholder="Email"
+              placeholder="you@bloomandco.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              style={inputStyle}
+              className={fieldInput}
             />
+          </div>
 
-            {/* Password */}
-            <input
-              className="tala-input"
+          {/* Password */}
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="auth-password" className={fieldLabel}>
+              Password
+            </Label>
+            <Input
+              id="auth-password"
               type="password"
-              placeholder="Password"
+              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={inputStyle}
+              className={fieldInput}
             />
+          </div>
 
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="tala-submit"
-              style={{
-                width: '100%',
-                padding: '17px',
-                background: 'transparent',
-                border: `1.4px solid ${ACCENT}`,
-                borderRadius: '2px',
-                color: ACCENT,
-                fontFamily: 'var(--font-fredoka)',
-                fontWeight: 500,
-                fontSize: '14px',
-                letterSpacing: '0.22em',
-                textTransform: 'uppercase',
-                marginTop: '6px',
-                transition: 'all 0.2s',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.6 : 1,
-              }}
-            >
-              {loading
-                ? '...'
-                : mode === 'login'
-                ? 'Sign in'
-                : 'Create account'}
-            </button>
-
-            {/* Divider */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '14px',
-                margin: '2px 0',
-              }}
-            >
-              <span style={{ flex: 1, height: '1px', background: ACCENT, opacity: 0.4 }} />
-              <span
-                style={{
-                  fontFamily: 'var(--font-fredoka)',
-                  fontSize: '12px',
-                  letterSpacing: '0.2em',
-                  textTransform: 'uppercase',
-                  color: ACCENT,
-                  opacity: 0.75,
-                }}
-              >
-                or
-              </span>
-              <span style={{ flex: 1, height: '1px', background: ACCENT, opacity: 0.4 }} />
-            </div>
-
-            {/* Google */}
-            <button
-              type="button"
-              onClick={handleGoogle}
-              disabled={loading}
-              className="tala-google"
-              style={{
-                width: '100%',
-                padding: '15px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '12px',
-                background: 'transparent',
-                border: `1.4px solid ${ACCENT}`,
-                borderRadius: '2px',
-                color: ACCENT,
-                fontFamily: 'var(--font-fredoka)',
-                fontWeight: 500,
-                fontSize: '14px',
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
-                transition: 'all 0.2s',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.6 : 1,
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-                <path
-                  fill="#4285F4"
-                  d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"
-                />
-              </svg>
-              Continue with Google
-            </button>
-          </form>
-
-          {/* Error / reset confirmation */}
-          {error && (
-            <p
-              aria-live="polite"
-              style={{
-                fontFamily: 'var(--font-fredoka)',
-                fontSize: '13px',
-                color: ACCENT,
-                opacity: 0.9,
-                textAlign: 'center',
-                marginTop: '16px',
-              }}
-            >
-              {error}
-            </p>
-          )}
-          {resetSent && !error && (
-            <p
-              style={{
-                fontFamily: 'var(--font-fredoka)',
-                fontSize: '13px',
-                color: ACCENT,
-                opacity: 0.9,
-                textAlign: 'center',
-                marginTop: '16px',
-              }}
-            >
-              Password reset email sent — check your inbox.
-            </p>
-          )}
-
-          {/* Footer */}
-          <div
-            style={{
-              marginTop: '34px',
-              fontFamily: 'var(--font-dm-serif)',
-              fontStyle: 'italic',
-              fontSize: '15.5px',
-              lineHeight: 1.9,
-              color: ACCENT,
-              textAlign: 'center',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-            }}
+          {/* Submit */}
+          <Button
+            type="submit"
+            disabled={loading}
+            className="h-auto w-full rounded-[11px] py-[13px] font-fredoka text-[14.5px] font-medium"
           >
-            {mode === 'login' && (
+            {loading
+              ? 'Signing in…'
+              : mode === 'login'
+              ? 'Sign in'
+              : 'Create account'}
+          </Button>
+
+          {/* Divider */}
+          <div className="my-1 flex items-center gap-[14px]">
+            <span className="h-px flex-1 bg-border" />
+            <span className={microLabel}>or</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+
+          {/* Google */}
+          <button
+            type="button"
+            onClick={handleGoogle}
+            disabled={loading}
+            className="flex w-full items-center justify-center gap-[10px] rounded-[11px] border border-input bg-card py-[13px] font-fredoka text-[14.5px] font-medium text-foreground transition-all hover:border-primary hover:bg-accent disabled:pointer-events-none disabled:opacity-50"
+          >
+            <svg viewBox="0 0 48 48" className="size-[19px] flex-none" aria-hidden="true">
+              <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" />
+              <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" />
+              <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" />
+              <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571.001-.001 6.19 5.238 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" />
+            </svg>
+            Continue with Google
+          </button>
+        </form>
+
+        {/* Error / reset confirmation */}
+        {error && (
+          <p
+            aria-live="polite"
+            className="mt-4 text-center font-fredoka text-[13px] text-destructive"
+          >
+            {error}
+          </p>
+        )}
+        {resetSent && !error && (
+          <p className="mt-4 text-center font-fredoka text-[13px] text-primary">
+            Password reset email sent — check your inbox.
+          </p>
+        )}
+
+        {/* Footer */}
+        <div className="mt-[26px] flex w-full flex-col items-center gap-3">
+          {mode === 'login' && (
+            <p className="text-center font-dm-serif text-[15.5px] italic text-muted-foreground">
               <a
                 href="#"
                 onClick={handleForgotPassword}
-                style={{
-                  color: ACCENT,
-                  textDecoration: 'underline',
-                  textUnderlineOffset: '3px',
-                }}
+                className="text-primary underline underline-offset-2 hover:text-[#8a715c]"
               >
                 Forgot your password?
               </a>
-            )}
-            <span>
-              <span style={{ opacity: 0.85 }}>
-                {mode === 'login'
-                  ? "Don't have an account?"
-                  : 'Already have an account?'}
-              </span>{' '}
-              <button
-                type="button"
-                className="tala-toggle-link"
-                onClick={() => {
-                  setMode(mode === 'login' ? 'signup' : 'login')
-                  setError(null)
-                  setResetSent(false)
-                }}
-                style={{
-                  fontFamily: 'var(--font-dm-serif)',
-                  fontStyle: 'italic',
-                  fontSize: '15.5px',
-                  color: ACCENT,
-                  background: 'none',
-                  border: 'none',
-                  padding: 0,
-                  cursor: 'pointer',
-                  textDecoration: 'underline',
-                  textUnderlineOffset: '3px',
-                }}
-              >
-                {mode === 'login' ? 'Sign Up.' : 'Log In.'}
-              </button>
-            </span>
-            <div
-              style={{
-                marginTop: '10px',
-                display: 'flex',
-                gap: '14px',
-                fontFamily: 'var(--font-fredoka)',
-                fontStyle: 'normal',
-                fontSize: '11px',
-                letterSpacing: '0.2em',
-                textTransform: 'uppercase',
-                opacity: 0.8,
+            </p>
+          )}
+
+          <p className="text-center font-dm-serif text-[15.5px] italic text-muted-foreground">
+            {mode === 'login'
+              ? "Don't have an account? "
+              : 'Already have an account? '}
+            <button
+              type="button"
+              onClick={() => {
+                setMode(mode === 'login' ? 'signup' : 'login')
+                setError(null)
+                setResetSent(false)
               }}
+              className="font-dm-serif text-[15.5px] italic text-primary underline underline-offset-2 hover:text-[#8a715c]"
             >
-              <a href="/terms" style={{ color: ACCENT, textDecoration: 'none' }}>
-                Terms
-              </a>
-              <a href="/privacy" style={{ color: ACCENT, textDecoration: 'none' }}>
-                Privacy
-              </a>
-            </div>
+              {mode === 'login' ? 'Sign up.' : 'Log in.'}
+            </button>
+          </p>
+
+          <div className="mt-2 flex w-full justify-center gap-[22px] border-t border-border pt-[18px]">
+            <a
+              href="/terms"
+              className="font-fredoka text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground no-underline hover:text-foreground"
+            >
+              Terms
+            </a>
+            <a
+              href="/privacy"
+              className="font-fredoka text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground no-underline hover:text-foreground"
+            >
+              Privacy
+            </a>
           </div>
         </div>
       </div>
-    </>
+    </div>
   )
 }
