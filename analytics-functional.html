@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Analytics — functionality only</title>
+
+<!--
+  ============================================================================
+  ANALYTICS PAGE — FUNCTIONALITY-ONLY SCAFFOLD
+  ----------------------------------------------------------------------------
+  This file is a self-contained, dependency-free port of the /analytics page's
+  *behaviour* so you can tinker with the aesthetic layout in Claude design.
+
+  It contains NO design choices on purpose:
+    • no colours, fonts, gradients, shadows, spacing systems
+    • the only CSS below is the bare minimum structural plumbing needed for the
+      interactive bits to read as data (bar widths, heatmap cells, the line
+      chart). Replace all of it with your design.
+
+  What IS here is every piece of *functionality* the real page has, ported
+  faithfully from the codebase (mock-data.ts, load.ts, cross-channel.ts, the
+  section components and the format/plan helpers):
+
+    1.  Cross-network filter that drives every section below
+    2.  Data-source state (mock / empty) → banner + per-section empty states
+    3.  Plan tier selector → social-listening lock/unlock gate
+    4.  Core KPI cards (per-network values + deltas) + engagement/reach trend
+    5.  Top content (top 3 by engagement rate)
+    6.  Content performance (sortable per-post table)
+    7.  Audience insights (locations, ages, gender, active-hours heatmap,
+        follower growth)
+    8.  Cross-channel followers (real deterministic identity matcher)
+    9.  Best time to post (per-network windows)
+    10. Competitor benchmark (table + share of voice)
+    11. ROI / conversion attribution (filtered table with totals)
+    12. Custom report builder (widget toggles, white-label, export)
+    13. Social listening & sentiment (plan-gated locked/unlocked states)
+
+  Every element carries a descriptive class so you can target it when styling.
+  ============================================================================
+-->
+
+<style>
+  /* ----------------------------------------------------------------------
+     MINIMAL STRUCTURAL CSS ONLY — not a design. Delete / replace freely.
+     Kept neutral (no colour/typography choices) so the data stays legible.
+     ---------------------------------------------------------------------- */
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, sans-serif; line-height: 1.4; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 1rem; }
+  section { margin: 1.5rem 0; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid; }
+  th button { font: inherit; cursor: pointer; background: none; border: 0; padding: 0; }
+  [hidden] { display: none !important; }
+
+  /* Data-driven primitives (widths/heights encode VALUES, not aesthetics). */
+  .bar-track { display: inline-block; width: 160px; height: 10px; border: 1px solid; vertical-align: middle; }
+  .bar-fill { display: block; height: 100%; background: currentColor; }
+  .col-chart { display: flex; align-items: flex-end; gap: 4px; height: 100px; }
+  .col-chart .col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+  .col-chart .col > span:first-child { width: 100%; background: currentColor; }
+  .heatmap-row { display: flex; align-items: center; gap: 4px; }
+  .heatmap-cells { display: flex; flex: 1; gap: 1px; }
+  .heatmap-cells > span { flex: 1; height: 14px; outline: 1px solid rgba(0,0,0,.08); }
+  .line-chart svg { width: 100%; height: 160px; border: 1px solid; }
+
+  /* Active state on the network filter / sort headers, expressed structurally. */
+  [aria-pressed="true"], [aria-sort] button[data-active="true"] { font-weight: 700; text-decoration: underline; }
+
+  .controls label { margin-right: 1rem; }
+  .source-badge::before { content: "Source: "; }
+</style>
+</head>
+
+<body>
+<div class="wrap" id="app">
+
+  <!-- ── Page header ── -->
+  <header class="analytics-header">
+    <h1>Analytics</h1>
+    <p class="analytics-subtitle">Unified performance across all your connected channels.</p>
+    <span class="plan-badge" data-role="plan-badge"></span>
+  </header>
+
+  <!-- ── Dev/preview controls (these simulate the server inputs the real page
+       resolves: ALLOW_MOCK_ANALYTICS and the live subscription plan). ── -->
+  <fieldset class="controls" data-role="preview-controls">
+    <legend>Preview controls (simulate server state)</legend>
+    <label>
+      Data source:
+      <select data-control="dataSource">
+        <option value="mock">Mock (allowMock = true)</option>
+        <option value="empty">Empty (production, nothing connected)</option>
+      </select>
+    </label>
+    <label>
+      Plan tier:
+      <select data-control="plan">
+        <option value="starter">Starter</option>
+        <option value="growth">Growth</option>
+        <option value="pro" selected>Pro</option>
+        <option value="agency">Agency</option>
+      </select>
+    </label>
+  </fieldset>
+
+  <!-- ── Page-level data-source banner ── -->
+  <div class="data-banner" data-role="banner" role="status"></div>
+
+  <!-- ── Cross-network filter: drives every section ── -->
+  <nav class="network-filter" data-role="network-filter" aria-label="Filter by network"></nav>
+
+  <!-- ── Sections (rendered by JS) ── -->
+  <section class="section section-core" data-section="core"></section>
+  <section class="section section-top" data-section="top"></section>
+  <section class="section section-posts" data-section="posts"></section>
+  <section class="section section-audience" data-section="audience"></section>
+  <section class="section section-cross" data-section="cross"></section>
+  <section class="section section-besttimes" data-section="besttimes"></section>
+  <section class="section section-competitors" data-section="competitors"></section>
+  <section class="section section-roi" data-section="roi"></section>
+  <section class="section section-report" data-section="report"></section>
+  <section class="section section-listening" data-section="listening"></section>
+
+</div>
+
+<script>
+/* ===========================================================================
+   DATA LAYER — ported verbatim (logic-equivalent) from the codebase.
+   Determinism preserved: no Math.random()/Date.now(); seeded PRNG only.
+   =========================================================================== */
+
+// ── Networks (drives the cross-network unified-reporting filter) ──
+const NETWORKS = [
+  { id: 'all', label: 'All' },
+  { id: 'instagram', label: 'Instagram' },
+  { id: 'facebook', label: 'Facebook' },
+  { id: 'linkedin', label: 'LinkedIn' },
+  { id: 'tiktok', label: 'TikTok' },
+  { id: 'youtube', label: 'YouTube' },
+  { id: 'pinterest', label: 'Pinterest' },
+  { id: 'snapchat', label: 'Snapchat' },
+  { id: 'google', label: 'Google' },
+];
+const REAL_NETWORKS = ['instagram','facebook','linkedin','tiktok','youtube','pinterest','snapchat','google'];
+const NETWORK_LABEL = {
+  instagram:'Instagram', facebook:'Facebook', linkedin:'LinkedIn', tiktok:'TikTok',
+  youtube:'YouTube', pinterest:'Pinterest', snapchat:'Snapchat', google:'Google',
+};
+
+const NETWORK_WEIGHT = { instagram:0.26, facebook:0.16, linkedin:0.1, tiktok:0.18, youtube:0.13, pinterest:0.08, snapchat:0.04, google:0.05 };
+const NETWORK_DELTA_BIAS = { instagram:2, facebook:-3, linkedin:1, tiktok:5, youtube:3, pinterest:1, snapchat:-2, google:-4 };
+
+// Deterministic PRNG (LCG) so per-network generated series are stable.
+function seeded(seed) {
+  let s = (seed >>> 0) || 1;
+  return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 0xffffffff; };
+}
+function networkSeed(network) {
+  const idx = NETWORKS.findIndex(n => n.id === network);
+  return (idx + 1) * 97;
+}
+
+// ── 1. Core performance metrics ──
+const BASE_KPIS = {
+  engagementRate: { label:'Engagement rate', format:'percent', value:4.8,   deltaPct:12.4, additive:false },
+  followers:      { label:'Followers',       format:'number',  value:24800, deltaPct:3.4,  additive:true  },
+  reach:          { label:'Reach',           format:'number',  value:184200,deltaPct:8.1,  additive:true  },
+  followerGrowth: { label:'Follower growth', format:'number',  value:3240,  deltaPct:18.6, additive:true  },
+  impressions:    { label:'Impressions',     format:'number',  value:412800,deltaPct:5.3,  additive:true  },
+  likes:          { label:'Likes',           format:'number',  value:28940, deltaPct:9.7,  additive:true  },
+  comments:       { label:'Comments',        format:'number',  value:3120,  deltaPct:-2.4, additive:true  },
+  shares:         { label:'Shares',          format:'number',  value:1860,  deltaPct:14.2, additive:true  },
+  clicks:         { label:'Clicks',          format:'number',  value:9450,  deltaPct:6.8,  additive:true  },
+};
+const NETWORK_ENGAGEMENT_RATE = { instagram:5.6, facebook:3.2, linkedin:4.1, tiktok:7.3, youtube:2.4, pinterest:1.6, snapchat:3.0, google:1.9 };
+
+function biasedDelta(base, network) {
+  if (network === 'all') return base;
+  return Math.round((base + NETWORK_DELTA_BIAS[network]) * 10) / 10;
+}
+function getCoreMetrics(network) {
+  return Object.keys(BASE_KPIS).map(key => {
+    const spec = BASE_KPIS[key];
+    let value = spec.value;
+    if (network !== 'all') {
+      if (key === 'engagementRate') value = NETWORK_ENGAGEMENT_RATE[network];
+      else if (spec.additive) value = Math.round(spec.value * NETWORK_WEIGHT[network]);
+    }
+    return { key, label: spec.label, value, format: spec.format, deltaPct: biasedDelta(spec.deltaPct, network) };
+  });
+}
+
+// ── 1b. Trend chart (last 30 days) ──
+const END_DATE = new Date('2026-06-22T00:00:00Z');
+function lastNDateLabels(n) {
+  const out = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(END_DATE);
+    d.setUTCDate(d.getUTCDate() - i);
+    out.push(`${d.getUTCMonth() + 1}/${d.getUTCDate()}`);
+  }
+  return out;
+}
+function getTrend(network) {
+  const labels = lastNDateLabels(30);
+  const rand = seeded(networkSeed(network));
+  const scale = network === 'all' ? 1 : NETWORK_WEIGHT[network];
+  const baseEngagement = 920 * scale;
+  const baseReach = 6100 * scale;
+  return labels.map((label, i) => {
+    const trend = 1 + i * 0.012;
+    const wobble = 0.85 + rand() * 0.3;
+    return { label, engagement: Math.round(baseEngagement * trend * wobble), reach: Math.round(baseReach * trend * (0.85 + rand() * 0.3)) };
+  });
+}
+
+// ── 2. Post-level performance ──
+const POSTS = [
+  { id:'p1',  platform:'instagram', caption:'5 quick wins for your spring launch ✨',        format:'Carousel', postedAt:'2026-06-18', views:24100, likes:1980, comments:214, shares:162,  engagementRate:9.8 },
+  { id:'p2',  platform:'tiktok',    caption:'POV: marketing made simple',                    format:'Reel',     postedAt:'2026-06-17', views:88400, likes:7240, comments:612, shares:1140, engagementRate:10.2 },
+  { id:'p3',  platform:'linkedin',  caption:'How we cut email churn by 22% this quarter',     format:'Text',     postedAt:'2026-06-16', views:12300, likes:540,  comments:96,  shares:71,   engagementRate:5.7 },
+  { id:'p4',  platform:'facebook',  caption:'Customer spotlight: Bloom & Co bakery',          format:'Image',    postedAt:'2026-06-15', views:9870,  likes:410,  comments:38,  shares:22,   engagementRate:4.8 },
+  { id:'p5',  platform:'instagram', caption:'Behind the scenes of our content studio',        format:'Story',    postedAt:'2026-06-14', views:6540,  likes:290,  comments:12,  shares:9,    engagementRate:4.7 },
+  { id:'p6',  platform:'instagram', caption:'New feature drop: AI captions in one tap',       format:'Reel',     postedAt:'2026-06-13', views:41200, likes:3410, comments:388, shares:502,  engagementRate:10.4 },
+  { id:'p7',  platform:'tiktok',    caption:'3 hooks that stop the scroll',                   format:'Video',    postedAt:'2026-06-12', views:52900, likes:4120, comments:301, shares:690,  engagementRate:9.7 },
+  { id:'p8',  platform:'linkedin',  caption:'The creator economy in 2026: our take',          format:'Link',     postedAt:'2026-06-11', views:8900,  likes:312,  comments:54,  shares:40,   engagementRate:4.6 },
+  { id:'p9',  platform:'facebook',  caption:'Weekend sale — 20% off all plans',               format:'Image',    postedAt:'2026-06-10', views:14600, likes:620,  comments:71,  shares:58,   engagementRate:5.1 },
+  { id:'p10', platform:'google',    caption:'Search ad: small business marketing suite',      format:'Link',     postedAt:'2026-06-09', views:31400, likes:0,    comments:0,   shares:0,    engagementRate:3.2 },
+  { id:'p11', platform:'instagram', caption:'Carousel: 7 caption formulas that convert',      format:'Carousel', postedAt:'2026-06-08', views:19800, likes:1540, comments:176, shares:140,  engagementRate:9.4 },
+  { id:'p12', platform:'tiktok',    caption:'Day in the life of a solo founder',              format:'Reel',     postedAt:'2026-06-07', views:67200, likes:5310, comments:488, shares:902,  engagementRate:10.0 },
+  { id:'p13', platform:'linkedin',  caption:'Hiring: senior brand designer (remote)',         format:'Text',     postedAt:'2026-06-06', views:6700,  likes:198,  comments:33,  shares:19,   engagementRate:3.7 },
+  { id:'p14', platform:'facebook',  caption:'Live Q&A recap + your top questions',            format:'Video',    postedAt:'2026-06-05', views:11200, likes:388,  comments:62,  shares:31,   engagementRate:4.3 },
+];
+function getPostPerformance(network) {
+  return network === 'all' ? POSTS : POSTS.filter(p => p.platform === network);
+}
+
+// ── 3. Audience insights ──
+const AUDIENCE_LOCATIONS = [
+  { country:'United States', pct:42 }, { country:'United Kingdom', pct:16 }, { country:'Canada', pct:11 },
+  { country:'Australia', pct:9 }, { country:'Germany', pct:7 }, { country:'Other', pct:15 },
+];
+const AUDIENCE_AGES = [
+  { range:'18–24', pct:22 }, { range:'25–34', pct:38 }, { range:'35–44', pct:24 }, { range:'45–54', pct:11 }, { range:'55+', pct:5 },
+];
+const HEATMAP_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const HEATMAP_HOUR_LABELS = ['12a','4a','8a','12p','4p','8p','11p'];
+function getAudience(network) {
+  const rand = seeded(networkSeed(network) + 13);
+  const values = HEATMAP_DAYS.map(() =>
+    Array.from({ length: 24 }, (_, hour) => {
+      const peak = Math.exp(-((hour - 12) ** 2) / 28) + 0.6 * Math.exp(-((hour - 19) ** 2) / 10);
+      return Math.round(Math.min(100, peak * 100 * (0.6 + rand() * 0.5)));
+    })
+  );
+  const followerBase = network === 'all' ? 48200 : Math.round(48200 * NETWORK_WEIGHT[network]);
+  const followerSeries = ['Jan','Feb','Mar','Apr','May','Jun'].map((label, i) => ({ label, value: Math.round(followerBase * (1 + i * 0.06)) }));
+  const topGender = network === 'linkedin' ? { label:'Men', pct:56 } : { label:'Women', pct:61 };
+  return { locations: AUDIENCE_LOCATIONS, ageRanges: AUDIENCE_AGES, topGender, heatmap: { days: HEATMAP_DAYS, hourLabels: HEATMAP_HOUR_LABELS, values }, followerSeries };
+}
+
+// ── 4. Best time to post ──
+const BEST_TIMES_ALL = [
+  { day:'Tue', time:'11:00 AM', score:96 }, { day:'Thu', time:'7:00 PM', score:92 },
+  { day:'Wed', time:'1:00 PM', score:88 }, { day:'Sat', time:'10:00 AM', score:81 },
+];
+const BEST_TIMES_BY_NETWORK = {
+  instagram:[{day:'Wed',time:'12:00 PM',score:97},{day:'Fri',time:'6:00 PM',score:90},{day:'Sun',time:'9:00 AM',score:84}],
+  facebook: [{day:'Thu',time:'1:00 PM',score:89},{day:'Tue',time:'9:00 AM',score:82},{day:'Sat',time:'11:00 AM',score:76}],
+  linkedin: [{day:'Tue',time:'8:00 AM',score:95},{day:'Wed',time:'12:00 PM',score:91},{day:'Thu',time:'5:00 PM',score:83}],
+  tiktok:   [{day:'Fri',time:'7:00 PM',score:98},{day:'Tue',time:'9:00 PM',score:93},{day:'Sun',time:'8:00 PM',score:88}],
+  youtube:  [{day:'Sat',time:'2:00 PM',score:92},{day:'Sun',time:'11:00 AM',score:87},{day:'Thu',time:'6:00 PM',score:80}],
+  pinterest:[{day:'Sat',time:'9:00 PM',score:90},{day:'Sun',time:'8:00 PM',score:85},{day:'Mon',time:'3:00 PM',score:72}],
+  snapchat: [{day:'Fri',time:'8:00 PM',score:94},{day:'Wed',time:'10:00 PM',score:86},{day:'Sat',time:'9:00 PM',score:81}],
+  google:   [{day:'Mon',time:'10:00 AM',score:79},{day:'Wed',time:'2:00 PM',score:74},{day:'Thu',time:'11:00 AM',score:70}],
+};
+function getBestTimes(network) {
+  return network === 'all' ? BEST_TIMES_ALL : BEST_TIMES_BY_NETWORK[network];
+}
+
+// ── 5. Competitor benchmark ──
+const COMPETITORS = [
+  { name:'Your brand',       engagementRate:4.8, followerGrowthPct:18.6, shareOfVoicePct:28, isYou:true },
+  { name:'Brightleaf Co.',   engagementRate:3.9, followerGrowthPct:11.2, shareOfVoicePct:24 },
+  { name:'Maker & Main',     engagementRate:5.4, followerGrowthPct:9.8,  shareOfVoicePct:21 },
+  { name:'Northstar Studio', engagementRate:2.7, followerGrowthPct:6.1,  shareOfVoicePct:15 },
+  { name:'Other brands',     engagementRate:3.1, followerGrowthPct:4.4,  shareOfVoicePct:12 },
+];
+function getCompetitors(network) {
+  if (network === 'all') return COMPETITORS;
+  const yourRate = NETWORK_ENGAGEMENT_RATE[network];
+  return COMPETITORS.map(c => c.isYou ? { ...c, engagementRate: yourRate } : c);
+}
+
+// ── 6. Cross-channel followers (sample rosters + full matcher) ──
+const SAMPLE_FOLLOWER_ROSTERS = {
+  instagram:[
+    {handle:'@jane.eyre',name:'Jane Eyre',bio:'Bookworm 📚 coffee lover. Marketing @ Thornfield. London.'},
+    {handle:'@marcus.lee',name:'Marcus Lee',bio:'Product designer ✏️ coffee + dogs'},
+    {handle:'@david.kim.photo',name:'David Kim',bio:'Wedding photographer 📷 NYC'},
+    {handle:'@hannah.bauer',name:'Hannah Bauer',bio:'Travel blogger ✈️ exploring Europe one city at a time'},
+    {handle:'@coffee.house.co',name:'The Coffee House',bio:'Your neighborhood cafe ☕ open daily from 7am'},
+  ],
+  tiktok:[
+    {handle:'@jane_eyre',name:'Jane Eyre',bio:'coffee + books ☕📚 marketing girl in London'},
+    {handle:'@marcus_lee',name:'Marcus Lee',bio:'designer, coffee addict, dog dad 🐶'},
+    {handle:'@gym.rat.mike',name:'Mike Torres',bio:'Fitness coach. Leg day enthusiast 💪'},
+  ],
+  linkedin:[
+    {handle:'marcuslee',name:'Marcus Lee',bio:'Product designer at Acme. Coffee & dogs.'},
+    {handle:'davidkimphoto',name:'Dave Kim',bio:'Photographer. Brooklyn based.'},
+    {handle:'hannahbauer1',name:'Hannah Bauer',bio:'Content creator & travel writer. Berlin.'},
+    {handle:'sarah-johnson',name:'Sarah Johnson',bio:'VP of Sales at Globex. Revenue leader.'},
+  ],
+  facebook:[ {handle:'bobsburgers.official',name:"Bob's Burgers",bio:'Best burgers in town since 1994'} ],
+  youtube:[
+    {handle:'@janeeyre',name:'Jane Eyre',bio:'book + coffee vlogs ☕📚 London'},
+    {handle:'@makerandmain',name:'Maker & Main',bio:'DIY home & craft tutorials'},
+  ],
+  pinterest:[
+    {handle:'jane.eyre',name:'Jane Eyre',bio:'mood boards, coffee, books'},
+    {handle:'thecoffeehouseco',name:'The Coffee House',bio:'cafe recipes & latte art'},
+  ],
+  snapchat:[ {handle:'jane.eyre',name:'Jane Eyre',bio:'behind the scenes ✨'} ],
+  google:[ {handle:'acme-marketing',name:'Acme Marketing',bio:'B2B growth agency for small business'} ],
+};
+function getSampleFollowerRosters() {
+  return REAL_NETWORKS.map(platform => ({ platform, followers: SAMPLE_FOLLOWER_ROSTERS[platform] }));
+}
+
+// --- matcher (ported from lib/analytics/cross-channel.ts) ---
+const WEIGHTS = { handle:0.45, name:0.35, bio:0.2 };
+const MATCH_THRESHOLD = 0.7;
+const HIGH_CONFIDENCE = 0.85;
+const STOPWORDS = new Set(['the','and','for','with','your','you','our','are','was','this','that','from','has','have','all','who','her','his','their','them','out','get','one','via','about','into','over','than','then']);
+function normalizeHandle(h){ return h.toLowerCase().replace(/^@+/,'').replace(/[^a-z0-9]/g,''); }
+function normalizeName(n){ return n.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim(); }
+function bioTokens(bio){
+  const words = bio.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g,'').split(/[^a-z0-9]+/).filter(w => w.length > 2 && !STOPWORDS.has(w));
+  return new Set(words);
+}
+function editDistance(a,b){
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  let prev = Array.from({length:b.length+1},(_,i)=>i);
+  for (let i=1;i<=a.length;i++){
+    const curr=[i];
+    for (let j=1;j<=b.length;j++){
+      const cost = a[i-1]===b[j-1]?0:1;
+      curr[j] = Math.min(prev[j]+1, curr[j-1]+1, prev[j-1]+cost);
+    }
+    prev = curr;
+  }
+  return prev[b.length];
+}
+function stringSimilarity(a,b){ if(!a&&!b)return 1; if(!a||!b)return 0; return 1 - editDistance(a,b)/Math.max(a.length,b.length); }
+function jaccard(a,b){ if(!a.size||!b.size)return 0; let inter=0; for(const w of a) if(b.has(w)) inter++; const union=a.size+b.size-inter; return union===0?0:inter/union; }
+function scorePair(x,y){
+  const handleSim = stringSimilarity(x.handle,y.handle);
+  const nameSim = stringSimilarity(x.name,y.name);
+  const bioInformative = x.tokens.size>0 && y.tokens.size>0;
+  const bioSim = bioInformative ? jaccard(x.tokens,y.tokens) : 0;
+  let contributions;
+  if (bioInformative) {
+    contributions = { handle:handleSim*WEIGHTS.handle, name:nameSim*WEIGHTS.name, bio:bioSim*WEIGHTS.bio };
+  } else {
+    const span = WEIGHTS.handle + WEIGHTS.name;
+    contributions = { handle:(handleSim*WEIGHTS.handle)/span, name:(nameSim*WEIGHTS.name)/span, bio:0 };
+  }
+  return { score: contributions.handle+contributions.name+contributions.bio, contributions };
+}
+class UnionFind {
+  constructor(size){ this.parent = Array.from({length:size},(_,i)=>i); }
+  find(i){ while(this.parent[i]!==i){ this.parent[i]=this.parent[this.parent[i]]; i=this.parent[i]; } return i; }
+  union(a,b){ const ra=this.find(a), rb=this.find(b); if(ra!==rb) this.parent[Math.max(ra,rb)]=Math.min(ra,rb); }
+}
+function confidenceLabel(s){ if(s>=HIGH_CONFIDENCE)return 'High'; if(s>=MATCH_THRESHOLD)return 'Medium'; return 'Low'; }
+function letterCount(s){ return (s.match(/[a-z]/gi)||[]).length; }
+function canonicalName(entries){
+  return entries.map(e=>e.profile.name).reduce((best,name)=>{
+    const bl=letterCount(best), nl=letterCount(name);
+    if(nl>bl)return name; if(nl<bl)return best;
+    if(name.length!==best.length)return name.length>best.length?name:best;
+    return name<best?name:best;
+  });
+}
+function matchCrossChannelFollowers(rosters){
+  const entries=[];
+  for (const roster of rosters)
+    for (const profile of roster.followers)
+      entries.push({ platform:roster.platform, profile, handle:normalizeHandle(profile.handle), name:normalizeName(profile.name), tokens:bioTokens(profile.bio) });
+  const uf = new UnionFind(entries.length);
+  const edges=[];
+  for (let i=0;i<entries.length;i++) for (let j=i+1;j<entries.length;j++){
+    if (entries[i].platform===entries[j].platform) continue;
+    const { score, contributions } = scorePair(entries[i],entries[j]);
+    if (score>=MATCH_THRESHOLD){ edges.push({a:i,b:j,score,contributions}); uf.union(i,j); }
+  }
+  const groups = new Map();
+  for (let i=0;i<entries.length;i++){ const root=uf.find(i); (groups.get(root)||groups.set(root,[]).get(root)).push(i); }
+  const people=[];
+  for (const memberIdx of groups.values()){
+    if (memberIdx.length<2) continue;
+    const memberSet=new Set(memberIdx);
+    const platforms=Array.from(new Set(memberIdx.map(i=>entries[i].platform)));
+    if (platforms.length<2) continue;
+    const groupEdges = edges.filter(e=>memberSet.has(e.a)&&memberSet.has(e.b));
+    const avgScore = groupEdges.reduce((s,e)=>s+e.score,0)/groupEdges.length;
+    const totals={handle:0,name:0,bio:0};
+    for (const e of groupEdges){ totals.handle+=e.contributions.handle; totals.name+=e.contributions.name; totals.bio+=e.contributions.bio; }
+    const strongestSignal = ['handle','name','bio'].reduce((best,sig)=> totals[sig]>totals[best]?sig:best);
+    const members = memberIdx.map(i=>entries[i]);
+    const accounts = members.map(e=>({ platform:e.platform, handle:e.profile.handle, name:e.profile.name, bio:e.profile.bio }));
+    const confidence = Math.round(avgScore*10000)/10000;
+    people.push({
+      id: members.map(e=>`${e.platform}:${e.handle}`).sort().join('+'),
+      canonicalName: canonicalName(members), accounts, platforms,
+      confidence, confidenceLabel: confidenceLabel(confidence), strongestSignal,
+    });
+  }
+  people.sort((a,b)=> b.platforms.length-a.platforms.length || b.confidence-a.confidence || a.canonicalName.localeCompare(b.canonicalName));
+  return people;
+}
+const SIGNAL_REASON = { handle:'Near-identical handles', name:'Near-identical display names', bio:'Overlapping bio keywords' };
+
+// ── 7. Report builder ──
+const REPORT_WIDGETS = [
+  { id:'kpis',          label:'Core KPI cards',           defaultOn:true  },
+  { id:'trend',         label:'Engagement trend chart',   defaultOn:true  },
+  { id:'top-content',   label:'Top content',              defaultOn:true  },
+  { id:'posts',         label:'Post performance table',   defaultOn:true  },
+  { id:'audience',      label:'Audience demographics',    defaultOn:false },
+  { id:'cross-channel', label:'Cross-channel followers',  defaultOn:false },
+  { id:'best-time',     label:'Best time to post',        defaultOn:false },
+  { id:'competitors',   label:'Competitor benchmark',     defaultOn:false },
+  { id:'roi',           label:'ROI / attribution',        defaultOn:false },
+];
+const EXPORT_FORMATS = ['PDF','CSV','PowerPoint'];
+
+// ── 8. ROI / attribution ──
+const ROI_ROWS = [
+  { postId:'p2',  caption:'POV: marketing made simple',          platform:'tiktok',    utmCampaign:'spring_launch',  clicks:3120, conversions:184, revenue:5336 },
+  { postId:'p6',  caption:'New feature drop: AI captions',       platform:'instagram', utmCampaign:'ai_captions',    clicks:2410, conversions:142, revenue:4118 },
+  { postId:'p9',  caption:'Weekend sale — 20% off all plans',    platform:'facebook',  utmCampaign:'weekend_sale',   clicks:1980, conversions:211, revenue:6119 },
+  { postId:'p10', caption:'Search ad: marketing suite',          platform:'google',    utmCampaign:'brand_search',   clicks:4540, conversions:268, revenue:7772 },
+  { postId:'p3',  caption:'How we cut email churn by 22%',       platform:'linkedin',  utmCampaign:'b2b_retention',  clicks:740,  conversions:38,  revenue:3990 },
+  { postId:'p1',  caption:'5 quick wins for your spring launch', platform:'instagram', utmCampaign:'spring_launch',  clicks:1260, conversions:64,  revenue:1856 },
+];
+function getRoiAttribution(network){ return network==='all'?ROI_ROWS:ROI_ROWS.filter(r=>r.platform===network); }
+
+// ── 9. Social listening ──
+const LISTENING = {
+  totalMentions:1842, deltaPct:21.3, shareOfVoicePct:28,
+  sentiment:{ positive:64, neutral:27, negative:9 },
+  mentions:[
+    { id:'m1', source:'Instagram', author:'@bloomandco',        text:'Tala made scheduling our launch so easy — obsessed 💜', sentiment:'positive', at:'2026-06-21' },
+    { id:'m2', source:'X',         author:'@founderlife',       text:'Anyone compared Tala vs the bigger tools? Curious on pricing.', sentiment:'neutral', at:'2026-06-21' },
+    { id:'m3', source:'TikTok',    author:'@creatorjules',      text:'The AI captions in Tala are shockingly good lol', sentiment:'positive', at:'2026-06-20' },
+    { id:'m4', source:'Reddit',    author:'u/smallbizmarketer', text:'Wish the analytics export had more formats, otherwise solid.', sentiment:'negative', at:'2026-06-20' },
+    { id:'m5', source:'LinkedIn',  author:'Maya R.',            text:'Switched our agency clients to Tala this quarter — great support.', sentiment:'positive', at:'2026-06-19' },
+  ],
+};
+function getSocialListening(network){
+  if (network==='all') return LISTENING;
+  return { ...LISTENING,
+    totalMentions: Math.round(LISTENING.totalMentions * NETWORK_WEIGHT[network]),
+    shareOfVoicePct: Math.max(5, Math.round(LISTENING.shareOfVoicePct * (0.6 + NETWORK_WEIGHT[network]))),
+  };
+}
+
+// ── Plan gating ──
+const PLAN_LABELS = { starter:'Starter', growth:'Growth', pro:'Pro', agency:'Agency' };
+const SOCIAL_LISTENING_TIERS = ['pro','agency'];
+function canUseSocialListening(plan){ return SOCIAL_LISTENING_TIERS.includes(plan); }
+const LISTENING_TIER_NAMES = SOCIAL_LISTENING_TIERS.map(t=>PLAN_LABELS[t]).join(' & ');
+
+/* ===========================================================================
+   FORMAT HELPERS (ported from lib/analytics/format.ts)
+   =========================================================================== */
+function formatCompact(v){ if(Math.abs(v)>=1e6)return (v/1e6).toFixed(1)+'M'; if(Math.abs(v)>=1e3)return (v/1e3).toFixed(1)+'K'; return ''+v; }
+function formatPercent(v,d=1){ return v.toFixed(d)+'%'; }
+function formatCurrency(v){ return '$'+v.toLocaleString('en-US'); }
+function formatDelta(v){ return (v>0?'+':'')+v.toFixed(1)+'%'; }
+function sourceSuffix(s){ return s==='live'?'(live)':s==='mixed'?'(live + mock)':s==='empty'?'(not connected)':'(mock)'; }
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ===========================================================================
+   APP STATE + RENDERING
+   =========================================================================== */
+const state = {
+  network: 'all',
+  dataSource: 'mock',           // 'mock' | 'empty' — simulates ALLOW_MOCK_ANALYTICS
+  plan: 'pro',                  // drives social-listening gate
+  sortKey: 'engagementRate',    // post performance table
+  sortDesc: true,
+  reportEnabled: Object.fromEntries(REPORT_WIDGETS.map(w => [w.id, w.defaultOn])),
+  whiteLabel: false,
+};
+const allowMock = () => state.dataSource === 'mock';
+// Per the loader: 'mock' when allowMock else 'empty'. (Live state is a server
+// concern not reproducible offline, so this scaffold covers mock + empty.)
+const sectionSource = () => allowMock() ? 'mock' : 'empty';
+
+const $ = sel => document.querySelector(sel);
+const sec = name => document.querySelector(`[data-section="${name}"]`);
+
+function emptyState(message){
+  return `<div class="empty-state"><p>${esc(message)}</p>
+    <a class="empty-cta" href="#connect">Connect an account</a></div>`;
+}
+function sectionHead(title, sourceLabel, description){
+  return `<div class="section-head">
+    <h2 class="section-title">${title}</h2>
+    <span class="source-badge">${esc(sourceLabel)}</span>
+    ${description ? `<p class="section-desc">${esc(description)}</p>` : ''}
+  </div>`;
+}
+
+/* ── Network filter ── */
+function renderNetworkFilter(){
+  $('[data-role="network-filter"]').innerHTML = NETWORKS.map(n =>
+    `<button type="button" class="network-pill" data-network="${n.id}" aria-pressed="${n.id===state.network}">${esc(n.label)}</button>`
+  ).join('');
+}
+
+/* ── Header + banner ── */
+function renderHeaderAndBanner(){
+  $('[data-role="plan-badge"]').textContent = `${PLAN_LABELS[state.plan]} plan`;
+  const banner = $('[data-role="banner"]');
+  if (allowMock()){
+    banner.innerHTML = `<p><strong>Demo data (dev)</strong> — showing mock placeholders. On the live site only real data is shown. Each section notes its source.</p>`;
+  } else {
+    banner.innerHTML = `<p><strong>No connected accounts yet.</strong> Connect a social account to start seeing your analytics — <a href="#connect">connect now</a>.</p>`;
+  }
+}
+
+/* ── 1. Core performance ── */
+function renderCore(){
+  const src = sectionSource();
+  const kpis = allowMock() ? getCoreMetrics(state.network) : [];
+  const trend = allowMock() ? getTrend(state.network) : [];
+  let body;
+  if (src === 'empty' || kpis.length === 0){
+    body = emptyState('Connect an account to see your unified performance metrics.');
+  } else {
+    const cards = kpis.map(kpi => {
+      const up = kpi.deltaPct !== null && kpi.deltaPct >= 0;
+      const valueStr = kpi.format==='percent' ? formatPercent(kpi.value) : formatCompact(kpi.value);
+      return `<div class="kpi-card" data-metric="${kpi.key}">
+        <div class="kpi-label">${esc(kpi.label)}</div>
+        <div class="kpi-value">${valueStr}</div>
+        ${kpi.deltaPct!==null ? `<div class="kpi-delta" data-direction="${up?'up':'down'}">${formatDelta(kpi.deltaPct)} <span>vs last period</span></div>` : ''}
+      </div>`;
+    }).join('');
+    const trendBlock = trend.length ? `<div class="trend-chart">
+        <h3>Engagement &amp; reach</h3>
+        <p>Last 30 days · time series ${sourceSuffix(src)}</p>
+        ${lineChart(trend.map(p=>p.label), [
+          {label:'Engagement', values:trend.map(p=>p.engagement)},
+          {label:'Reach', values:trend.map(p=>p.reach)},
+        ])}
+      </div>` : '';
+    body = `<div class="kpi-grid">${cards}</div>${trendBlock}`;
+  }
+  sec('core').innerHTML = sectionHead('Core performance', `Meta / LinkedIn / TikTok / Google APIs ${sourceSuffix(src)}`,
+    'Unified KPIs across every connected account — one view instead of toggling each native dashboard.') + body;
+}
+
+function lineChart(labels, series){
+  const all = series.flatMap(s => s.values);
+  const max = Math.max(1, ...all);
+  const n = Math.max(1, labels.length - 1);
+  const x = i => (i/n)*100;
+  const y = v => 100 - (v/max)*100;
+  const polylines = series.map(s => {
+    const pts = s.values.map((v,i)=>`${x(i)},${y(v)}`).join(' ');
+    return `<polyline data-series="${esc(s.label)}" points="${pts}" fill="none" stroke="currentColor" stroke-width="0.8" vector-effect="non-scaling-stroke" />`;
+  }).join('');
+  const legend = series.map(s=>`<span class="legend-item">${esc(s.label)}</span>`).join('');
+  return `<div class="line-chart">
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Trend chart">${polylines}</svg>
+    <div class="chart-axis"><span>${esc(labels[0])}</span><span>${esc(labels[Math.floor(labels.length/2)])}</span><span>${esc(labels[labels.length-1])}</span></div>
+    <div class="chart-legend">${legend}</div>
+  </div>`;
+}
+
+/* ── 2. Top content ── */
+function renderTop(){
+  const src = sectionSource();
+  const posts = allowMock() ? getPostPerformance(state.network) : [];
+  const top = [...posts].sort((a,b)=>b.engagementRate-a.engagementRate).slice(0,3);
+  let body;
+  if (src === 'empty'){
+    body = emptyState('Connect an account to surface your best-performing posts.');
+  } else if (top.length === 0){
+    body = `<p class="empty-inline">No posts for this network yet.</p>`;
+  } else {
+    body = `<div class="top-grid">` + top.map((post,i)=>`
+      <div class="top-card" data-rank="${i+1}">
+        <div class="top-card-head"><span class="rank-badge">#${i+1}</span><span class="network-name">${esc(NETWORK_LABEL[post.platform])}</span></div>
+        <p class="top-caption">${esc(post.caption)}</p>
+        <div class="top-meta"><span class="format">${esc(post.format)}</span><span class="eng">${formatPercent(post.engagementRate)} eng.</span></div>
+        <div class="top-stats">
+          <span data-stat="views">${formatCompact(post.views)} views</span>
+          <span data-stat="likes">${formatCompact(post.likes)} likes</span>
+          <span data-stat="comments">${formatCompact(post.comments)} comments</span>
+          <span data-stat="shares">${formatCompact(post.shares)} shares</span>
+        </div>
+      </div>`).join('') + `</div>`;
+  }
+  sec('top').innerHTML = sectionHead('Top content', `scheduled_posts + per-network insights ${sourceSuffix(src)}`,
+    'Your highest-engagement posts — surfacing which formats, captions, and times performed best.') + body;
+}
+
+/* ── 3. Content performance (sortable table) ── */
+const POST_COLUMNS = [
+  { key:'views', label:'Views' }, { key:'likes', label:'Likes' }, { key:'comments', label:'Comments' },
+  { key:'shares', label:'Shares' }, { key:'engagementRate', label:'Eng. rate' },
+];
+function renderPosts(){
+  const src = sectionSource();
+  let body;
+  if (src === 'empty'){
+    body = emptyState('Connect an account to see how individual posts performed.');
+  } else {
+    const input = getPostPerformance(state.network);
+    const posts = [...input].sort((a,b)=>{ const diff=a[state.sortKey]-b[state.sortKey]; return state.sortDesc?-diff:diff; });
+    const headCells = POST_COLUMNS.map(col=>{
+      const active = state.sortKey===col.key;
+      const dir = active ? (state.sortDesc?'descending':'ascending') : 'none';
+      return `<th class="num" aria-sort="${dir}"><button type="button" data-sort="${col.key}" data-active="${active}">${col.label} ${active?(state.sortDesc?'▼':'▲'):'↕'}</button></th>`;
+    }).join('');
+    const rows = posts.map(post=>`<tr>
+      <td class="post-cell"><span class="post-caption">${esc(post.caption)}</span><span class="post-date">${esc(post.postedAt)}</span></td>
+      <td>${esc(NETWORK_LABEL[post.platform])}</td>
+      <td><span class="format-pill">${esc(post.format)}</span></td>
+      <td class="num">${formatCompact(post.views)}</td>
+      <td class="num">${formatCompact(post.likes)}</td>
+      <td class="num">${formatCompact(post.comments)}</td>
+      <td class="num">${formatCompact(post.shares)}</td>
+      <td class="num eng">${formatPercent(post.engagementRate)}</td>
+    </tr>`).join('') || `<tr><td colspan="8" class="empty-inline">No posts for this network yet.</td></tr>`;
+    body = `<table class="posts-table"><thead><tr>
+      <th>Post</th><th>Network</th><th>Format</th>${headCells}
+    </tr></thead><tbody>${rows}</tbody></table>`;
+  }
+  sec('posts').innerHTML = sectionHead('Content performance', `scheduled_posts + per-network insights ${sourceSuffix(src)}`,
+    "Per-post metrics across formats and captions. The post list is already in Supabase — engagement numbers join in from each network's API.") + body;
+}
+
+/* ── 4. Audience insights ── */
+function renderAudience(){
+  const src = sectionSource();
+  const audience = allowMock() ? getAudience(state.network) : null;
+  const hasLocations = !!audience && audience.locations.length>0;
+  const hasAges = !!audience && audience.ageRanges.length>0;
+  const hasHours = !!audience && audience.heatmap.values.some(r=>r.some(v=>v>0));
+  const hasFollowers = !!audience && audience.followerSeries.length>0;
+  const hasAny = hasLocations||hasAges||hasHours||hasFollowers;
+  let body;
+  if (!audience || !hasAny){
+    body = emptyState('Audience demographics will appear once an account with audience insights (e.g. GA4) is connected and has visitors.');
+  } else {
+    const maxLoc = Math.max(...audience.locations.map(l=>l.pct));
+    const maxAge = Math.max(...audience.ageRanges.map(a=>a.pct));
+    const locCard = hasLocations ? `<div class="audience-card" data-card="locations"><h3>Top locations</h3>${audience.locations.map(l=>barRow(l.country,l.pct,maxLoc,'%')).join('')}</div>` : '';
+    const ageCard = hasAges ? `<div class="audience-card" data-card="ages"><h3>Age ranges</h3><p class="gender">${audience.topGender.pct}% ${esc(audience.topGender.label.toLowerCase())}</p>${audience.ageRanges.map(a=>barRow(a.range,a.pct,maxAge,'%')).join('')}</div>` : '';
+    const hoursCard = hasHours ? `<div class="audience-card" data-card="hours"><h3>Active hours</h3><p>When your audience is online (darker = more active)</p>${heatmap(audience.heatmap)}</div>` : '';
+    const followerCard = hasFollowers ? `<div class="audience-card" data-card="followers"><h3>Follower growth</h3><p>Last 6 months</p>${columnChart(audience.followerSeries)}</div>` : '';
+    body = `<div class="audience-grid">${locCard}${ageCard}${hoursCard}${followerCard}</div>`;
+  }
+  sec('audience').innerHTML = sectionHead('Audience insights', `GA4 + network audience APIs ${sourceSuffix(src)}`,
+    "Who you're reaching — location, age, gender, active hours, and follower growth over time.") + body;
+}
+function barRow(label, value, max, suffix){
+  const pct = Math.min(100, (value/max)*100);
+  return `<div class="bar-row"><span class="bar-label">${esc(label)}</span><span class="bar-track"><span class="bar-fill" style="width:${pct}%"></span></span><span class="bar-value">${value}${suffix}</span></div>`;
+}
+function columnChart(data){
+  const max = Math.max(1, ...data.map(d=>d.value));
+  return `<div class="col-chart">` + data.map(d=>`<div class="col" data-label="${esc(d.label)}" title="${esc(d.label)}: ${d.value.toLocaleString()}"><span style="height:${(d.value/max)*100}%"></span><span class="col-label">${esc(d.label)}</span></div>`).join('') + `</div>`;
+}
+function heatmap(hm){
+  const rows = hm.values.map((row,d)=>`<div class="heatmap-row"><span class="heatmap-day">${esc(hm.days[d])}</span><span class="heatmap-cells">${
+    row.map((intensity,h)=>`<span title="${esc(hm.days[d])} ${h}:00 — ${intensity}" style="background:rgba(0,0,0,${(0.06+(Math.min(100,Math.max(0,intensity))/100)*0.74).toFixed(3)})"></span>`).join('')
+  }</span></div>`).join('');
+  const axis = `<div class="heatmap-axis">${hm.hourLabels.map(h=>`<span>${esc(h)}</span>`).join('')}</div>`;
+  return `<div class="heatmap">${rows}${axis}</div>`;
+}
+
+/* ── 5. Cross-channel followers ── */
+function renderCross(){
+  // Source: mock when allowMock, else empty (matcher over the dev sample).
+  const src = allowMock() ? 'mock' : 'empty';
+  const people = allowMock() ? matchCrossChannelFollowers(getSampleFollowerRosters()) : [];
+  const visible = state.network==='all' ? people : people.filter(p=>p.platforms.includes(state.network));
+  const linkedAccounts = visible.reduce((s,p)=>s+p.accounts.length,0);
+  let body;
+  if (src === 'empty'){
+    body = emptyState('Cross-channel matching needs a follower roster from a connected account — no platform exposes one yet.');
+  } else if (people.length === 0){
+    body = `<p class="empty-inline">No likely cross-channel followers found yet.</p>`;
+  } else if (visible.length === 0){
+    body = `<p class="empty-inline">No potential matches overlap ${esc(NETWORK_LABEL[state.network])} yet.</p>`;
+  } else {
+    const banner = `<div class="potential-banner"><strong>Potential matches.</strong> These people are inferred from public profile signals (handle, name, bio) — they are <em>not confirmed identities</em>. Read the confidence score as a likelihood, not a fact.</div>`;
+    const summary = `<div class="cross-summary">
+      <div class="summary-card"><div class="summary-label">Potential people</div><div class="summary-value">${visible.length}</div><div class="summary-hint">appear to follow you on 2+ networks</div></div>
+      <div class="summary-card"><div class="summary-label">Linked accounts</div><div class="summary-value">${linkedAccounts}</div><div class="summary-hint">across all matched people</div></div>
+    </div>`;
+    const list = visible.map(person=>{
+      const pct = Math.round(person.confidence*100);
+      const chips = person.accounts.map(a=>`<span class="account-chip" data-platform="${a.platform}" title="${esc(NETWORK_LABEL[a.platform])} · ${esc(a.name)}"><span class="chip-network">${esc(NETWORK_LABEL[a.platform])}</span> <span class="chip-handle">${esc(a.handle.startsWith('@')?a.handle:'@'+a.handle)}</span></span>`).join('');
+      return `<div class="person-row" data-confidence="${person.confidenceLabel}">
+        <div class="person-head">
+          <span class="person-name">${esc(person.canonicalName)}</span>
+          <span class="channel-count">${person.platforms.length} channels</span>
+          <span class="confidence-badge">${person.confidenceLabel} · ${pct}% likely</span>
+        </div>
+        <div class="person-reason">${esc(SIGNAL_REASON[person.strongestSignal])}</div>
+        <div class="person-chips">${chips}</div>
+      </div>`;
+    }).join('');
+    body = `${banner}${summary}<div class="person-list">${list}</div>`;
+  }
+  sec('cross').innerHTML = sectionHead('Cross-channel followers', `Cross-platform identity match ${sourceSuffix(src)}`,
+    'People who appear to follow you on more than one network under slightly different handles — surfaced as potential matches, not confirmed identities.') + body;
+}
+
+/* ── 6. Best time to post ── */
+function renderBestTimes(){
+  const platforms = state.network==='all' ? REAL_NETWORKS : [state.network];
+  // mock → every platform has slots; empty → none.
+  const slotsFor = p => allowMock() ? getBestTimes(p) : [];
+  const visible = platforms.filter(p => slotsFor(p).length > 0);
+  const src = allowMock() ? 'mock' : 'empty';
+  const networkLabel = NETWORKS.find(n=>n.id===state.network)?.label ?? 'All';
+  let body;
+  if (visible.length === 0){
+    body = emptyState('Best-time recommendations appear once you have published posts with engagement history.');
+  } else {
+    body = `<p class="besttimes-intro">Recommended posting windows for <strong>${esc(networkLabel)}</strong>, from your real engagement:</p>
+      <div class="besttimes-grid">` + visible.map(p=>{
+        const slots = slotsFor(p);
+        return `<div class="besttime-card" data-platform="${p}"><div class="besttime-network">${esc(NETWORK_LABEL[p])}</div>` +
+          slots.map(slot=>`<div class="besttime-slot"><span class="slot-when">${esc(slot.day)} · ${esc(slot.time)}</span><span class="bar-track"><span class="bar-fill" style="width:${slot.score}%"></span></span><span class="slot-score">${slot.score}</span></div>`).join('') +
+          `</div>`;
+      }).join('') + `</div>`;
+  }
+  sec('besttimes').innerHTML = sectionHead('Best time to post', `Per-account engagement history ${sourceSuffix(src)}`,
+    'Recommended posting windows derived from when your published posts earned the most engagement, per platform.') + body;
+}
+
+/* ── 7. Competitor benchmark ── */
+function renderCompetitors(){
+  const src = sectionSource();
+  const rows = allowMock() ? getCompetitors(state.network) : [];
+  let body;
+  if (src === 'empty' || rows.length === 0){
+    body = emptyState('Competitor benchmarking requires a competitive-intelligence integration (not connected yet).');
+  } else {
+    const maxSov = Math.max(...rows.map(c=>c.shareOfVoicePct));
+    const table = `<div class="competitor-table"><h3>Engagement &amp; follower growth</h3>
+      <table><thead><tr><th>Brand</th><th class="num">Eng. rate</th><th class="num">Follower growth</th></tr></thead>
+      <tbody>${rows.map(c=>`<tr data-you="${!!c.isYou}"><td>${esc(c.name)}${c.isYou?' <span class="you-badge">You</span>':''}</td><td class="num">${formatPercent(c.engagementRate)}</td><td class="num">${formatPercent(c.followerGrowthPct)}</td></tr>`).join('')}</tbody></table></div>`;
+    const sov = `<div class="competitor-sov"><h3>Share of voice</h3>${rows.map(c=>barRow(c.name, c.shareOfVoicePct, maxSov, '%')).join('')}</div>`;
+    body = `<div class="competitor-grid">${table}${sov}</div>`;
+  }
+  sec('competitors').innerHTML = sectionHead('Competitor benchmark', `Competitive intel provider ${sourceSuffix(src)}`,
+    'How your engagement and follower growth stack up against rivals, plus share of voice.') + body;
+}
+
+/* ── 8. ROI / attribution ── */
+function renderRoi(){
+  const src = sectionSource();
+  let body;
+  if (src === 'empty'){
+    body = emptyState('Revenue attribution appears once Google Analytics (with UTM campaigns) is connected.');
+  } else {
+    const input = getRoiAttribution('all');
+    const rows = state.network==='all' ? input : input.filter(r=>r.platform===state.network);
+    const totals = rows.reduce((a,r)=>({clicks:a.clicks+r.clicks, conversions:a.conversions+r.conversions, revenue:a.revenue+r.revenue}),{clicks:0,conversions:0,revenue:0});
+    const bodyRows = rows.map(r=>`<tr>
+      <td><span class="roi-caption">${esc(r.caption)}</span></td>
+      <td>${esc(NETWORK_LABEL[r.platform])}</td>
+      <td><span class="utm-pill">${esc(r.utmCampaign)}</span></td>
+      <td class="num">${formatCompact(r.clicks)}</td>
+      <td class="num">${r.conversions}</td>
+      <td class="num revenue">${formatCurrency(r.revenue)}</td>
+    </tr>`).join('') || `<tr><td colspan="6" class="empty-inline">No attributed revenue for this network yet.</td></tr>`;
+    const footer = rows.length ? `<tfoot><tr><td colspan="3">Total</td><td class="num">${formatCompact(totals.clicks)}</td><td class="num">${totals.conversions}</td><td class="num revenue">${formatCurrency(totals.revenue)}</td></tr></tfoot>` : '';
+    body = `<table class="roi-table"><thead><tr><th>Campaign</th><th>Network</th><th>UTM campaign</th><th class="num">Clicks</th><th class="num">Conversions</th><th class="num">Revenue</th></tr></thead><tbody>${bodyRows}</tbody>${footer}</table>`;
+  }
+  sec('roi').innerHTML = sectionHead('ROI &amp; conversion attribution', `UTM via GA4 + revenue ${sourceSuffix(src)}`,
+    'UTM-tagged clicks, conversions, and revenue attributed back to the campaign that drove them.') + body;
+}
+
+/* ── 9. Custom report builder ── */
+function renderReport(){
+  const widgets = REPORT_WIDGETS.map(w=>`<label class="report-widget" data-enabled="${state.reportEnabled[w.id]}">
+    <input type="checkbox" data-widget="${w.id}" ${state.reportEnabled[w.id]?'checked':''} />
+    <span class="widget-grip" aria-hidden="true">⠿</span>
+    <span class="widget-label">${esc(w.label)}</span>
+  </label>`).join('');
+  const exports = EXPORT_FORMATS.map(fmt=>`<button type="button" class="export-btn" data-format="${fmt}" disabled title="Export coming soon">Export as ${fmt}</button>`).join('');
+  const body = `<div class="report-grid">
+    <div class="report-widgets"><h3>Widgets</h3><p>Choose what appears in the exported report.</p>${widgets}</div>
+    <div class="report-export"><h3>Export</h3><p>Download a snapshot of the selected widgets.</p>${exports}
+      <label class="whitelabel"><span>White-label branding <small>Hide Tala logo on exports</small></span>
+        <input type="checkbox" data-control="whiteLabel" ${state.whiteLabel?'checked':''} /></label>
+    </div>
+  </div>`;
+  sec('report').innerHTML = sectionHead('Custom report builder', 'User config (mock) — export renders server-side',
+    'Toggle the widgets to include, add your branding, and export. Drag-and-drop ordering and export are mocked for now.') + body;
+}
+
+/* ── 10. Social listening (plan-gated) ── */
+function renderListening(){
+  const unlocked = canUseSocialListening(state.plan);
+  const src = unlocked ? sectionSource() : 'empty';
+  let body;
+  if (!unlocked){
+    body = `<div class="listening-locked">
+      <p class="lock-title">Available on ${LISTENING_TIER_NAMES}</p>
+      <p>Social listening &amp; sentiment is an enterprise feature. Upgrade to monitor brand mentions and track sentiment across the web.</p>
+      <a class="upgrade-cta" href="#plan">Upgrade</a>
+    </div>`;
+  } else {
+    const data = allowMock() ? getSocialListening(state.network) : null;
+    if (!data){
+      body = emptyState('Social listening requires a brand-monitoring integration (not connected yet).');
+    } else {
+      const up = data.deltaPct >= 0;
+      const sentimentBar = `<div class="sentiment-bar">
+        <span class="seg" data-sentiment="positive" style="width:${data.sentiment.positive}%"></span>
+        <span class="seg" data-sentiment="neutral" style="width:${data.sentiment.neutral}%"></span>
+        <span class="seg" data-sentiment="negative" style="width:${data.sentiment.negative}%"></span>
+      </div>`;
+      const sentimentLegend = ['positive','neutral','negative'].map(k=>`<span class="sentiment-stat" data-sentiment="${k}">${data.sentiment[k]}% ${k}</span>`).join('');
+      const mentions = data.mentions.map(m=>`<div class="mention-row" data-sentiment="${m.sentiment}"><p class="mention-text">${esc(m.text)}</p><p class="mention-meta">${esc(m.author)} · ${esc(m.source)} · ${esc(m.at)}</p></div>`).join('');
+      body = `<div class="listening-grid">
+        <div class="listening-card" data-card="mentions"><div class="kpi-label">Total mentions</div><div class="kpi-value">${formatCompact(data.totalMentions)}</div>
+          <div class="kpi-delta" data-direction="${up?'up':'down'}">${formatDelta(data.deltaPct)} vs last period</div>
+          <div class="sov">${data.shareOfVoicePct}% share of voice</div></div>
+        <div class="listening-card" data-card="sentiment"><h3>Sentiment</h3>${sentimentBar}<div class="sentiment-legend">${sentimentLegend}</div></div>
+        <div class="listening-card" data-card="recent"><h3>Recent mentions</h3>${mentions}</div>
+      </div>`;
+    }
+  }
+  sec('listening').innerHTML = sectionHead('Social listening &amp; sentiment', `Listening provider + Claude sentiment ${sourceSuffix(src)}`,
+    'Brand-mention monitoring and sentiment across the web.')
+    + `<div class="listening-tier">Enterprise · ${LISTENING_TIER_NAMES}</div>` + body;
+}
+
+/* ── Full render ── */
+function render(){
+  renderHeaderAndBanner();
+  renderNetworkFilter();
+  renderCore();
+  renderTop();
+  renderPosts();
+  renderAudience();
+  renderCross();
+  renderBestTimes();
+  renderCompetitors();
+  renderRoi();
+  renderReport();
+  renderListening();
+}
+
+/* ===========================================================================
+   EVENT WIRING (delegated)
+   =========================================================================== */
+document.getElementById('app').addEventListener('click', e=>{
+  const netBtn = e.target.closest('[data-network]');
+  if (netBtn){ state.network = netBtn.dataset.network; render(); return; }
+
+  const sortBtn = e.target.closest('[data-sort]');
+  if (sortBtn){
+    const key = sortBtn.dataset.sort;
+    if (key === state.sortKey) state.sortDesc = !state.sortDesc;
+    else { state.sortKey = key; state.sortDesc = true; }
+    renderPosts();
+    return;
+  }
+});
+
+document.getElementById('app').addEventListener('change', e=>{
+  const t = e.target;
+  if (t.dataset.control === 'dataSource'){ state.dataSource = t.value; render(); return; }
+  if (t.dataset.control === 'plan'){ state.plan = t.value; render(); return; }
+  if (t.dataset.control === 'whiteLabel'){ state.whiteLabel = t.checked; return; }
+  if (t.dataset.widget){ state.reportEnabled[t.dataset.widget] = t.checked; renderReport(); return; }
+});
+
+render();
+</script>
+</body>
+</html>
