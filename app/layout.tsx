@@ -34,9 +34,10 @@ const dmSerif = DM_Serif_Display({
   display: "swap",
 });
 
-// Spectral (serif) body face for the analytics re-skin. Loaded app-wide via the
-// real next/font mechanism but applied only under `.analytics-page` (see
-// globals.css) so it doesn't silently restyle every other page's body copy.
+// Spectral (serif) is the app-wide body face. Loaded via the real next/font
+// mechanism and wired up as `--font-sans` in globals.css, so every page's body
+// copy inherits it. Fredoka (headings/labels/buttons) and DM Serif (decorative
+// taglines) are unaffected — they carry their own explicit font utilities.
 const spectral = Spectral({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600"],
