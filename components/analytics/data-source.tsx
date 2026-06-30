@@ -4,19 +4,37 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
 /**
- * Small, consistent "Source:" caption shown on every analytics widget so it is
- * always obvious where the data will eventually come from. While Tala has no
- * live integrations, every label ends with "(mock)".
+ * Append an alpha channel to a 6-digit hex colour (e.g. `#D6498C` → `#D6498C1A`).
+ * Lets the source pill share a section's theme colour at a soft tint without
+ * pulling in a colour library.
  */
-export function DataSource({ label, className }: { label: string; className?: string }) {
+function withAlpha(hex: string, alpha: string): string {
+  return /^#[0-9a-fA-F]{6}$/.test(hex) ? `${hex}${alpha}` : hex
+}
+
+/**
+ * Small, consistent "Source:" caption shown on every analytics widget so it is
+ * always obvious where the data comes from. The pill is tinted to the section's
+ * theme colour (text = colour, ~10% fill, ~40% border); the wording itself
+ * still carries the real "(live)" / "(not connected)" suffix from the loader.
+ */
+export function DataSource({
+  label,
+  color = '#1E7B82',
+  className,
+}: {
+  label: string
+  /** Section theme colour — tints text, fill (~10%), and border (~40%). */
+  color?: string
+  className?: string
+}) {
   return (
     <span
       className={cn(
         'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10.5px] font-medium',
         className
       )}
-      // Source/live pill → content/teal tint from the category palette.
-      style={{ background: '#DCF1F2', color: '#1E7B82', borderColor: 'rgba(54,183,192,.4)' }}
+      style={{ background: withAlpha(color, '1A'), color, borderColor: withAlpha(color, '66') }}
     >
       <Database className="size-3 shrink-0" />
       Source: {label}
@@ -102,14 +120,17 @@ export function EmptyState({
   message?: string
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-[14px] border border-dashed border-border bg-card px-4 py-10 text-center shadow-[0_1px_0_rgba(255,255,255,.6)_inset]">
+    <div
+      className="flex flex-col items-center gap-4 rounded-[14px] border-[1.5px] border-dashed px-7 py-12 text-center"
+      style={{ borderColor: 'rgba(164,141,120,.34)', background: 'rgba(234,227,214,.25)' }}
+    >
       <span
-        className="flex size-10 items-center justify-center rounded-full"
+        className="flex size-[54px] items-center justify-center rounded-full"
         style={{ background: '#EAE3D6', color: '#A48D78' }}
       >
-        <Plug className="size-5" />
+        <Plug className="size-6" />
       </span>
-      <p className="max-w-sm text-sm text-muted-foreground">{message}</p>
+      <p className="max-w-lg text-[15px] leading-relaxed text-muted-foreground">{message}</p>
       <Button
         asChild
         size="sm"
@@ -163,7 +184,7 @@ export function Section({
             <h2 className="font-fredoka text-lg font-semibold leading-none tracking-[-0.01em] text-foreground">
               {title}
             </h2>
-            <DataSource label={source} />
+            <DataSource label={source} color={iconColor} />
           </div>
           {description && (
             <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>

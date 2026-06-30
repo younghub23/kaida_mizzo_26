@@ -197,10 +197,21 @@
 .analytics-page [data-slot="card"] {
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
 }
+
+/* Body copy on the analytics page switches to Spectral (a serif), matching the
+   mockup. Fredoka headings/labels and DM Serif taglines keep their own faces
+   because those elements carry explicit font utilities that override this
+   inherited default. Scoped to `.analytics-page` so no other page is touched. */
+.analytics-page {
+  font-family: var(--font-spectral), Georgia, "Times New Roman", serif;
+}
+
+/* Network filter pills: the active pill adopts the mockup's social-soft chip
+   (cat-social-soft fill + cat-social-text ink) instead of the default grey. */
 .analytics-page [data-slot="tabs-trigger"][data-state="active"] {
-  background-color: transparent;
-  background-image: linear-gradient(100deg, #f9e4ee, #eae3d6);
-  color: #3a2e22;
+  background-color: #f9e4ee;
+  background-image: none;
+  color: #a82c66;
   box-shadow: none;
 }
 

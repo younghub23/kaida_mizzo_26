@@ -30,7 +30,7 @@ export function SocialListening({
     <Section
       title="Social listening &amp; sentiment"
       icon={Ear}
-      iconColor="#B5604A"
+      iconColor="#C8472E"
       eyebrow="Listening"
       source={`Listening provider + Claude sentiment ${sourceSuffix(unlocked ? source : 'empty')}`}
       description="Brand-mention monitoring and sentiment across the web."

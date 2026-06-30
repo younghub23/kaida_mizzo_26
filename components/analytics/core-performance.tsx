@@ -7,18 +7,21 @@ import { formatCompact, formatPercent, formatDelta, sourceSuffix, type SectionSo
 
 // Category-tinted KPI numbers, echoing the dashboard's warm palette. Keyed by
 // metric, with a vivid fallback cycle for anything unmapped.
+// Per-metric KPI number colours, mirroring the mockup's grid: engagement
+// content-teal, followers magenta, reach tangerine, impressions work-blue,
+// clicks olive-green — drawing on the full data-viz palette, not just pink/blue.
 const KPI_COLOR: Partial<Record<MetricKey, string>> = {
-  followers: '#A82C66', // social
-  engagementRate: '#1E7B82', // content
-  reach: '#E08A3C', // tangerine
+  engagementRate: '#1E7B82', // content-teal
+  followers: '#C12C6E',
+  reach: '#D97A2C',
   impressions: '#3A6E92', // work / blue
-  followerGrowth: '#1E7B82',
-  clicks: '#3A6E92',
-  likes: '#A82C66',
+  clicks: '#5E8C3E', // green
+  followerGrowth: '#5E8C3E',
+  likes: '#C12C6E',
   comments: '#1E7B82',
-  shares: '#E08A3C',
+  shares: '#D97A2C',
 }
-const KPI_FALLBACK = ['#A82C66', '#1E7B82', '#E08A3C', '#3A6E92']
+const KPI_FALLBACK = ['#1E7B82', '#C12C6E', '#D97A2C', '#3A6E92', '#5E8C3E']
 // Up = warm olive-green, down = rust — matching the dashboard's delta colours.
 const DELTA_UP = '#4C6633'
 const DELTA_DOWN = '#C8472E'
@@ -94,6 +97,9 @@ export function CorePerformance({
           <CardContent>
             <LineChart
               labels={trend.map((p) => p.label)}
+              // Pink engagement line over a vertical pink→tangerine→lemon wash,
+              // turquoise reach line — fed by the real trend series.
+              areaGradient={['#D6498C', '#E08A3C', '#F4C96D']}
               series={[
                 { label: 'Engagement', color: '#D6498C', values: trend.map((p) => p.engagement) },
                 { label: 'Reach', color: '#36B7C0', values: trend.map((p) => p.reach) },

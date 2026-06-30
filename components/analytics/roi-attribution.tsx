@@ -40,7 +40,7 @@ export function RoiAttribution({
     <Section
       title="ROI &amp; conversion attribution"
       icon={DollarSign}
-      iconColor="#4C6633"
+      iconColor="#5E8C3E"
       eyebrow="Revenue"
       source={`UTM via GA4 + revenue ${sourceSuffix(source)}`}
       description="UTM-tagged clicks, conversions, and revenue attributed back to the campaign that drove them."
