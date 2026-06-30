@@ -35,6 +35,7 @@ import {
   type CalendarTodo,
 } from '@/app/actions/calendar'
 import type { ScheduledPost } from '@/app/actions/social'
+import { card, cardLink } from '@/app/(dashboard)/profile/ui'
 import { CATEGORIES, getCategory } from './categories'
 import { EventDialog } from './event-dialog'
 import {
@@ -49,11 +50,9 @@ import {
   addMonths,
   startOfDay,
   formatTime,
-  formatTimeShort,
   formatRelative,
   formatHourLabel,
   formatMonthYear,
-  formatFullDate,
   WEEKDAY_LABELS,
   GRID_HOURS,
   DAY_START_HOUR,
@@ -74,11 +73,8 @@ const HOUR_HEIGHT = 56
 const TODAY_COLUMN_TINT =
   'linear-gradient(180deg, rgba(214,72,140,0.05), rgba(224,138,60,0.04))'
 
-// Hex → rgba helper for the gentle per-day cell wash in month view.
-function withAlpha(hex: string, alpha: number): string {
-  const n = parseInt(hex.slice(1), 16)
-  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`
-}
+// Bordered control containers (nav-pill, view-toggle) use the heavier hairline.
+const LINE_STRONG = 'rgba(164,141,120,0.34)'
 
 export function CalendarClient({ initialEvents, initialPosts, initialTodos }: Props) {
   const [events, setEvents] = useState<CalendarEvent[]>(initialEvents)
@@ -181,61 +177,69 @@ export function CalendarClient({ initialEvents, initialPosts, initialTodos }: Pr
     [items]
   )
 
-  const headingDate =
-    view === 'day' ? formatFullDate(cursor) : formatMonthYear(cursor)
+  // Tagline reflects the currently visible month, derived from the real cursor.
+  const tagline = `${formatMonthYear(cursor)} — everything you've planned, in one place.`
 
   return (
     <div className="tala-theme min-h-screen bg-background font-sans text-foreground">
-      <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-5 p-6 lg:p-7">
-        {/* ── Header ── */}
-        <header className="relative flex flex-wrap items-end justify-between gap-6 overflow-hidden rounded-2xl border border-border bg-accent px-6 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]">
+      <div className="mx-auto flex w-full max-w-[1340px] flex-col gap-6 px-10 pb-[70px] pt-[34px] max-[820px]:px-[22px] max-[820px]:pb-[60px] max-[820px]:pt-[26px]">
+        {/* ── Page header ── */}
+        <header className="flex flex-wrap items-start justify-between gap-6">
           <div>
-            <span className="block font-fredoka text-sm font-semibold lowercase tracking-[0.02em] text-primary">
-              tala
-            </span>
-            <h1 className="font-fredoka text-[34px] font-semibold leading-none tracking-tight text-foreground">
+            <h1 className="font-fredoka text-[40px] font-semibold leading-[1.05] tracking-[-0.02em] text-foreground max-[820px]:text-[32px]">
               Calendar
             </h1>
-            <p className="mt-1.5 font-dm-serif text-lg italic text-muted-foreground">{headingDate}</p>
+            <p className="mt-2 font-dm-serif text-[19px] italic text-primary">{tagline}</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             {/* Prev · Today · Next, joined into one pill */}
-            <div className="flex items-center overflow-hidden rounded-lg border border-border bg-card">
+            <div
+              className="flex items-center overflow-hidden rounded-[11px] border bg-card"
+              style={{ borderColor: LINE_STRONG }}
+            >
               <button
                 onClick={() => shift(-1)}
                 aria-label="Previous"
-                className="px-3 py-2 text-[#5a5042] transition-colors hover:bg-[rgba(164,141,120,0.12)] hover:text-foreground"
+                className="flex h-[38px] w-10 items-center justify-center text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
-                <ChevronLeft className="size-4" />
+                <ChevronLeft className="size-[17px]" />
               </button>
               <button
                 onClick={() => setCursor(new Date())}
-                className="border-x border-border px-3.5 py-2 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-primary transition-colors hover:bg-[rgba(164,141,120,0.12)]"
+                className="flex h-[38px] items-center border-x border-border px-4 font-fredoka text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-accent"
               >
                 Today
               </button>
               <button
                 onClick={() => shift(1)}
                 aria-label="Next"
-                className="px-3 py-2 text-[#5a5042] transition-colors hover:bg-[rgba(164,141,120,0.12)] hover:text-foreground"
+                className="flex h-[38px] w-10 items-center justify-center text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
-                <ChevronRight className="size-4" />
+                <ChevronRight className="size-[17px]" />
               </button>
             </div>
 
             {/* View toggle */}
-            <div className="inline-flex items-center gap-0.5 rounded-lg border border-border bg-card p-[3px]">
+            <div
+              className="inline-flex items-center gap-0.5 rounded-[11px] border bg-card p-[3px]"
+              style={{ borderColor: LINE_STRONG }}
+            >
               {(['month', 'week', 'day'] as CalendarView[]).map((v) => (
                 <button
                   key={v}
                   onClick={() => setView(v)}
                   className={cn(
-                    'rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-colors',
+                    'rounded-lg px-4 py-[7px] font-fredoka text-[13px] font-medium capitalize transition-colors',
                     view === v
-                      ? 'tala-grad-soft text-white shadow-[0_1px_4px_rgba(200,71,46,0.3)]'
-                      : 'text-[#5a5042] hover:text-foreground'
+                      ? 'text-[#A82C66] shadow-[0_1px_3px_rgba(58,46,34,0.08)]'
+                      : 'text-muted-foreground hover:text-foreground'
                   )}
+                  style={
+                    view === v
+                      ? { backgroundImage: 'linear-gradient(120deg,#F9E4EE,#FBE8DE)' }
+                      : undefined
+                  }
                 >
                   {v}
                 </button>
@@ -245,9 +249,9 @@ export function CalendarClient({ initialEvents, initialPosts, initialTodos }: Pr
             <button
               onClick={() => setSettingsOpen(true)}
               aria-label="Calendar settings"
-              className="flex size-[38px] items-center justify-center rounded-lg border border-border bg-card text-[#5a5042] transition-colors hover:bg-[rgba(164,141,120,0.12)] hover:text-foreground"
+              className="flex size-9 items-center justify-center rounded-[10px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
-              <Settings className="size-4" />
+              <Settings className="size-5" />
             </button>
 
             <Button size="default" onClick={() => openAdd(view === 'month' ? null : cursor)}>
@@ -258,9 +262,9 @@ export function CalendarClient({ initialEvents, initialPosts, initialTodos }: Pr
         </header>
 
         {/* ── Body: left rail + main view ── */}
-        <div className="grid gap-5 lg:grid-cols-[220px_1fr]">
-          {/* Left rail */}
-          <div className="flex flex-col gap-5">
+        <div className="grid items-start gap-[22px] min-[1081px]:grid-cols-[232px_1fr]">
+          {/* Left rail — sticky beside the grid on wide screens, a wrapping row below 1080px */}
+          <div className="flex flex-col gap-[22px] max-[1080px]:flex-row max-[1080px]:flex-wrap min-[1081px]:sticky min-[1081px]:top-[78px] [&>*]:max-[1080px]:min-w-[220px] [&>*]:max-[1080px]:flex-1">
             <MiniMonth cursor={cursor} today={today} items={items} onPick={(d) => setCursor(d)} />
             <Legend />
           </div>
@@ -303,7 +307,7 @@ export function CalendarClient({ initialEvents, initialPosts, initialTodos }: Pr
         </div>
 
         {/* ── Bottom panels ── */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-[22px] min-[1081px]:grid-cols-3">
           <Panel
             title="Coming up"
             open={openPanels.coming}
@@ -312,35 +316,40 @@ export function CalendarClient({ initialEvents, initialPosts, initialTodos }: Pr
             {comingUp.length === 0 ? (
               <EmptyHint text="Nothing scheduled yet." />
             ) : (
-              <ul className="flex flex-col">
+              <ul className="flex flex-col gap-3.5">
                 {comingUp.map((it) => {
                   const cat = getCategory(it.category)
                   return (
                     <li key={it.id}>
                       <button
                         onClick={() => openItem(it)}
-                        className="group flex w-full items-center gap-3 border-t border-border py-2 text-left first:border-t-0"
+                        className="group flex w-full items-center gap-[13px] text-left"
                       >
                         <span
-                          className="flex w-[42px] shrink-0 flex-col items-center rounded-[7px] py-1.5 leading-none"
-                          style={{ backgroundColor: cat.tint, color: cat.text }}
+                          className="flex size-12 shrink-0 flex-col items-center justify-center rounded-[11px] leading-none"
+                          style={{
+                            backgroundImage: `linear-gradient(160deg, ${cat.tint}, rgba(255,255,255,0.5))`,
+                            color: cat.text,
+                          }}
                         >
-                          <span className="text-[9px] font-semibold uppercase tracking-[0.08em] opacity-85">
+                          <span className="font-fredoka text-[9.5px] font-semibold uppercase tracking-[0.1em]">
                             {it.start.toLocaleDateString(undefined, { month: 'short' })}
                           </span>
-                          <span className="mt-0.5 font-fredoka text-base font-semibold">
+                          <span className="mt-0.5 font-fredoka text-[19px] font-semibold">
                             {it.start.getDate()}
                           </span>
                         </span>
-                        <span
-                          className="size-2.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: cat.color }}
-                        />
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[13px] font-medium text-foreground transition-colors group-hover:text-[#8a715c]">
-                            {it.title}
+                          <span className="flex items-center gap-2 font-fredoka text-[14px] font-medium">
+                            <span
+                              className="size-[9px] shrink-0 rounded-full"
+                              style={{ backgroundColor: cat.color }}
+                            />
+                            <span className="truncate text-foreground transition-colors group-hover:text-[#8a715c]">
+                              {it.title}
+                            </span>
                           </span>
-                          <span className="block text-[11px] text-muted-foreground">
+                          <span className="mt-0.5 block text-[12px] text-muted-foreground">
                             {it.allDay ? 'All day' : formatTime(it.start)}
                           </span>
                         </span>
@@ -360,7 +369,7 @@ export function CalendarClient({ initialEvents, initialPosts, initialTodos }: Pr
             {updates.length === 0 ? (
               <EmptyHint text="No recent activity." />
             ) : (
-              <ul className="flex flex-col">
+              <ul className="flex flex-col gap-3.5">
                 {updates.map((it) => {
                   const cat = getCategory(it.category)
                   const label =
@@ -368,17 +377,17 @@ export function CalendarClient({ initialEvents, initialPosts, initialTodos }: Pr
                       ? `${it.meta?.status ?? 'Scheduled'}`
                       : getCategory(it.category).label
                   return (
-                    <li key={it.id} className="flex gap-2.5 border-t border-border py-2 first:border-t-0">
+                    <li key={it.id} className="flex gap-[11px]">
                       <span
                         className="mt-1 size-2.5 shrink-0 rounded-full"
                         style={{ backgroundColor: cat.color }}
                       />
                       <div className="min-w-0">
-                        <p className="text-[12.5px] capitalize leading-snug text-[#5a5042]">
-                          <span className="font-medium text-foreground">{it.title}</span>
-                          <span className="text-muted-foreground"> · {label}</span>
+                        <p className="text-[13.5px] leading-[1.4] text-foreground">
+                          <span className="font-fredoka font-semibold">{it.title}</span>
+                          <span className="capitalize text-muted-foreground"> · {label}</span>
                         </p>
-                        <p className="mt-0.5 text-[10.5px] text-muted-foreground">
+                        <p className="mt-0.5 text-[12px] text-muted-foreground">
                           {formatRelative(it.start, today)}
                         </p>
                       </div>
@@ -397,11 +406,11 @@ export function CalendarClient({ initialEvents, initialPosts, initialTodos }: Pr
             action={
               <button
                 onClick={() => setTodoExpanded((v) => !v)}
-                className="text-muted-foreground transition-colors hover:text-foreground"
+                className="flex size-[26px] items-center justify-center rounded-[7px] transition-colors hover:bg-accent hover:text-foreground"
                 aria-label={todoExpanded ? 'Collapse to-do list' : 'Expand to-do list to full width'}
                 title={todoExpanded ? 'Collapse' : 'Expand to full width'}
               >
-                {todoExpanded ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
+                {todoExpanded ? <Minimize2 className="size-[15px]" /> : <Maximize2 className="size-[15px]" />}
               </button>
             }
           >
@@ -458,9 +467,9 @@ function MiniMonth({
   const matrix = getMonthMatrix(view.getFullYear(), view.getMonth())
 
   return (
-    <div className="rounded-xl border border-border bg-card p-3.5">
-      <div className="mb-2.5 flex items-center justify-between">
-        <span className="font-fredoka text-sm font-semibold">{formatMonthYear(view)}</span>
+    <div className={cn(card, cardLink, 'p-4')}>
+      <div className="mb-3 flex items-center justify-between">
+        <span className="font-fredoka text-[15px] font-semibold">{formatMonthYear(view)}</span>
         <div className="flex items-center gap-0.5">
           <Button
             variant="ghost"
@@ -480,11 +489,11 @@ function MiniMonth({
           </Button>
         </div>
       </div>
-      <div className="grid grid-cols-7 gap-0.5 text-center">
+      <div className="grid grid-cols-7 gap-px text-center">
         {WEEKDAY_LABELS.map((d) => (
           <span
             key={d}
-            className="py-1 text-[9px] font-semibold uppercase tracking-[0.04em] text-muted-foreground"
+            className="pb-1.5 font-fredoka text-[10px] font-semibold text-muted-foreground"
           >
             {d[0]}
           </span>
@@ -500,10 +509,10 @@ function MiniMonth({
               key={dateKey(d)}
               onClick={() => onPick(d)}
               className={cn(
-                'relative flex aspect-square items-center justify-center rounded-full text-[11.5px] tabular-nums transition-colors',
-                !inMonth && 'text-muted-foreground/40',
-                inMonth && 'hover:bg-[rgba(164,141,120,0.14)]',
-                isToday && 'bg-primary font-semibold text-primary-foreground hover:bg-primary',
+                'relative flex aspect-square items-center justify-center rounded-full font-fredoka text-xs font-medium tabular-nums transition-colors',
+                !inMonth && 'text-muted-foreground/50',
+                inMonth && 'hover:bg-accent',
+                isToday && 'bg-primary font-semibold text-primary-foreground hover:bg-[#8a715c]',
                 isSelected && !isToday && 'bg-[rgba(164,141,120,0.22)] font-semibold text-foreground'
               )}
             >
@@ -525,15 +534,15 @@ function MiniMonth({
 // ── Legend (MORE INFO) ────────────────────────────────────────────────────────
 function Legend() {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <p className="mb-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-primary">
+    <div className={cn(card, cardLink, 'p-[18px]')}>
+      <p className="mb-3.5 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-primary">
         More info
       </p>
-      <ul className="flex flex-col gap-2.5">
+      <ul className="flex flex-col gap-[13px]">
         {CATEGORIES.map((c) => (
-          <li key={c.key} className="flex items-center gap-2.5 text-[12.5px] text-[#5a5042]">
+          <li key={c.key} className="flex items-center gap-[11px] text-sm text-foreground">
             <span
-              className="size-2.5 rounded-full ring-[3px] ring-black/[0.03]"
+              className="size-3 shrink-0 rounded-full shadow-[0_1px_2px_rgba(58,46,34,0.12)]"
               style={{ backgroundColor: c.color }}
             />
             {c.label}
@@ -566,12 +575,12 @@ function MonthView({
   const maxPills = compact ? 2 : 3
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
+    <div className={cn(card, cardLink, 'overflow-hidden')}>
       <div className="grid grid-cols-7 border-b border-border">
         {WEEKDAY_LABELS.map((d) => (
           <div
             key={d}
-            className="px-3 py-2.5 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-primary"
+            className="px-[18px] py-[15px] font-fredoka text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
           >
             {d}
           </div>
@@ -582,22 +591,18 @@ function MonthView({
           const inMonth = day.getMonth() === cursor.getMonth()
           const isToday = sameDay(day, today)
           const dayItems = itemsForDay(items, day)
-          // Gentle wash matching the first event's category color.
-          const tint =
-            inMonth && dayItems.length > 0
-              ? withAlpha(getCategory(dayItems[0].category).color, 0.06)
-              : undefined
           return (
             <div
               key={dateKey(day)}
               onClick={() => onAdd(day)}
-              style={tint ? { backgroundColor: tint } : undefined}
               className={cn(
-                'group relative flex cursor-pointer flex-col gap-1 border-b border-r border-border p-[7px] transition-colors',
-                compact ? 'min-h-[84px]' : 'min-h-[118px]',
+                'group relative flex cursor-pointer flex-col gap-1.5 border-b border-r border-border p-[10px] transition-colors hover:bg-[rgba(234,227,214,0.4)]',
+                compact
+                  ? 'min-h-[92px]'
+                  : 'min-h-[132px] max-[820px]:min-h-[92px] max-[640px]:min-h-[70px]',
                 idx % 7 === 6 && 'border-r-0',
                 idx >= 35 && 'border-b-0',
-                !inMonth && 'bg-[rgba(164,141,120,0.045)]'
+                !inMonth && 'bg-[rgba(234,227,214,0.22)]'
               )}
             >
               <div className="flex items-center justify-between">
@@ -607,9 +612,11 @@ function MonthView({
                     onOpenDay(day)
                   }}
                   className={cn(
-                    'flex size-[25px] items-center justify-center rounded-full font-fredoka text-[13px] font-semibold tabular-nums transition-colors hover:bg-[rgba(164,141,120,0.14)]',
-                    !inMonth && 'text-muted-foreground/40',
-                    isToday && 'bg-primary text-primary-foreground hover:bg-primary'
+                    'flex items-center justify-center font-fredoka text-[14px] font-semibold tabular-nums transition-colors',
+                    isToday
+                      ? 'size-[28px] rounded-full bg-primary text-primary-foreground hover:bg-[#8a715c]'
+                      : 'rounded-full px-1 hover:bg-accent',
+                    !inMonth && 'text-muted-foreground/55'
                   )}
                 >
                   {day.getDate()}
@@ -669,19 +676,14 @@ function EventPill({
         onClick(item)
       }}
       className={cn(
-        'flex items-center gap-1.5 overflow-hidden rounded-[5px] border-l-[3px] text-left font-medium leading-tight',
-        compact ? 'px-1.5 py-0.5 text-[10px]' : 'px-1.5 py-[3px] text-[11px]'
+        'flex items-center gap-[7px] overflow-hidden rounded-[7px] text-left font-medium leading-[1.3]',
+        compact ? 'px-2 py-0.5 text-[11px]' : 'px-[9px] py-1 text-[12px]'
       )}
-      style={{ backgroundColor: cat.tint, borderLeftColor: cat.color, color: cat.text }}
+      style={{ backgroundColor: cat.tint, color: cat.text }}
       title={item.title}
     >
-      <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: cat.color }} />
+      <span className="size-[7px] shrink-0 rounded-full" style={{ backgroundColor: cat.color }} />
       <span className="truncate">{item.title}</span>
-      {!item.allDay && (
-        <span className="ml-auto shrink-0 text-[9.5px] tabular-nums opacity-75">
-          {formatTimeShort(item.start)}
-        </span>
-      )}
     </button>
   )
 }
@@ -701,7 +703,7 @@ function TimeGridView({
   onOpenItem: (it: CalendarItem) => void
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
+    <div className={cn(card, 'overflow-hidden')}>
       {/* Day headers */}
       <div
         className="grid border-b border-border"
@@ -855,21 +857,33 @@ function Panel({
   children: React.ReactNode
 }) {
   return (
-    <div className={cn('rounded-xl border border-border bg-card', className)}>
-      <div className="flex w-full items-center justify-between gap-2 px-[18px] py-4 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-primary">
-        <button onClick={onToggle} className="flex flex-1 items-center text-left">
+    <div className={cn(card, cardLink, 'overflow-hidden', className)}>
+      <div
+        className={cn(
+          'flex items-center justify-between gap-2 px-5 py-[17px]',
+          open && 'border-b border-border'
+        )}
+      >
+        <button
+          onClick={onToggle}
+          className="flex flex-1 items-center text-left font-fredoka text-[15px] font-semibold tracking-[0.02em] text-foreground"
+        >
           {title}
         </button>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 text-muted-foreground">
           {action}
-          <button onClick={onToggle} aria-label={open ? 'Collapse section' : 'Expand section'}>
+          <button
+            onClick={onToggle}
+            aria-label={open ? 'Collapse section' : 'Expand section'}
+            className="flex size-[26px] items-center justify-center rounded-[7px] transition-colors hover:bg-accent hover:text-foreground"
+          >
             <ChevronDown
-              className={cn('size-4 text-muted-foreground transition-transform', !open && '-rotate-90')}
+              className={cn('size-[15px] transition-transform', !open && '-rotate-90')}
             />
           </button>
         </div>
       </div>
-      {open && <div className="px-[18px] pb-4">{children}</div>}
+      {open && <div className="px-5 py-4">{children}</div>}
     </div>
   )
 }
@@ -923,10 +937,10 @@ function TodoList({
   }
 
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-3.5">
       {/* Inline add row, matching the bordered "+ Add a task" field. */}
-      <div className="flex items-center gap-2 rounded-lg border border-border px-3 py-2">
-        <Plus className="size-4 shrink-0 text-primary" />
+      <div className="flex items-center gap-2.5 rounded-[11px] border border-[rgba(164,141,120,0.34)] px-[13px] py-[11px] transition-colors hover:border-primary">
+        <Plus className="size-4 shrink-0 text-muted-foreground" />
         <input
           value={value}
           onChange={(e) => setValue(e.target.value)}
@@ -938,7 +952,7 @@ function TodoList({
           }}
           placeholder="Add a task"
           disabled={adding}
-          className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+          className="flex-1 bg-transparent text-[13.5px] text-foreground outline-none placeholder:text-muted-foreground"
         />
       </div>
 
@@ -947,14 +961,14 @@ function TodoList({
       ) : (
         <ul
           className={cn(
-            'flex flex-col',
+            'flex flex-col gap-3',
             expanded && 'sm:grid sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-3'
           )}
         >
           {todos.map((t) => (
             <li
               key={t.id}
-              className="group flex items-center gap-2.5 border-t border-border py-[7px] text-sm first:border-t-0"
+              className="group flex items-center gap-[11px] text-[13.5px]"
             >
               <button
                 onClick={async () => {
@@ -962,12 +976,14 @@ function TodoList({
                   if (res.success) onChanged()
                 }}
                 className={cn(
-                  'flex size-[17px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] border-primary text-primary-foreground transition-colors',
-                  t.done && 'bg-primary'
+                  'flex size-[18px] shrink-0 items-center justify-center rounded-[6px] border-[1.6px] transition-colors',
+                  t.done
+                    ? 'border-[#D6498C] bg-[#D6498C] text-white'
+                    : 'border-[rgba(164,141,120,0.34)] text-transparent'
                 )}
                 aria-label={t.done ? 'Mark incomplete' : 'Mark complete'}
               >
-                {t.done && <Check className="size-3" />}
+                {t.done && <Check className="size-[11px]" strokeWidth={3} />}
               </button>
               {editingId === t.id ? (
                 <Input
@@ -990,7 +1006,7 @@ function TodoList({
                 <button
                   onClick={() => startEdit(t)}
                   className={cn(
-                    'flex-1 truncate rounded px-1 py-0.5 text-left text-[13px] transition-colors hover:bg-[rgba(164,141,120,0.1)]',
+                    'flex-1 truncate rounded px-1 py-0.5 text-left text-[13.5px] transition-colors hover:bg-[rgba(164,141,120,0.1)]',
                     t.done && 'text-muted-foreground line-through'
                   )}
                   title="Click to edit"
