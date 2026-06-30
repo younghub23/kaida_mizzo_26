@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { Sparkles, Store, Loader2 } from 'lucide-react'
+import { Sparkles, Store, Loader2, IdCard } from 'lucide-react'
 import {
   Card,
   CardHeader,
@@ -17,6 +17,8 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { updateBrandProfile } from '@/app/actions/profile'
 import { PageHeading } from '../page-heading'
+import { IconTile } from '../icon-tile'
+import { card, microLabel } from '../ui'
 import {
   type BrandProfile,
   BRAND_TYPES,
@@ -307,10 +309,21 @@ export function BrandForm({
       </div>
 
       {/* Basics */}
-      <Card>
+      <Card className={`${card} ring-0`}>
         <CardHeader>
-          <CardTitle>Basics</CardTitle>
-          <CardDescription>Your business identity and branding.</CardDescription>
+          <div className="flex items-center gap-3.5">
+            <IconTile
+              section="brand"
+              icon={IdCard}
+              className="size-11 rounded-[12px]"
+              iconClassName="size-[22px]"
+            />
+            <div className="flex flex-col gap-1">
+              <span className={microLabel}>Basics</span>
+              <CardTitle>Basics</CardTitle>
+              <CardDescription>Your business identity and branding.</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <Field
@@ -455,8 +468,9 @@ export function BrandForm({
       </Card>
 
       {/* Audience */}
-      <Card>
+      <Card className={`${card} ring-0`}>
         <CardHeader>
+          <span className={microLabel}>Audience</span>
           <CardTitle>Audience</CardTitle>
           <CardDescription>Who are you trying to reach?</CardDescription>
         </CardHeader>
@@ -499,8 +513,9 @@ export function BrandForm({
       </Card>
 
       {/* Positioning */}
-      <Card>
+      <Card className={`${card} ring-0`}>
         <CardHeader>
+          <span className={microLabel}>Positioning</span>
           <CardTitle>Positioning &amp; Goals</CardTitle>
           <CardDescription>How your brand sounds and what success looks like.</CardDescription>
         </CardHeader>

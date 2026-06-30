@@ -9,10 +9,10 @@ export function PageHeading({
 }) {
   return (
     <div>
-      <h1 className="font-fredoka text-[28px] font-semibold leading-[1.05] tracking-[-0.01em]">
+      <h1 className="font-fredoka text-[34px] font-semibold leading-[1.05] tracking-[-0.02em] max-[820px]:text-[28px]">
         {title}
       </h1>
-      <p className="mt-1.5 font-dm-serif text-lg italic text-muted-foreground">
+      <p className="mt-2 font-dm-serif text-[19px] italic text-primary">
         {subtitle}
       </p>
     </div>

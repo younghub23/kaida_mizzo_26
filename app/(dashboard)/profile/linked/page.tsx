@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { Mail } from 'lucide-react'
+import { Mail, Link2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import {
   Card,
@@ -11,6 +11,8 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { LinkedAccounts, type ConnectedAccount } from './linked-accounts'
 import { PageHeading } from '../page-heading'
+import { IconTile } from '../icon-tile'
+import { card, microLabel } from '../ui'
 
 const PROVIDER_LABELS: Record<string, string> = {
   email: 'Email & password',
@@ -48,24 +50,36 @@ export default async function LinkedAccountsPage() {
         subtitle="Social profiles and sign-in methods connected to Tala."
       />
 
-      <Card>
+      <Card className={`${card} ring-0`}>
         <CardHeader>
-          <CardTitle className="text-base">Social Accounts</CardTitle>
-          <CardDescription>
-            Connect channels to schedule and publish from Tala.
-          </CardDescription>
+          <div className="flex items-center gap-3.5">
+            <IconTile
+              section="linked"
+              icon={Link2}
+              className="size-11 rounded-[12px]"
+              iconClassName="size-[22px]"
+            />
+            <div className="flex flex-col gap-1">
+              <span className={microLabel}>Channels</span>
+              <CardTitle className="text-base">Social Accounts</CardTitle>
+              <CardDescription>
+                Connect channels to schedule and publish from Tala.
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <LinkedAccounts connected={connected} />
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className={`${card} ring-0`}>
         <CardHeader>
+          <span className={microLabel}>Sign-in methods</span>
           <CardTitle className="text-base">Sign-In Methods</CardTitle>
           <CardDescription>How you sign in to your Tala account.</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col divide-y">
+        <CardContent className="flex flex-col divide-y divide-border">
           {providers.map((provider) => (
             <div key={provider} className="flex items-center gap-4 py-3">
               <Mail className="size-5 shrink-0 text-muted-foreground" />
