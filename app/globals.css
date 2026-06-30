@@ -7,7 +7,10 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  /* App-wide body face: Spectral (a warm editorial serif), loaded in layout.tsx
+     via next/font as --font-spectral. Headings/labels/buttons keep Fredoka and
+     decorative taglines keep DM Serif via their own font utilities. */
+  --font-sans: var(--font-spectral), Georgia, "Times New Roman", serif;
   --font-mono: var(--font-geist-mono);
   --font-fredoka: var(--font-fredoka), sans-serif;
   --font-dm-serif: var(--font-dm-serif), serif;

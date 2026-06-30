@@ -13,6 +13,12 @@ export default async function PlanPage() {
     redirect('/dashboard')
   }
 
+  // Account-type subtitle comes from the real user record. In practice this is
+  // always "Business" here (creators are redirected above), but we read it live
+  // rather than hard-coding it.
+  const accountType =
+    user.user_metadata?.account_type === 'creator' ? 'Creator' : 'Business'
+
   const plans = [
     {
       name: 'Starter',
@@ -40,5 +46,5 @@ export default async function PlanPage() {
     },
   ]
 
-  return <PlanCards plans={plans} />
+  return <PlanCards plans={plans} accountType={accountType} />
 }

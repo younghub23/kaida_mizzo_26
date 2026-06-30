@@ -1,16 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { Check } from 'lucide-react'
 import { logError } from '@/lib/log'
-
-const ACCENT = '#C13A77'
-const BG = '#FBF0CE'
-const R = 193
-const G = 58
-const B = 119
-
-const GLOW_BLUR  = [3,    9,    15,   22  ]
-const GLOW_ALPHA = [0.10, 0.22, 0.34, 0.48]
 
 interface Plan {
   name: string
@@ -19,10 +11,16 @@ interface Plan {
   features: string[]
 }
 
-export default function PlanCards({ plans }: { plans: Plan[] }) {
-  const [selected, setSelected]   = useState<number | null>(null)
-  const [loading,  setLoading]    = useState<string | null>(null)
-  const [error,    setError]      = useState<string | null>(null)
+export default function PlanCards({
+  plans,
+  accountType,
+}: {
+  plans: Plan[]
+  accountType: string
+}) {
+  const [selected, setSelected] = useState<number | null>(null)
+  const [loading, setLoading] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   async function handleSelect(priceId: string, i: number) {
     setSelected(i)
@@ -48,199 +46,107 @@ export default function PlanCards({ plans }: { plans: Plan[] }) {
     }
   }
 
+  const busy = loading !== null
+
   return (
-    <>
+    <div className="tala-theme flex min-h-screen flex-col items-center justify-center bg-background px-8 pt-14 pb-16 text-foreground max-[560px]:px-5 max-[560px]:pt-9 max-[560px]:pb-12">
       <style>{`
-        .plan-select-btn:hover:not(:disabled) {
-          background: ${ACCENT};
-          color: ${BG};
+        .plan-card:hover {
+          box-shadow: 0 6px 22px rgba(58,46,34,.1);
+          transform: translateY(-1px);
+        }
+        .plan-cta:not(:disabled):hover {
+          filter: brightness(1.05);
+          box-shadow: 0 5px 18px rgba(200,71,46,.32);
+          transform: translateY(-1px);
         }
       `}</style>
 
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '72px 40px 80px',
-          background: BG,
-        }}
-      >
-        {/* Wordmark */}
-        <span
-          style={{
-            fontFamily: 'var(--font-fredoka)',
-            fontWeight: 700,
-            fontSize: '72px',
-            letterSpacing: '-0.03em',
-            lineHeight: 0.9,
-            color: ACCENT,
-          }}
-        >
-          tala
-        </span>
+      <div className="mx-auto w-full max-w-[1280px]">
+        {/* Header */}
+        <header className="mb-11 text-center">
+          <h1 className="font-fredoka text-[44px] font-bold leading-[1.05] tracking-[-0.01em] text-foreground">
+            Tala Subscription
+          </h1>
+          <p className="mt-2 text-[19px] text-primary">{accountType}</p>
+        </header>
 
-        {/* Heading */}
-        <h1
-          style={{
-            fontFamily: 'var(--font-fredoka)',
-            fontWeight: 400,
-            fontSize: '27px',
-            letterSpacing: '0.01em',
-            whiteSpace: 'nowrap',
-            textAlign: 'center',
-            color: ACCENT,
-            margin: '30px 0 58px',
-          }}
-        >
-          Tala Subscription Plan: Business
-        </h1>
-
-        {/* Cards row */}
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'nowrap',
-            gap: '26px',
-            alignItems: 'stretch',
-            justifyContent: 'center',
-            width: '100%',
-            maxWidth: '1140px',
-          }}
-        >
+        {/* Plans grid */}
+        <div className="grid grid-cols-4 items-stretch gap-6 max-[1000px]:grid-cols-2 max-[560px]:grid-cols-1">
           {plans.map((plan, i) => {
-            const isSel = selected === i
             const isLoading = loading === plan.priceId
-            const otherLoading = loading !== null && !isLoading
-
-            const glow = `0 0 ${GLOW_BLUR[i]}px 0 rgba(${R},${G},${B},${GLOW_ALPHA[i]})`
-            const focusRing = `, 0 0 0 3px rgba(${R},${G},${B},0.14)`
-            const boxShadow = isSel ? glow + focusRing : glow
-
             return (
               <div
                 key={plan.name}
-                style={{
-                  flex: '1 1 0',
-                  minWidth: 0,
-                  maxWidth: '280px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  padding: '36px 28px 30px',
-                  borderRadius: '2px',
-                  background: 'transparent',
-                  border: `${isSel ? '1.6px' : '1.2px'} solid ${ACCENT}`,
-                  boxShadow,
-                  transition: 'box-shadow 0.25s, border-width 0.15s',
-                }}
+                className={`plan-card flex flex-col rounded-[16px] border border-border bg-card shadow-[0_1px_0_rgba(255,255,255,.6)_inset] transition-[box-shadow,transform] duration-200${
+                  selected === i && isLoading
+                    ? ' outline outline-2 outline-offset-2 outline-primary/40'
+                    : ''
+                }`}
               >
-                {/* Plan name */}
-                <span
-                  style={{
-                    fontFamily: 'var(--font-fredoka)',
-                    fontWeight: 700,
-                    fontSize: '32px',
-                    letterSpacing: '-0.02em',
-                    lineHeight: 1,
-                    color: ACCENT,
-                    marginBottom: '22px',
-                  }}
-                >
-                  {plan.name}
-                </span>
-
-                {/* Price */}
-                <span
-                  style={{
-                    fontFamily: 'var(--font-dm-serif)',
-                    fontStyle: 'normal',
-                    fontSize: '30px',
-                    lineHeight: 1,
-                    color: ACCENT,
-                    marginBottom: '22px',
-                  }}
-                >
-                  {plan.price}
-                </span>
-
-                {/* Features */}
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '11px',
-                    alignSelf: 'stretch',
-                    marginBottom: '30px',
-                  }}
-                >
-                  {plan.features.map((feat) => (
-                    <span
-                      key={feat}
-                      style={{
-                        fontFamily: 'var(--font-dm-serif)',
-                        fontStyle: 'italic',
-                        fontSize: '15px',
-                        lineHeight: 1.35,
-                        color: ACCENT,
-                        opacity: 0.9,
-                      }}
-                    >
-                      {'— '}{feat}
+                {/* Body */}
+                <div className="flex flex-1 flex-col p-[28px_26px_22px]">
+                  <div className="mb-1.5 flex items-center justify-between gap-2.5">
+                    <span className="font-fredoka text-[23px] font-semibold text-foreground">
+                      {plan.name}
                     </span>
-                  ))}
+                  </div>
+                  <div className="mb-6 text-[18px] text-muted-foreground">
+                    {plan.price}
+                  </div>
+                  <ul className="flex flex-col gap-[15px]">
+                    {plan.features.map((feat) => (
+                      <li
+                        key={feat}
+                        className="flex items-start gap-3 text-[16px] leading-[1.4] text-[#7a6a56]"
+                      >
+                        <Check
+                          aria-hidden
+                          strokeWidth={2.2}
+                          className="mt-[3px] size-[17px] flex-none text-primary"
+                        />
+                        <span>{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
-                {/* Select button */}
-                <button
-                  onClick={() => handleSelect(plan.priceId, i)}
-                  disabled={loading !== null}
-                  className="plan-select-btn"
-                  style={{
-                    marginTop: 'auto',
-                    alignSelf: 'stretch',
-                    padding: '13px',
-                    borderRadius: '2px',
-                    border: `1.3px solid ${ACCENT}`,
-                    background: isSel ? ACCENT : 'transparent',
-                    color: isSel ? BG : ACCENT,
-                    fontFamily: 'var(--font-fredoka)',
-                    fontWeight: 500,
-                    fontSize: '13px',
-                    letterSpacing: '0.2em',
-                    textTransform: 'uppercase',
-                    transition: 'all 0.2s',
-                    cursor: loading !== null ? 'not-allowed' : 'pointer',
-                    opacity: otherLoading ? 0.45 : 1,
-                    pointerEvents: otherLoading ? 'none' : 'auto',
-                  }}
-                >
-                  {isLoading ? '...' : isSel ? 'Selected' : 'Select'}
-                </button>
+                {/* Footer CTA */}
+                <div className="border-t border-border p-[20px_26px_26px]">
+                  <button
+                    onClick={() => handleSelect(plan.priceId, i)}
+                    disabled={busy}
+                    aria-busy={isLoading}
+                    className="plan-cta flex w-full items-center justify-center rounded-[12px] px-[18px] py-[14px] font-fredoka text-[16px] font-medium text-white shadow-[0_2px_12px_rgba(200,71,46,.24)] transition-[filter,box-shadow,transform] duration-150 disabled:cursor-not-allowed disabled:opacity-60"
+                    style={{
+                      backgroundImage:
+                        'linear-gradient(120deg,#D6488C,#C8472E,#E08A3C)',
+                    }}
+                  >
+                    {isLoading ? '…' : 'Choose plan'}
+                  </button>
+                </div>
               </div>
             )
           })}
         </div>
 
-        {/* Error */}
+        {/* Error (real failures surfaced) */}
         {error && (
           <p
             aria-live="polite"
-            style={{
-              fontFamily: 'var(--font-fredoka)',
-              fontSize: '13px',
-              color: ACCENT,
-              opacity: 0.9,
-              textAlign: 'center',
-              marginTop: '28px',
-            }}
+            className="mt-6 text-center text-[15px] text-destructive"
           >
             {error}
           </p>
         )}
+
+        {/* Footer note */}
+        <p className="mt-[26px] text-center text-[15px] text-muted-foreground">
+          7-day free trial on new subscriptions. Cancel anytime from Manage
+          subscription.
+        </p>
       </div>
-    </>
+    </div>
   )
 }
