@@ -106,15 +106,17 @@ behavior:
 - Swap inline UI SVGs for `lucide-react`; reuse `.tala-theme` tokens and the
   `analytics-page` warm pass in `app/globals.css`.
 
-## One genuinely new thing to confirm: the Spectral body font
+## App-wide body font: adopt Spectral everywhere
 
-The mockup switches **body copy to Spectral** (a serif), keeping Fredoka for
-headings/labels and DM Serif for taglines. The app currently uses the
-Helvetica/sans body. This is presentational, but **app-wide if applied globally.**
-Load Spectral via the real font mechanism (`next/font` in `app/layout.tsx`) and,
-unless you want it everywhere, **scope it to the analytics page** (e.g. under
-`.analytics-page`) to avoid silently restyling every other page. Flag this choice
-rather than flipping the whole app's body font without confirmation.
+Make **Spectral the app-wide body font** (intended — apply it across the whole
+site for a consistent editorial feel, not just analytics). Load it via
+`next/font/google` in `app/layout.tsx` (weights 300/400/500/600 + italic) as a CSS
+variable, and set it as the default **body** font, replacing the current
+`"Helvetica Neue", Helvetica, Arial, sans-serif` stack
+(`"Spectral", Georgia, "Times New Roman", serif`). **Keep Fredoka** for headings/
+labels/big numbers and **DM Serif Display** for decorative taglines — only the
+sans body text changes. This touches shared styling, so sanity-check other pages
+still read well; presentational only.
 
 ## Acceptance checklist
 
@@ -128,8 +130,9 @@ rather than flipping the whole app's body font without confirmation.
       per section; sections with no live data show the real empty/connect state.
 - [ ] Network filter, plan-gated Listening, sortable post table, and connect CTAs
       (→ `/socials/connect`) all still work.
-- [ ] Spectral is loaded via the real font loader and scoped (or applied app-wide
-      only if intended) — not hand-injected per the mockup's `<link>`.
+- [ ] Spectral is the app-wide body font (loaded via `next/font` in
+      `app/layout.tsx`, replacing the sans body stack) — not hand-injected per the
+      mockup's `<link>`; Fredoka/DM Serif unchanged.
 - [ ] Shell business-line/date/avatar are derived, not the mockup's literals;
       tokens/icons reuse `.tala-theme` + `lucide-react`; no raw mockup CSS vars
       duplicated, no leftover inline UI SVGs.

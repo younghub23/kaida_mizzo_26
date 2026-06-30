@@ -25,9 +25,19 @@ plan, price, priceId, and the checkout flow must be preserved exactly.**
 2. **REAL BILLING / REAL DATA ONLY.** Plans, prices, and feature lists come from
    the real server config (with env-based Stripe price IDs); the account-type
    subtitle comes from the real user record. The mockup's `localStorage`
-   account-type read, its sample plan copy, and its "every card is Choose plan"
-   first-run state are illustrative — keep the **real** plans/checkout. Don't fake
-   a "Choose plan" that doesn't hit Stripe.
+   account-type read and its sample plan copy are illustrative — keep the **real**
+   plans/checkout. Don't fake a "Choose plan" that doesn't hit Stripe.
+
+## When this page appears (scope)
+
+This is the **one-time plan-selection screen shown immediately after sign-up**.
+The business user lands here once, picks a plan, and goes through checkout; they
+do **not** return here afterward. **All ongoing plan management — change plan,
+upgrade/downgrade, cancel, billing portal — already lives on `/profile/wallet`.**
+So on this page **every card is a fresh "Choose plan"** (first-time selection):
+do **not** add "Current plan" / "Switch plan" states, a `currentPlanId`, or any
+plan-management UI here. (Creators are redirected away before this page — it's
+business-only.)
 
 Before writing any Next.js code, read `node_modules/next/dist/docs/` per
 `AGENTS.md` (Next 16 has breaking changes). Read `design-language-reference.md`
@@ -44,6 +54,30 @@ for the shared warm tokens (the mockup is that same system).
   **checkout**: `handleSelect` POSTs `{ priceId }` to **`/api/checkout`** and
   redirects to the returned Stripe `url`, with `selected` / `loading` / `error`
   states. **Keep every bit of this wiring**; you're reskinning the markup around it.
+
+### The checkout flow is already fully built — keep it working end-to-end
+
+The real Stripe path already exists and must remain fully functional after the
+re-skin (this is a hard requirement, not a "nice to have"):
+
+1. Card CTA → `handleSelect(priceId, i)` → `POST /api/checkout` with `{ priceId }`.
+2. `app/api/checkout/route.ts` validates `priceId` against the env price IDs,
+   requires an authed user with an email, and creates a **Stripe subscription
+   Checkout Session** with `trial_period_days: 7`, `customer_email`,
+   `client_reference_id: user.id`, `success_url → /dashboard?success=true`,
+   `cancel_url → /plan`. It returns `{ url }`.
+3. `PlanCards` redirects the browser to that `url` (`window.location.assign`).
+4. On payment, **`app/api/webhooks/stripe/route.ts`** handles
+   `checkout.session.completed`, resolves the tier from the subscription's price,
+   and writes `profiles.plan` (+ `stripe_customer_id`). That's what later powers
+   plan-gating and `/profile/wallet`.
+
+**Do not alter the request/response shape, the `priceId`s, the trial, or the
+success/cancel URLs.** After reskinning, verify the full path works in **Stripe
+test mode**: clicking a plan opens Stripe Checkout for the right price with the
+7-day trial, completing it redirects to `/dashboard?success=true`, and the
+webhook updates the user's `plan`. Surface real failures via the existing `error`
+state — never swallow them or simulate success.
 - **Standalone page:** it renders full-screen (no dashboard sidebar/top bar) — the
   mockup is also standalone. Keep it that way; don't add the app shell.
 - **Tokens:** `.tala-theme` + `font-fredoka`/`font-dm-serif` + the gradients in
@@ -69,18 +103,11 @@ while preserving state + `handleSelect` + the plans data:
   optional **"Current" pill**, price line (`18px` muted), and a feature list —
   accent-stroked check (`17px`, stroke 2.2) + feature text (`16px`, `#7A6A56`),
   rows gapped `15px`. **Footer** (top border): full-width CTA.
-- **CTA / button states — keep them backed by real data:**
-  - With **no active plan** (the real first-time `/plan` flow), every card's CTA is
-    the **gradient "Choose plan"** → existing `handleSelect(priceId)` (label can be
-    "Choose plan"/"Select"; keep the loading "…" and disabled-while-loading
-    behavior).
-  - The **"Current" pill + disabled "Current Plan"** button (and "Switch plan" on
-    the others) should appear **only if** the page actually knows the user's active
-    plan from real data (e.g. `getCurrentPlan()` from `lib/plan/server.ts`). If you
-    don't wire that real source, **do not fabricate a current plan** — leave all
-    cards as "Choose plan". Note: current-plan *management* (change/cancel via the
-    Stripe billing portal) already lives on **`/profile/wallet`** — don't duplicate
-    or fake it here.
+- **CTA / button state:** every card's CTA is the **gradient "Choose plan"** →
+  existing `handleSelect(priceId)` (keep the loading "…" and disabled-while-loading
+  behavior). Since this is the one-time post-signup screen, there is no current
+  plan to mark — **omit the "Current" pill / "Current Plan" / "Switch plan" states
+  entirely.** (Plan changes happen later on `/profile/wallet`.)
 - **Footer note:** "7-day free trial on new subscriptions. Cancel anytime from
   Manage subscription." (`15px` muted).
 - Keep the **error** message (`aria-live`) and hover states (cards lift, gradient
@@ -90,26 +117,39 @@ Drive plan name/price/features from the **real `plans` array** in `plan/page.tsx
 (env price IDs) — the mockup's feature wording is just a sample; if it diverges
 from the real config, the real config wins.
 
-## One genuinely new thing to confirm: the Spectral body font
+## App-wide body font: adopt Spectral everywhere
 
-The mockup sets **body copy in Spectral** (serif), keeping Fredoka for headings/
-labels. The app currently uses the sans body. If adopting it, load Spectral via
-the real font mechanism (`next/font` in `app/layout.tsx`); since this is the auth/
-plan flow, scope it here unless you intend the app-wide switch — flag that choice
-rather than silently restyling every page's body font.
+Make **Spectral the app-wide body font** (this is intended — apply it across the
+whole site, not just this page, for a consistent editorial feel):
+- Load it via the real font mechanism — `next/font/google` in `app/layout.tsx`
+  (weights 300/400/500/600 + italic) exposed as a CSS variable (e.g.
+  `--font-spectral`), the same way Fredoka/DM Serif are loaded.
+- Set it as the default **body** font, replacing the current
+  `"Helvetica Neue", Helvetica, Arial, sans-serif` stack
+  (`"Spectral", Georgia, "Times New Roman", serif`), so every page's body copy
+  inherits it.
+- **Keep Fredoka** for the logo/headings/labels/buttons/big numbers and **DM Serif
+  Display** for decorative italic taglines — only the sans **body** text changes.
+- This touches shared styling (`app/layout.tsx` / `app/globals.css`), so sanity-
+  check the other pages still read well; it's a presentational change only — no
+  copy, layout, or behavior changes anywhere.
 
 ## Acceptance checklist
 
 - [ ] `npm run lint` and `npm run build` pass.
 - [ ] No change to routes, the plans config, Stripe price IDs, `/api/checkout`,
-      or the creator-redirect (presentation-layer diff only).
-- [ ] "Choose plan" still POSTs the real `priceId` to `/api/checkout` and redirects
-      to Stripe; loading/error/selected states intact.
+      the webhook, or the creator-redirect (presentation-layer diff only).
+- [ ] **Stripe checkout works end-to-end in test mode:** "Choose plan" POSTs the
+      real `priceId`, opens Stripe Checkout for the right price with the 7-day
+      trial, completing it lands on `/dashboard?success=true`, and the webhook sets
+      `profiles.plan`. Loading/error/selected states intact; real errors surfaced.
 - [ ] Plans/prices/features come from the real server config; account-type subtitle
       from real user metadata (not `localStorage`).
-- [ ] "Current/Switch" states appear only if backed by real `getCurrentPlan()` data;
-      otherwise all cards read "Choose plan" — no fabricated current plan.
-- [ ] Page stays standalone (no app shell); Spectral (if used) loaded via the real
-      font loader and scoped/confirmed.
+- [ ] Every card reads "Choose plan" — no "Current/Switch" states or `currentPlanId`
+      on this one-time post-signup screen.
+- [ ] Page stays standalone (no app shell).
+- [ ] **Spectral is the app-wide body font** (loaded via `next/font` in
+      `app/layout.tsx`, replacing the sans body stack); Fredoka/DM Serif unchanged;
+      other pages still read well.
 - [ ] Tokens/icons reuse `.tala-theme` + `lucide-react`; no raw mockup CSS vars
       duplicated, no leftover inline UI SVGs.
