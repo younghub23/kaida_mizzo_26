@@ -122,12 +122,12 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '15. Dispute resolution and governing law',
     body: [
-      'These Terms, and any dispute arising out of or relating to them or the Service, are governed by the laws of [your state/country], without regard to its conflict-of-laws rules.',
+      'These Terms, and any dispute arising out of or relating to them or the Service, are governed by the laws of the Commonwealth of Virginia, United States, without regard to its conflict-of-laws rules.',
       'Informal resolution first. Before filing a claim, you agree to try to resolve the dispute informally by contacting us at support@tala.com. We will try to resolve it with you in good faith. If we cannot resolve a dispute within 30 days, either party may pursue the dispute as described below.',
-      'Binding arbitration. Except as set out below, you and Tala agree that any dispute will be resolved by final and binding individual arbitration administered under the rules of [arbitration body] in [arbitration location], rather than in court. The arbitrator decides the dispute and may award the same relief a court could on an individual basis.',
+      'Binding arbitration. Except as set out below, you and Tala agree that any dispute will be resolved by final and binding individual arbitration administered by the American Arbitration Association (AAA) under its Consumer Arbitration Rules, seated in McLean, Virginia, rather than in court. The arbitrator decides the dispute and may award the same relief a court could on an individual basis.',
       'Exceptions and small claims. Either party may bring an individual claim in small claims court if it qualifies, and either party may seek injunctive relief in court to protect its intellectual property or stop unauthorized use of the Service.',
       'Class action waiver. To the extent permitted by law, disputes will be brought only in an individual capacity, and not as a plaintiff or class member in any class, collective, or representative proceeding.',
-      'Where binding arbitration is not permitted by applicable law, the courts located in [your jurisdiction] will have exclusive jurisdiction over disputes, and nothing in this section limits any rights you have that cannot be waived under the law that applies to you.',
+      'Where binding arbitration is not permitted by applicable law, the state and federal courts located in Fairfax County, Virginia will have exclusive jurisdiction over disputes, and you and Tala consent to personal jurisdiction and venue there. Nothing in this section limits any rights you have that cannot be waived under the law that applies to you.',
     ],
   },
   {
