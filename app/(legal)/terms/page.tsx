@@ -120,7 +120,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '15. Contact',
     body: [
-      'Questions about these Terms? Contact us at support@tala.com.',
+      'Questions about these Terms? Contact us at ycaproject.marketing@gmail.com.',
     ],
   },
 ]
