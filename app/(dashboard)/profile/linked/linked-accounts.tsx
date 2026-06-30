@@ -53,14 +53,14 @@ export function LinkedAccounts({
   }
 
   return (
-    <div className="flex flex-col divide-y">
+    <div className="flex flex-col divide-y divide-border">
       {ALL_PLATFORMS.map((platform) => {
         const account = connected.find((a) => a.platform === platform)
         const label = PLATFORM_LABELS[platform] ?? platform
         return (
           <div key={platform} className="flex items-center gap-4 py-3">
             <span
-              className="flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+              className="flex size-10 shrink-0 items-center justify-center rounded-[11px] text-sm font-bold text-white"
               style={{ backgroundColor: PLATFORM_COLORS[platform] }}
             >
               {label[0]}

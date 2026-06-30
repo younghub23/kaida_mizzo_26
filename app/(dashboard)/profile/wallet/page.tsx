@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card'
 import { BillingSection, type PlanOption } from './billing-section'
 import { PageHeading } from '../page-heading'
+import { card, microLabel } from '../ui'
 
 const PLANS: PlanOption[] = [
   {
@@ -175,10 +176,11 @@ export default async function WalletPage() {
       />
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+        <Card className={`${card} ring-0`}>
           <CardHeader>
+            <span className={microLabel}>Payment</span>
             <CardTitle className="flex items-center gap-2 text-base">
-              <CreditCard className="size-4" />
+              <CreditCard className="size-4 text-[#D99A2E]" />
               Payment Method
             </CardTitle>
           </CardHeader>
@@ -200,10 +202,11 @@ export default async function WalletPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={`${card} ring-0`}>
           <CardHeader>
+            <span className={microLabel}>Billing</span>
             <CardTitle className="flex items-center gap-2 text-base">
-              <MapPin className="size-4" />
+              <MapPin className="size-4 text-[#D99A2E]" />
               Billing Address
             </CardTitle>
           </CardHeader>
@@ -233,10 +236,11 @@ export default async function WalletPage() {
         </Card>
       </div>
 
-      <Card>
+      <Card className={`${card} ring-0`}>
         <CardHeader>
+          <span className={microLabel}>History</span>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Receipt className="size-4" />
+            <Receipt className="size-4 text-[#D99A2E]" />
             Payment History
           </CardTitle>
           <CardDescription>Your recent invoices and receipts.</CardDescription>
@@ -245,7 +249,7 @@ export default async function WalletPage() {
           {overview.invoices.length === 0 ? (
             <p className="text-sm text-muted-foreground">No invoices yet.</p>
           ) : (
-            <div className="flex flex-col divide-y">
+            <div className="flex flex-col divide-y divide-border">
               {overview.invoices.map((inv) => (
                 <div
                   key={inv.id}

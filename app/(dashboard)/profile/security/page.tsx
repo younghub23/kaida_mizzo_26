@@ -18,6 +18,8 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { SignOutEverywhere } from './sign-out-everywhere'
 import { PageHeading } from '../page-heading'
+import { IconTile } from '../icon-tile'
+import { card, microLabel } from '../ui'
 
 function formatDateTime(value: string | undefined) {
   if (!value) return 'Unknown'
@@ -46,11 +48,22 @@ export default async function SecurityPage() {
         subtitle="Keep your account secure and manage how you sign in."
       />
 
-      <Card>
+      <Card className={`${card} ring-0`}>
         <CardHeader>
-          <CardTitle className="text-base">How You Sign In to Tala</CardTitle>
+          <div className="flex items-center gap-3.5">
+            <IconTile
+              section="security"
+              icon={ShieldCheck}
+              className="size-11 rounded-[12px]"
+              iconClassName="size-[22px]"
+            />
+            <div className="flex flex-col gap-1">
+              <span className={microLabel}>Sign-in</span>
+              <CardTitle className="text-base">How You Sign In to Tala</CardTitle>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="flex flex-col divide-y">
+        <CardContent className="flex flex-col divide-y divide-border">
           <div className="flex items-center gap-4 py-3">
             <Mail className="size-5 shrink-0 text-muted-foreground" />
             <div className="min-w-0 flex-1">
@@ -64,14 +77,14 @@ export default async function SecurityPage() {
 
           <Link
             href="/profile/password"
-            className="flex items-center gap-4 py-3 transition-colors hover:bg-muted/50"
+            className="group flex items-center gap-4 py-3 transition-colors hover:bg-accent/40"
           >
             <KeyRound className="size-5 shrink-0 text-muted-foreground" />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium">Password</p>
               <p className="text-sm text-muted-foreground">Change your password</p>
             </div>
-            <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+            <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-px group-hover:text-foreground" />
           </Link>
 
           <div className="flex items-center gap-4 py-3">
@@ -86,10 +99,11 @@ export default async function SecurityPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className={`${card} ring-0`}>
         <CardHeader>
+          <span className={microLabel}>Extra protection</span>
           <CardTitle className="flex items-center gap-2 text-base">
-            <ShieldCheck className="size-4" />
+            <ShieldCheck className="size-4 text-[#36B7C0]" />
             2-Step Verification
             <Badge variant="outline">Coming soon</Badge>
           </CardTitle>
@@ -100,8 +114,9 @@ export default async function SecurityPage() {
         </CardHeader>
       </Card>
 
-      <Card>
+      <Card className={`${card} ring-0`}>
         <CardHeader>
+          <span className={microLabel}>Active sessions</span>
           <CardTitle className="text-base">Active Sessions</CardTitle>
           <CardDescription>
             Signed out somewhere you don&apos;t recognize? Sign out of every

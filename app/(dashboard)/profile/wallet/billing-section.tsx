@@ -14,6 +14,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { card, microLabel } from '../ui'
 
 export type PlanOption = {
   name: string
@@ -85,14 +86,15 @@ export function BillingSection({
 
   return (
     <section className="flex flex-col gap-4">
-      <div>
+      <div className="flex flex-col gap-1">
+        <span className={microLabel}>Subscription</span>
         <h2 className="font-fredoka text-xl font-semibold">Your Plan</h2>
         <p className="text-sm text-muted-foreground">
           Change your subscription tier or manage billing.
         </p>
       </div>
 
-      <Card>
+      <Card className={`${card} ring-0`}>
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-col gap-1.5">
@@ -143,7 +145,8 @@ export function BillingSection({
             <Card
               key={option.tier}
               className={cn(
-                'flex flex-col',
+                card,
+                'flex flex-col ring-0',
                 isCurrent && 'ring-2 ring-[#D6488C] ring-offset-2 ring-offset-background'
               )}
             >

@@ -29,3 +29,24 @@ export const chipPalettes: { bg: string; border: string; text: string }[] = [
   { bg: '#FBE7E0', border: 'rgba(240,176,160,.55)', text: '#B5604A' }, // blush
   { bg: '#EAE3D6', border: 'rgba(164,141,120,.45)', text: '#8A715C' }, // soft brown
 ]
+
+// Per-section icon-tile palette (soft tint + stroked-glyph color). One key per
+// Profile route so the overview rows and each sub-page's icon tiles tell the
+// same color story — Brand blush, Wallet amber, Security turquoise, Password
+// sky, Linked rust, Privacy soft-brown. Mirrors the static mockup's tile tints.
+export type SectionKey =
+  | 'brand'
+  | 'wallet'
+  | 'security'
+  | 'password'
+  | 'linked'
+  | 'privacy'
+
+export const sectionTiles: Record<SectionKey, { bg: string; icon: string }> = {
+  brand: { bg: '#F9E4EE', icon: '#D6498C' },
+  wallet: { bg: '#FBF0D2', icon: '#D99A2E' },
+  security: { bg: '#DCF1F2', icon: '#36B7C0' },
+  password: { bg: '#E4F0F8', icon: '#5B9BD0' },
+  linked: { bg: '#FBE7E0', icon: '#C8472E' },
+  privacy: { bg: '#EAE3D6', icon: '#A48D78' },
+}
