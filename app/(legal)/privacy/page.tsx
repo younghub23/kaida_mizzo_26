@@ -25,9 +25,10 @@ const SECTIONS: LegalSection[] = [
           'Payment information: handled by our payment processor, Stripe. We do not store full card numbers; we store limited billing details and a Stripe customer identifier.',
           'Connected accounts: when you connect a social or analytics account (for example Meta, Instagram, LinkedIn, TikTok, or Google), we store access tokens and basic account details needed to publish and read data on your behalf.',
           'Content and contacts: posts, campaigns, images, and any email contact lists you upload or create in Tala.',
-          'Usage and device data: log data, IP address, browser type, and how you interact with the Service.',
+          'Usage and device data: log data, IP address, approximate location (derived from your IP address), browser and device type, and how you interact with the Service.',
         ],
       },
+      'We collect this information in three ways: directly from you (for example, when you create an account, complete your brand profile, or upload content); automatically as you use the Service (through cookies and similar tracking technologies, server logs, and analytics — see "Cookies" below); and from third parties you choose to connect (such as the social, analytics, and login providers you authorize).',
     ],
   },
   {
@@ -126,7 +127,7 @@ export default function PrivacyPage() {
   return (
     <LegalDoc
       title="Privacy Policy"
-      lastUpdated="June 22, 2026"
+      lastUpdated="June 30, 2026"
       disclaimer={DISCLAIMER}
       intro={INTRO}
       sections={SECTIONS}
