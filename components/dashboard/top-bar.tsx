@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Menu, MessageCircle, User } from 'lucide-react'
@@ -37,6 +38,21 @@ export function TopBar({
   const pathname = usePathname()
   const page = currentPageName(pathname)
 
+  // Render the real current date only after mount — formatting depends on the
+  // viewer's locale/timezone, so computing it during SSR risks a hydration
+  // mismatch. This is presentation only.
+  const [today, setToday] = useState<string | null>(null)
+  useEffect(() => {
+    /* eslint-disable-next-line react-hooks/set-state-in-effect */
+    setToday(
+      new Date().toLocaleDateString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      })
+    )
+  }, [])
+
   return (
     <header className="tala-theme sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-card px-3 text-foreground sm:px-4">
       <button
@@ -57,6 +73,11 @@ export function TopBar({
       </Link>
 
       <div className="ml-auto flex items-center gap-2">
+        {today && (
+          <span className="mr-1 hidden text-[12.5px] text-muted-foreground sm:inline">
+            Today · <b className="font-fredoka font-medium text-foreground">{today}</b>
+          </span>
+        )}
         <button
           type="button"
           data-chat-toggle

@@ -16,6 +16,12 @@ import { logout } from '@/app/actions/auth'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
+// First letter of the business/user name for the sidebar avatar tile.
+function businessInitial(name: string): string {
+  const trimmed = name.trim()
+  return trimmed ? trimmed.charAt(0).toUpperCase() : '·'
+}
+
 const NAV_LINKS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/calendar', label: 'Calendar', icon: CalendarDays },
@@ -79,7 +85,16 @@ export function Sidebar({
         </nav>
 
         <div className="flex flex-col gap-2 border-t border-border pt-4">
-          <p className="truncate px-2.5 text-sm font-medium">{businessName}</p>
+          <div className="flex items-center gap-2.5 px-1.5 py-1">
+            <span
+              className="flex size-8 shrink-0 items-center justify-center rounded-[9px] font-fredoka text-[13px] font-semibold text-white"
+              style={{ background: 'linear-gradient(135deg,#36B7C0,#9AC6E0)' }}
+              aria-hidden
+            >
+              {businessInitial(businessName)}
+            </span>
+            <p className="min-w-0 flex-1 truncate font-fredoka text-sm font-medium">{businessName}</p>
+          </div>
           <form action={logout}>
             <Button
               type="submit"
