@@ -196,7 +196,7 @@ export function CalendarClient({ initialEvents, initialPosts, initialTodos }: Pr
             <h1 className="font-fredoka text-[34px] font-semibold leading-none tracking-tight text-foreground">
               Calendar
             </h1>
-            <p className="mt-1.5 font-dm-serif text-lg italic text-[#5a5042]">{headingDate}</p>
+            <p className="mt-1.5 font-dm-serif text-lg italic text-muted-foreground">{headingDate}</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">

@@ -204,6 +204,43 @@
   box-shadow: none;
 }
 
+/* Card titles wear the Fredoka editorial face (matching the dashboard / profile
+   pages) without having to touch every component. */
+.analytics-page [data-slot="card-title"] {
+  font-family: var(--font-fredoka), sans-serif;
+  font-weight: 600;
+}
+
+/* Warm the shadcn data tables (content performance, competitor, ROI): a
+   micro-label header in the Fredoka face, a soft warm row hover, and an
+   --accent-tinted totals/footer row — so no table reads as default-grey. */
+.analytics-page [data-slot="table-head"] {
+  font-family: var(--font-fredoka), sans-serif;
+  font-weight: 600;
+  font-size: 10.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+.analytics-page [data-slot="table-body"] [data-slot="table-row"]:hover {
+  background-color: rgba(164, 141, 120, 0.06);
+}
+.analytics-page [data-slot="table-footer"] {
+  background-color: var(--accent);
+}
+.analytics-page [data-slot="table-footer"] [data-slot="table-cell"] {
+  color: var(--accent-foreground);
+}
+
+/* Badges in the analytics scope keep their pill shape but adopt the warm
+   Fredoka label face used across the rest of the page. Per-instance inline
+   tints (plan-gate → email, source → content, …) layer on top of this. */
+.analytics-page [data-slot="badge"] {
+  font-family: var(--font-fredoka), sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+}
+
 /* Rainbow ribbon along the top of every Tala dialog, matching `.dialog-top`. */
 .tala-theme[data-slot="dialog-content"] {
   overflow: hidden;
@@ -260,4 +297,25 @@
 .profile-warm button[data-variant="destructive"]:hover {
   background-color: rgba(200, 71, 46, 0.16);
   color: #c8472e;
+}
+
+/* ── Socials page (warm Tala re-skin) ─────────────────────────────────────
+   Scoped to the Socials route via the `socials-page` marker class. Cards pick
+   up the signature inset top-highlight, and the composer animates in with the
+   reference's slideDown reveal when a channel is selected. */
+.socials-page [data-slot="card"] {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+}
+@keyframes socials-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.socials-reveal {
+  animation: socials-slide-down 0.3s ease;
 }

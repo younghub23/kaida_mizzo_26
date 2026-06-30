@@ -24,6 +24,8 @@ export function ReportBuilder() {
     <Section
       title="Custom report builder"
       icon={LayoutGrid}
+      iconColor="#9A6E16"
+      eyebrow="Reporting"
       source="User config (mock) — export renders server-side"
       description="Toggle the widgets to include, add your branding, and export. Drag-and-drop ordering and export are mocked for now."
     >
@@ -38,8 +40,12 @@ export function ReportBuilder() {
               <label
                 key={w.id}
                 className={cn(
-                  'flex cursor-pointer items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm',
-                  enabled[w.id] && 'bg-muted/50'
+                  'flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm transition-colors',
+                  // Enabled rows pick up a soft bougainvillea wash + tinted edge;
+                  // disabled rows stay on the plain warm hairline.
+                  enabled[w.id]
+                    ? 'border-[rgba(214,73,140,.25)] bg-[rgba(214,73,140,.06)]'
+                    : 'border-border hover:bg-[rgba(164,141,120,.06)]'
                 )}
               >
                 <GripVertical className="size-4 text-muted-foreground" aria-hidden />

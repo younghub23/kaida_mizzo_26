@@ -49,6 +49,8 @@ export function PostPerformance({ posts: input, source }: { posts: PostRow[]; so
     <Section
       title="Content performance"
       icon={FileText}
+      iconColor="#1E7B82"
+      eyebrow="Per-post"
       source={`scheduled_posts + per-network insights ${sourceSuffix(source)}`}
       description="Per-post metrics across formats and captions. The post list is already in Supabase — engagement numbers join in from each network's API."
     >
@@ -108,7 +110,14 @@ function PostRowCells({ post }: { post: PostRow }) {
       </TableCell>
       <TableCell>{NETWORK_LABEL[post.platform]}</TableCell>
       <TableCell>
-        <Badge variant="secondary">{post.format}</Badge>
+        {/* Format pill → content/teal tint from the category palette. */}
+        <Badge
+          variant="secondary"
+          className="border-transparent"
+          style={{ background: '#DCF1F2', color: '#1E7B82' }}
+        >
+          {post.format}
+        </Badge>
       </TableCell>
       <TableCell className="text-right tabular-nums">{formatCompact(post.views)}</TableCell>
       <TableCell className="text-right tabular-nums">{formatCompact(post.likes)}</TableCell>

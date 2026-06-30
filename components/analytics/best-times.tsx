@@ -31,6 +31,8 @@ export function BestTimes({
     <Section
       title="Best time to post"
       icon={Clock}
+      iconColor="#E08A3C"
+      eyebrow="Timing"
       source={`Per-account engagement history ${sourceSuffix(source)}`}
       description="Recommended posting windows derived from when your published posts earned the most engagement, per platform."
     >

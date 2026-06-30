@@ -29,6 +29,8 @@ export function AudienceInsights({
     <Section
       title="Audience insights"
       icon={Users}
+      iconColor="#3A6E92"
+      eyebrow="Demographics"
       source={`GA4 + network audience APIs ${sourceSuffix(source)}`}
       description="Who you're reaching — location, age, gender, active hours, and follower growth over time."
     >
@@ -111,7 +113,12 @@ function Heatmap({
               <div
                 key={h}
                 className={cn('h-4 flex-1 rounded-[2px]')}
-                style={{ backgroundColor: `color-mix(in oklch, #D6498C ${intensity}%, var(--muted))` }}
+                // Warm ramp: low intensity reads as faint cream-pink, high as
+                // saturated bougainvillea (#D6498C) — same family as the
+                // dashboard's "Active hours" bars.
+                style={{
+                  backgroundColor: `rgba(214, 73, 140, ${(0.08 + (Math.min(100, Math.max(0, intensity)) / 100) * 0.82).toFixed(3)})`,
+                }}
                 title={`${heatmap.days[d]} ${h}:00 — ${intensity}`}
               />
             ))}
