@@ -1,11 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, MessageCircle, User } from 'lucide-react'
+import { Menu } from 'lucide-react'
 
-// Friendly names for the current-page label beside the logo.
+// Friendly names for the breadcrumb's current-page label.
 const PAGE_NAMES: Record<string, string> = {
   '/dashboard': 'Dashboard',
   '/calendar': 'Calendar',
@@ -24,16 +23,12 @@ function currentPageName(pathname: string): string | null {
   return match ? PAGE_NAMES[match] : null
 }
 
-// Round, hairline-bordered action buttons (see the design reference).
-const roundButton =
-  'flex size-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground'
-
 export function TopBar({
+  userInitial,
   onToggleSidebar,
-  onToggleChat,
 }: {
+  userInitial: string
   onToggleSidebar: () => void
-  onToggleChat: () => void
 }) {
   const pathname = usePathname()
   const page = currentPageName(pathname)
@@ -54,42 +49,33 @@ export function TopBar({
   }, [])
 
   return (
-    <header className="tala-theme sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-card px-3 text-foreground sm:px-4">
-      <button
-        onClick={onToggleSidebar}
-        aria-label="Toggle sidebar"
-        className="flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-      >
-        <Menu className="size-5" />
-      </button>
+    <header className="tala-theme sticky top-0 z-20 flex h-[62px] shrink-0 items-center justify-between border-b border-border bg-background px-[26px] text-foreground backdrop-blur-[6px]">
+      <div className="flex items-center gap-[14px]">
+        <button
+          onClick={onToggleSidebar}
+          aria-label="Toggle sidebar"
+          className="flex size-9 items-center justify-center rounded-[10px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          <Menu size={20} strokeWidth={1.8} />
+        </button>
+        <div className="font-fredoka text-[14px] font-medium text-muted-foreground">
+          Workspace{page && <> · <b className="font-semibold text-foreground">{page}</b></>}
+        </div>
+      </div>
 
-      <Link href="/dashboard" className="flex items-baseline gap-2">
-        <span className="font-fredoka text-xl font-semibold lowercase text-primary">tala</span>
-        {page && (
-          <span className="hidden font-dm-serif text-base italic text-muted-foreground sm:inline">
-            · {page}
-          </span>
-        )}
-      </Link>
-
-      <div className="ml-auto flex items-center gap-2">
+      <div className="flex items-center gap-[14px]">
         {today && (
-          <span className="mr-1 hidden text-[12.5px] text-muted-foreground sm:inline">
+          <span className="hidden text-[12.5px] text-muted-foreground sm:inline">
             Today · <b className="font-fredoka font-medium text-foreground">{today}</b>
           </span>
         )}
-        <button
-          type="button"
-          data-chat-toggle
-          onClick={onToggleChat}
-          aria-label="AI chat"
-          className="flex size-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:border-transparent hover:bg-[#DCF1F2] hover:text-[#1E7B82]"
+        <span
+          aria-hidden
+          className="flex size-[34px] items-center justify-center rounded-[10px] font-fredoka text-[13px] font-semibold text-white"
+          style={{ background: 'linear-gradient(135deg,#D6488C,#E08A3C)' }}
         >
-          <MessageCircle className="size-[18px]" />
-        </button>
-        <Link href="/profile" aria-label="Profile" className={roundButton}>
-          <User className="size-[18px]" />
-        </Link>
+          {userInitial}
+        </span>
       </div>
     </header>
   )
