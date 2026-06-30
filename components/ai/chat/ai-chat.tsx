@@ -13,9 +13,11 @@ import {
   Check,
   X,
   Pencil,
+  User,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { microLabel } from '@/app/(dashboard)/profile/ui'
 import { AI_MODES, DEFAULT_AI_MODE, getModeMeta, type AiMode } from '@/lib/ai/modes'
 import {
   listConversations,
@@ -31,17 +33,34 @@ const MODE_ICON: Record<AiMode, typeof Sparkles> = {
   data_analyst: BarChart3,
 }
 
-// Per-mode accent ink (Strategist = social, Analyst = content).
+// Per-mode accent ink — the category "text" color (Strategist = social, Analyst
+// = content). Used for active-tab text, the user bubble ink, and tinted glyphs.
 const MODE_ACCENT: Record<AiMode, string> = {
-  content_strategist: '#A82C66',
-  data_analyst: '#1E7B82',
+  content_strategist: '#A82C66', // cat-social-text
+  data_analyst: '#1E7B82', // cat-content-text
 }
 
-// Brand gradients (the vivid palette — see the design reference / dashboard-chat).
-const GRAD_WARM = 'linear-gradient(135deg,#D6488C,#E08A3C)' // avatar / send button
-const GRAD_USER = 'linear-gradient(120deg,#D6488C,#C8472E,#E08A3C)' // user bubble
-const GRAD_BAND = 'linear-gradient(100deg,#F9E4EE,#EAE3D6)' // soft active band
-const GRAD_BAR = 'linear-gradient(#D6488C,#E08A3C)' // 3px active accent bar
+// Per-mode soft tint — the category "soft" fill behind the active agent tab.
+const MODE_SOFT: Record<AiMode, string> = {
+  content_strategist: '#F9E4EE', // cat-social-soft
+  data_analyst: '#DCF1F2', // cat-content-soft
+}
+
+// Per-mode dot — the category solid color tinting each conversation-list glyph.
+const MODE_DOT: Record<AiMode, string> = {
+  content_strategist: '#D6498C', // cat-social
+  data_analyst: '#36B7C0', // cat-content
+}
+
+// Per-mode gradient for the agent avatar / welcome tile (warm for Strategist,
+// cool for Analyst — these are the accents already encoded in the mockup).
+const MODE_GRAD: Record<AiMode, string> = {
+  content_strategist: 'linear-gradient(135deg,#D6488C,#E08A3C)',
+  data_analyst: 'linear-gradient(135deg,#36B7C0,#9AC6E0)',
+}
+
+// The brand warm gradient — send button + the user message avatar.
+const GRAD_WARM = 'linear-gradient(120deg,#D6488C,#C8472E,#E08A3C)'
 
 type Props = {
   initialConversations: ConversationSummary[]
@@ -61,6 +80,7 @@ export function AiChat({ initialConversations, canStrategist, canAnalyst }: Prop
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   const modeMeta = getModeMeta(mode)
   const modeAllowed = (m: AiMode) => (m === 'data_analyst' ? canAnalyst : canStrategist)
@@ -69,6 +89,14 @@ export function AiChat({ initialConversations, canStrategist, canAnalyst }: Prop
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
   }, [messages, sending])
+
+  // Grow the composer with its content (capped), matching the mockup's textarea.
+  useEffect(() => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 170)}px`
+  }, [input])
 
   async function refresh() {
     setConversations(await listConversations())
@@ -210,17 +238,18 @@ export function AiChat({ initialConversations, canStrategist, canAnalyst }: Prop
 
   return (
     <div className="tala-theme flex h-[calc(100dvh-3.5rem)] min-h-0 overflow-hidden bg-background text-foreground">
-      {/* Conversation sidebar */}
-      <aside className="hidden w-72 shrink-0 flex-col border-r border-border bg-card md:flex">
-        <div className="p-3">
-          <Button onClick={startNew} className="w-full justify-start gap-2">
+      {/* Conversation list column */}
+      <aside className="hidden w-[300px] shrink-0 flex-col border-r border-border bg-background min-[900px]:flex">
+        <div className="px-4 pb-3.5 pt-4">
+          <Button onClick={startNew} className="w-full justify-center gap-2">
             <Plus className="size-4" />
             New conversation
           </Button>
         </div>
-        <div className="flex-1 overflow-y-auto px-2 pb-3">
+        <p className={cn(microLabel, 'px-5 pb-1.5 pt-2.5')}>Recent</p>
+        <div className="flex-1 overflow-y-auto px-2.5 pb-4">
           {conversations.length === 0 ? (
-            <p className="px-2 py-4 text-sm text-muted-foreground">
+            <p className="px-3 py-4 text-sm text-muted-foreground">
               No conversations yet. Start one above.
             </p>
           ) : (
@@ -252,41 +281,31 @@ export function AiChat({ initialConversations, canStrategist, canAnalyst }: Prop
                     ) : (
                       <div
                         className={cn(
-                          'group relative flex items-center gap-2 overflow-hidden rounded-lg px-2.5 py-2 text-sm',
-                          isActive
-                            ? 'font-semibold text-foreground'
-                            : 'hover:bg-muted'
+                          'group flex items-center gap-2.5 rounded-[11px] px-3 py-2.5 text-sm transition-colors hover:bg-muted',
+                          isActive && 'bg-muted'
                         )}
-                        style={isActive ? { background: GRAD_BAND } : undefined}
                       >
-                        {isActive && (
-                          <span
-                            aria-hidden
-                            className="absolute inset-y-1.5 left-0 w-[3px] rounded-full"
-                            style={{ background: GRAD_BAR }}
-                          />
-                        )}
                         <button
                           onClick={() => openConversation(c)}
-                          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                          className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
                           title={c.title}
                         >
                           <Icon
-                            className={cn('size-4 shrink-0', !isActive && 'text-muted-foreground')}
-                            style={isActive ? { color: MODE_ACCENT[c.mode] } : undefined}
+                            className="size-[18px] shrink-0"
+                            style={{ color: MODE_DOT[c.mode] }}
                           />
                           <span className="truncate">{c.title}</span>
                         </button>
                         <button
                           onClick={() => beginRename(c)}
-                          className="hidden text-muted-foreground hover:text-foreground group-hover:block"
+                          className="hidden shrink-0 text-muted-foreground hover:text-foreground group-hover:block"
                           aria-label="Rename"
                         >
                           <Pencil className="size-3.5" />
                         </button>
                         <button
                           onClick={() => remove(c.id)}
-                          className="hidden text-muted-foreground hover:text-destructive group-hover:block"
+                          className="hidden shrink-0 text-muted-foreground hover:text-destructive group-hover:block"
                           aria-label="Delete"
                         >
                           <Trash2 className="size-3.5" />
@@ -303,9 +322,9 @@ export function AiChat({ initialConversations, canStrategist, canAnalyst }: Prop
 
       {/* Chat column */}
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Top bar: role switcher */}
-        <header className="flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
-          <div className="inline-flex rounded-lg border border-border bg-background/60 p-1">
+        {/* Chat header: agent tabs + decorative tagline */}
+        <header className="flex items-center justify-between gap-4 border-b border-border px-6 py-3.5">
+          <div className="inline-flex gap-[3px] rounded-xl border border-[rgba(164,141,120,.34)] bg-card p-1">
             {AI_MODES.map((m) => {
               const Icon = MODE_ICON[m.value]
               const active = m.value === mode
@@ -315,68 +334,72 @@ export function AiChat({ initialConversations, canStrategist, canAnalyst }: Prop
                   key={m.value}
                   onClick={() => switchMode(m.value)}
                   className={cn(
-                    'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors',
+                    'flex items-center gap-2 rounded-[9px] px-4 py-2 font-fredoka text-sm transition-all',
                     active
-                      ? 'font-semibold text-foreground'
+                      ? 'font-semibold shadow-[0_1px_3px_rgba(58,46,34,.08)]'
                       : 'font-medium text-muted-foreground hover:text-foreground'
                   )}
-                  style={active ? { background: GRAD_BAND } : undefined}
+                  style={
+                    active
+                      ? { background: MODE_SOFT[m.value], color: MODE_ACCENT[m.value] }
+                      : undefined
+                  }
                 >
-                  <Icon
-                    className="size-4"
-                    style={active ? { color: MODE_ACCENT[m.value] } : undefined}
-                  />
+                  <Icon className="size-[17px]" />
                   {m.label}
                   {!allowed && <Lock className="size-3" />}
                 </button>
               )
             })}
           </div>
-          <p className="hidden font-dm-serif text-sm italic text-muted-foreground sm:block">
+          <p className="hidden font-dm-serif text-[17px] italic text-primary min-[1180px]:block">
             {modeMeta.tagline}
           </p>
         </header>
 
         {/* Thread */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto">
-          <div className="mx-auto flex max-w-3xl flex-col gap-4 p-4">
-            {loadingThread ? (
-              <div className="flex justify-center py-10 text-muted-foreground">
-                <Loader2 className="size-5 animate-spin" />
-              </div>
-            ) : messages.length === 0 ? (
-              <EmptyState
-                mode={mode}
-                onPick={(s) => send(s)}
-                disabled={!currentAllowed}
-              />
-            ) : (
-              messages.map((m, i) => <MessageBubble key={i} message={m} />)
-            )}
+        <div ref={scrollRef} className="flex flex-1 flex-col overflow-y-auto px-6 py-11">
+          {loadingThread ? (
+            <div className="m-auto text-muted-foreground">
+              <Loader2 className="size-5 animate-spin" />
+            </div>
+          ) : messages.length === 0 ? (
+            <EmptyState
+              mode={mode}
+              onPick={(s) => send(s)}
+              disabled={!currentAllowed}
+            />
+          ) : (
+            <div className="mx-auto flex w-full max-w-[760px] flex-col gap-[22px]">
+              {messages.map((m, i) => (
+                <MessageBubble key={i} message={m} mode={mode} />
+              ))}
 
-            {sending && messages[messages.length - 1]?.role === 'user' && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="size-4 animate-spin" />
-                {getModeMeta(mode).label} is thinking…
-              </div>
-            )}
+              {sending && messages[messages.length - 1]?.role === 'user' && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin" />
+                  {getModeMeta(mode).label} is thinking…
+                </div>
+              )}
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
-          </div>
+              {error && <p className="text-sm text-destructive">{error}</p>}
+            </div>
+          )}
         </div>
 
         {/* Composer */}
-        <div className="border-t border-border bg-card p-4">
-          <div className="mx-auto max-w-3xl">
-            {currentAllowed ? (
+        <div className="border-t border-border px-6 pb-5.5 pt-4">
+          {currentAllowed ? (
+            <>
               <form
                 onSubmit={(e) => {
                   e.preventDefault()
                   send()
                 }}
-                className="flex items-end gap-2 rounded-2xl border border-input bg-background p-2 focus-within:border-primary"
+                className="relative mx-auto max-w-[880px]"
               >
                 <textarea
+                  ref={inputRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => {
@@ -387,22 +410,27 @@ export function AiChat({ initialConversations, canStrategist, canAnalyst }: Prop
                   }}
                   rows={1}
                   placeholder={`Message the ${getModeMeta(mode).label}…`}
-                  className="max-h-40 min-h-9 flex-1 resize-none bg-transparent px-2 py-1.5 text-sm outline-none"
+                  className="block max-h-[170px] min-h-[58px] w-full resize-none rounded-[16px] border border-[rgba(164,141,120,.34)] bg-card py-[17px] pl-[22px] pr-[62px] text-[15px] leading-normal shadow-[0_1px_0_rgba(255,255,255,.6)_inset] outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(164,141,120,.15)]"
                 />
                 <button
                   type="submit"
                   disabled={sending || !input.trim()}
                   aria-label="Send"
-                  className="flex size-9 shrink-0 items-center justify-center rounded-full text-white transition-[filter] hover:brightness-105 disabled:opacity-50"
+                  className="absolute bottom-[9px] right-[9px] flex size-[42px] items-center justify-center rounded-full text-white shadow-[0_2px_10px_rgba(200,71,46,.28)] transition-[filter,transform] hover:-translate-y-px hover:brightness-105 disabled:translate-y-0 disabled:opacity-50"
                   style={{ background: GRAD_WARM }}
                 >
-                  {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+                  {sending ? <Loader2 className="size-[19px] animate-spin" /> : <Send className="size-[19px]" />}
                 </button>
               </form>
-            ) : (
+              <p className="mt-2.5 text-center text-[11.5px] text-muted-foreground">
+                Tala can make mistakes — double-check important details before publishing.
+              </p>
+            </>
+          ) : (
+            <div className="mx-auto max-w-[880px]">
               <LockedComposer mode={mode} />
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -421,24 +449,24 @@ function EmptyState({
   const meta = getModeMeta(mode)
   const Icon = MODE_ICON[mode]
   return (
-    <div className="flex flex-col items-center gap-4 py-12 text-center">
+    <div className="m-auto flex w-full max-w-[540px] flex-col items-center text-center">
       <div
-        className="flex size-12 items-center justify-center rounded-xl text-white"
-        style={{ background: GRAD_WARM }}
+        className="mb-4 flex size-14 items-center justify-center rounded-[16px] text-white shadow-[0_8px_24px_rgba(214,72,140,.3)]"
+        style={{ background: MODE_GRAD[mode] }}
       >
-        <Icon className="size-6" />
+        <Icon className="size-7" />
       </div>
-      <div className="space-y-1">
-        <h2 className="font-fredoka text-lg font-semibold">{meta.label}</h2>
-        <p className="mx-auto max-w-md text-sm text-muted-foreground">{meta.intro}</p>
-      </div>
+      <h2 className="mb-2.5 font-fredoka text-[22px] font-semibold">{meta.label}</h2>
+      <p className="mb-6 max-w-[480px] text-sm leading-relaxed text-muted-foreground text-pretty">
+        {meta.intro}
+      </p>
       {!disabled && (
-        <div className="flex w-full max-w-md flex-col gap-2">
+        <div className="flex w-full flex-col gap-2.5">
           {meta.starters.map((s) => (
             <button
               key={s}
               onClick={() => onPick(s)}
-              className="rounded-lg border border-border bg-card p-3 text-left text-sm transition-colors hover:border-[#D6498C] hover:bg-[#F9E4EE] hover:text-[#A82C66]"
+              className="rounded-xl border border-border bg-card px-[19px] py-[15px] text-left text-sm shadow-[0_1px_0_rgba(255,255,255,.6)_inset] transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-px hover:border-primary hover:shadow-[0_6px_22px_rgba(58,46,34,.1)]"
             >
               {s}
             </button>
@@ -449,18 +477,25 @@ function EmptyState({
   )
 }
 
-function MessageBubble({ message }: { message: ChatMessage }) {
+function MessageBubble({ message, mode }: { message: ChatMessage; mode: AiMode }) {
   const isUser = message.role === 'user'
+  const Icon = MODE_ICON[mode]
   return (
-    <div className={cn('flex', isUser ? 'justify-end' : 'justify-start')}>
+    <div className={cn('flex items-start gap-3', isUser && 'flex-row-reverse')}>
+      <div
+        className="flex size-[34px] shrink-0 items-center justify-center rounded-[10px] text-white"
+        style={{ background: isUser ? GRAD_WARM : MODE_GRAD[mode] }}
+        aria-hidden
+      >
+        {isUser ? <User className="size-[18px]" /> : <Icon className="size-[18px]" />}
+      </div>
       <div
         className={cn(
-          'max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm',
+          'max-w-[560px] whitespace-pre-wrap rounded-[14px] px-[17px] py-3.5 text-[14.5px] leading-relaxed',
           isUser
-            ? 'rounded-br-[5px] text-white'
-            : 'rounded-bl-[5px] border border-border bg-card text-foreground'
+            ? 'bg-[#F9E4EE] text-[#A82C66]'
+            : 'border border-border bg-card text-foreground shadow-[0_1px_0_rgba(255,255,255,.6)_inset]'
         )}
-        style={isUser ? { background: GRAD_USER } : undefined}
       >
         {message.content}
       </div>
