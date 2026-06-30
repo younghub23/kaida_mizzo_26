@@ -6,9 +6,6 @@ export const metadata: Metadata = {
   description: 'The terms that govern your use of Tala.',
 }
 
-const DISCLAIMER =
-  'This is a starting template, not legal advice. Have it reviewed by a qualified attorney and replace the placeholders (company name, contact email, governing law) before relying on it.'
-
 const INTRO = [
   'These Terms of Service ("Terms") are a binding agreement between you and Tala ("Tala", "we", "us", or "our") and govern your access to and use of the Tala website, applications, and services (together, the "Service"). By creating an account or using the Service, you agree to these Terms. If you do not agree, do not use the Service.',
 ]
@@ -143,7 +140,6 @@ export default function TermsPage() {
     <LegalDoc
       title="Terms of Service"
       lastUpdated="June 30, 2026"
-      disclaimer={DISCLAIMER}
       intro={INTRO}
       sections={SECTIONS}
     />

@@ -36,7 +36,7 @@ export function LegalDoc({
 }: {
   title: string
   lastUpdated: string
-  disclaimer: string
+  disclaimer?: string
   intro: string[]
   sections: LegalSection[]
 }) {
@@ -47,9 +47,11 @@ export function LegalDoc({
       </h1>
       <p className="mt-2 text-sm text-[#C13A77]/70">Last updated: {lastUpdated}</p>
 
-      <div className="mt-6 rounded-sm border border-[#C13A77]/40 bg-[#C13A77]/5 p-4 text-sm">
-        {disclaimer}
-      </div>
+      {disclaimer && (
+        <div className="mt-6 rounded-sm border border-[#C13A77]/40 bg-[#C13A77]/5 p-4 text-sm">
+          {disclaimer}
+        </div>
+      )}
 
       {intro.map((p, i) => (
         <p key={i} className="mt-4 text-[15px] leading-relaxed">
