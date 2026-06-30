@@ -14,16 +14,20 @@ export function LineChart({
   series,
   height = 180,
   className,
+  areaGradient,
 }: {
   labels: string[]
   series: Series[]
   height?: number
   className?: string
+  /** Vertical gradient stops for the first series' area fill (top → bottom). */
+  areaGradient?: string[]
 }) {
   const max = Math.max(1, ...series.flatMap((s) => s.values))
   const n = Math.max(1, labels.length - 1)
   const x = (i: number) => (i / n) * 100
   const y = (v: number) => 100 - (v / max) * 100
+  const gradId = 'line-area-gradient'
 
   return (
     <div className={cn('w-full', className)}>
@@ -35,18 +39,28 @@ export function LineChart({
         role="img"
         aria-label={`Trend chart: ${series.map((s) => s.label).join(', ')}`}
       >
+        {areaGradient && areaGradient.length > 1 && (
+          <defs>
+            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+              {areaGradient.map((c, i) => (
+                <stop key={i} offset={`${(i / (areaGradient.length - 1)) * 100}%`} stopColor={c} />
+              ))}
+            </linearGradient>
+          </defs>
+        )}
         {[25, 50, 75].map((g) => (
           <line key={g} x1="0" x2="100" y1={g} y2={g} className="stroke-border" strokeWidth="0.3" />
         ))}
         {series.map((s, si) => {
           const pts = s.values.map((v, i) => `${x(i)},${y(v)}`).join(' ')
+          const useGradient = si === 0 && areaGradient && areaGradient.length > 1
           return (
             <g key={s.label}>
               {si === 0 && (
                 <polygon
                   points={`0,100 ${pts} 100,100`}
-                  fill={s.color}
-                  opacity={0.14}
+                  fill={useGradient ? `url(#${gradId})` : s.color}
+                  opacity={useGradient ? 0.22 : 0.14}
                 />
               )}
               <polyline

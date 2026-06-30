@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Fredoka, DM_Serif_Display } from "next/font/google";
+import { Geist, Geist_Mono, Fredoka, DM_Serif_Display, Spectral } from "next/font/google";
 import Script from "next/script";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -34,6 +34,17 @@ const dmSerif = DM_Serif_Display({
   display: "swap",
 });
 
+// Spectral (serif) body face for the analytics re-skin. Loaded app-wide via the
+// real next/font mechanism but applied only under `.analytics-page` (see
+// globals.css) so it doesn't silently restyle every other page's body copy.
+const spectral = Spectral({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-spectral",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Tala",
   description: "Small business marketing platform",
@@ -47,7 +58,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${fredoka.variable} ${dmSerif.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${fredoka.variable} ${dmSerif.variable} ${spectral.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}

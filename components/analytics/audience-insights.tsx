@@ -98,6 +98,26 @@ export function AudienceInsights({
   )
 }
 
+// Multi-hue intensity ramp (low → high), matching the mockup: cool cream-blue
+// through turquoise into warm lemon/tangerine/bougainvillea. Pure + deterministic
+// — driven only by the real GA4 matrix value, never a generated intensity.
+const HEAT_STOPS = ['#E4F0F8', '#9AC6E0', '#36B7C0', '#F4C96D', '#E08A3C', '#D6488C']
+
+function hexToRgb(hex: string): [number, number, number] {
+  return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)) as [number, number, number]
+}
+
+function heatColor(intensity: number): string {
+  const t = Math.min(100, Math.max(0, intensity)) / 100
+  const seg = t * (HEAT_STOPS.length - 1)
+  const i = Math.min(HEAT_STOPS.length - 2, Math.floor(seg))
+  const f = seg - i
+  const a = hexToRgb(HEAT_STOPS[i])
+  const b = hexToRgb(HEAT_STOPS[i + 1])
+  const ch = (k: number) => Math.round(a[k] + (b[k] - a[k]) * f)
+  return `rgb(${ch(0)}, ${ch(1)}, ${ch(2)})`
+}
+
 function Heatmap({
   heatmap,
 }: {
@@ -113,12 +133,9 @@ function Heatmap({
               <div
                 key={h}
                 className={cn('h-4 flex-1 rounded-[2px]')}
-                // Warm ramp: low intensity reads as faint cream-pink, high as
-                // saturated bougainvillea (#D6498C) — same family as the
-                // dashboard's "Active hours" bars.
-                style={{
-                  backgroundColor: `rgba(214, 73, 140, ${(0.08 + (Math.min(100, Math.max(0, intensity)) / 100) * 0.82).toFixed(3)})`,
-                }}
+                // Multi-hue ramp keyed off the real GA4 intensity (0–100): cool
+                // cream-blue at low activity, warming to bougainvillea at peak.
+                style={{ backgroundColor: heatColor(intensity) }}
                 title={`${heatmap.days[d]} ${h}:00 — ${intensity}`}
               />
             ))}

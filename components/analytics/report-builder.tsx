@@ -14,6 +14,21 @@ const EXPORT_ICON: Record<ExportFormat, React.ComponentType<{ className?: string
   PowerPoint: Presentation,
 }
 
+// Each widget row carries the theme colour of the section it represents, so the
+// checklist reads as a legend for the page's data-viz palette. Falls back to
+// bougainvillea for anything unmapped.
+const WIDGET_COLOR: Record<string, string> = {
+  kpis: '#D6498C',
+  trend: '#36B7C0',
+  'top-content': '#E08A3C',
+  posts: '#1E7B82',
+  audience: '#3A6E92',
+  'cross-channel': '#A82C66',
+  'best-time': '#E08A3C',
+  competitors: '#3A6E92',
+  roi: '#5E8C3E',
+}
+
 export function ReportBuilder() {
   const [enabled, setEnabled] = useState<Record<string, boolean>>(
     Object.fromEntries(REPORT_WIDGETS.map((w) => [w.id, w.defaultOn]))
@@ -24,7 +39,7 @@ export function ReportBuilder() {
     <Section
       title="Custom report builder"
       icon={LayoutGrid}
-      iconColor="#9A6E16"
+      iconColor="#B58A1E"
       eyebrow="Reporting"
       source="User config (mock) — export renders server-side"
       description="Toggle the widgets to include, add your branding, and export. Drag-and-drop ordering and export are mocked for now."
@@ -36,28 +51,35 @@ export function ReportBuilder() {
             <CardDescription>Choose what appears in the exported report.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-2">
-            {REPORT_WIDGETS.map((w) => (
-              <label
-                key={w.id}
-                className={cn(
-                  'flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm transition-colors',
-                  // Enabled rows pick up a soft bougainvillea wash + tinted edge;
-                  // disabled rows stay on the plain warm hairline.
-                  enabled[w.id]
-                    ? 'border-[rgba(214,73,140,.25)] bg-[rgba(214,73,140,.06)]'
-                    : 'border-border hover:bg-[rgba(164,141,120,.06)]'
-                )}
-              >
-                <GripVertical className="size-4 text-muted-foreground" aria-hidden />
-                <input
-                  type="checkbox"
-                  checked={enabled[w.id]}
-                  onChange={() => setEnabled((s) => ({ ...s, [w.id]: !s[w.id] }))}
-                  className="size-4 accent-[#D6498C]"
-                />
-                <span className="flex-1">{w.label}</span>
-              </label>
-            ))}
+            {REPORT_WIDGETS.map((w) => {
+              const color = WIDGET_COLOR[w.id] ?? '#D6498C'
+              return (
+                <label
+                  key={w.id}
+                  className={cn(
+                    'flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm transition-colors',
+                    !enabled[w.id] && 'border-border hover:bg-[rgba(164,141,120,.06)]'
+                  )}
+                  // Enabled rows pick up a soft wash + tinted edge in that
+                  // widget's category colour; disabled rows keep the warm hairline.
+                  style={
+                    enabled[w.id]
+                      ? { borderColor: `${color}40`, background: `${color}12` }
+                      : undefined
+                  }
+                >
+                  <GripVertical className="size-4 text-muted-foreground" aria-hidden />
+                  <input
+                    type="checkbox"
+                    checked={enabled[w.id]}
+                    onChange={() => setEnabled((s) => ({ ...s, [w.id]: !s[w.id] }))}
+                    className="size-4"
+                    style={{ accentColor: color }}
+                  />
+                  <span className="flex-1">{w.label}</span>
+                </label>
+              )
+            })}
           </CardContent>
         </Card>
 
