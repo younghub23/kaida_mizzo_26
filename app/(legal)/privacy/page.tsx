@@ -105,7 +105,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '10. Children’s privacy',
     body: [
-      'Tala is not intended for anyone under 18, and we do not knowingly collect personal information from children. If you believe a child has provided us information, contact us and we will delete it.',
+      'Tala is not intended for anyone under 16, and we do not knowingly collect personal information from children under 16. If you believe a child under 16 has provided us information, contact us and we will delete it.',
     ],
   },
   {
