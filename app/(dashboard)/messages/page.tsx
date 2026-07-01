@@ -1,11 +1,35 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { MessageSquare, ArrowLeft } from 'lucide-react'
+import { createClient } from '@/lib/supabase/server'
+import { isCreator } from '@/lib/account'
 import { microLabel, card } from '@/app/(dashboard)/profile/ui'
 
-// Placeholder for Messages — conversations with brands who reach out through the
-// Content Marketplace. The real inbox is built later; for now this is an honest,
-// on-brand empty state with no fabricated threads.
-export default function MessagesPage() {
+// Placeholder for Messages — the direct-message inbox where brand↔creator chats
+// live. When a brand and creator connect in the Content Marketplace, their
+// conversation is held and stored here. The real inbox is built later; for now
+// this is an honest, on-brand empty state with no fabricated threads. Copy
+// adapts to who's viewing.
+export default async function MessagesPage() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/login')
+  }
+
+  const creator = isCreator(user)
+
+  const subtitle = creator
+    ? 'Your direct messages with brands, in one place.'
+    : 'Your direct messages with creators, in one place.'
+
+  const body = creator
+    ? 'When you connect with a brand in the Content Marketplace, your conversation lives here. Once messaging is live, you’ll be able to reply and manage brand deals right from this inbox.'
+    : 'When you connect with a creator in the Content Marketplace, your conversation lives here. Once messaging is live, you’ll be able to reply and manage partnerships right from this inbox.'
+
   return (
     <div className="tala-theme min-h-[calc(100vh-3.5rem)] bg-background font-sans text-foreground">
       <div className="mx-auto flex max-w-[1100px] flex-col gap-6 px-8 pb-14 pt-8 max-[820px]:px-[22px]">
@@ -15,7 +39,7 @@ export default function MessagesPage() {
             Messages
           </h1>
           <p className="mt-3 font-dm-serif text-[21px] italic text-muted-foreground">
-            Conversations with brands who find you in the marketplace.
+            {subtitle}
           </p>
         </header>
 
@@ -25,13 +49,18 @@ export default function MessagesPage() {
           </span>
           <h2 className="font-fredoka text-2xl font-semibold">No messages yet</h2>
           <p className="max-w-md text-[15.5px] leading-relaxed text-muted-foreground">
-            Brands who reach out through the Content Marketplace will show up here. Once
-            messaging is live, you&rsquo;ll be able to reply and manage partnerships right
-            from this inbox.
+            {body}
           </p>
           <Link
+            href="/marketplace"
+            className="mt-2 inline-flex items-center gap-2 rounded-[11px] px-5 py-[11px] text-[14.5px] font-medium text-white shadow-[0_2px_10px_rgba(200,71,46,.22)] transition-[filter,transform] hover:-translate-y-px hover:brightness-105"
+            style={{ background: 'linear-gradient(120deg,#D6488C,#C8472E,#E08A3C)' }}
+          >
+            {creator ? 'Find brands to work with' : 'Find creators to work with'}
+          </Link>
+          <Link
             href="/dashboard"
-            className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-[#8A715C]"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-[#8A715C]"
           >
             <ArrowLeft className="size-4" />
             Back to dashboard
