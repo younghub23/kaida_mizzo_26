@@ -90,14 +90,14 @@ export default function AboutPage() {
           <p className="mb-[22px] text-[15.5px] leading-[1.6] text-muted-foreground">
             Have questions or need help? Reach out to us at{' '}
             <a
-              href="mailto:support@tala.com"
+              href="mailto:ycaproject.marketing@gmail.com"
               className="font-medium text-primary underline-offset-2 hover:underline"
             >
-              support@tala.com
+              ycaproject.marketing@gmail.com
             </a>
           </p>
           <a
-            href="mailto:support@tala.com"
+            href="mailto:ycaproject.marketing@gmail.com"
             className="inline-flex w-fit items-center gap-2 rounded-[11px] px-5 py-[11px] text-[14.5px] font-medium text-white shadow-[0_2px_10px_rgba(200,71,46,.22)] transition-[filter,box-shadow,transform] hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(200,71,46,.3)] hover:brightness-[1.05]"
             style={{ background: brandGradient }}
           >

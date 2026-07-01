@@ -25,7 +25,7 @@ The `/terms` and `/privacy` pages exist in the app (linked from the auth screens
 The content is a starting template — finalize it before launch.
 - [ ] Have a lawyer review the Terms of Service and Privacy Policy.
 - [ ] Replace the placeholders: company legal name, governing law / jurisdiction
-      (Terms §14), and contact emails (`support@tala.com`, `privacy@tala.com`).
+      (Terms §14), and contact emails (`ycaproject.marketing@gmail.com`, `ycaproject.marketing@gmail.com`).
 - [ ] Confirm the Privacy Policy's subprocessor list matches what you actually use
       (Supabase, Cloudflare, Stripe, Anthropic, Resend, connected social platforms).
 - [ ] Add the `/terms` and `/privacy` URLs to **Stripe** → Public business
