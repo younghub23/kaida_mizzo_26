@@ -5,11 +5,18 @@ import { logError } from '@/lib/log'
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const code = searchParams.get('code')
+  const state = searchParams.get('state')
   const error = searchParams.get('error')
+
+  const savedState = req.cookies.get('linkedin_oauth_state')?.value
 
   if (error || !code) {
     logError('social/linkedin/callback', 'OAuth error or missing code', undefined, { error })
     return NextResponse.redirect(new URL('/socials/connect?error=oauth_denied', req.url))
+  }
+  if (!state || !savedState || state !== savedState) {
+    logError('social/linkedin/callback', 'Missing/invalid OAuth state')
+    return NextResponse.redirect(new URL('/socials/connect?error=token', req.url))
   }
 
   const clientId = process.env.LINKEDIN_CLIENT_ID
@@ -34,7 +41,11 @@ export async function GET(req: NextRequest) {
         redirect_uri: redirectUri,
       }),
     })
-    const tokenData = (await tokenRes.json()) as { access_token?: string; error?: string }
+    const tokenData = (await tokenRes.json()) as {
+      access_token?: string
+      refresh_token?: string
+      error?: string
+    }
 
     if (!tokenData.access_token) {
       logError('social/linkedin/callback', 'Failed to get access token', undefined, { tokenData })
@@ -43,7 +54,7 @@ export async function GET(req: NextRequest) {
 
     const accessToken = tokenData.access_token
 
-    // Get user profile
+    // Get user profile (OpenID Connect userinfo endpoint)
     const profileRes = await fetch('https://api.linkedin.com/v2/userinfo', {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
@@ -69,15 +80,21 @@ export async function GET(req: NextRequest) {
         username: profile.name ?? 'LinkedIn User',
         platform_user_id: profile.sub,
         access_token: accessToken,
+        // LinkedIn only returns a refresh_token if the app has the "programmatic
+        // refresh tokens" feature enabled; store it when present.
+        ...(tokenData.refresh_token ? { refresh_token: tokenData.refresh_token } : {}),
       },
       { onConflict: 'user_id,platform' }
     )
 
     if (dbErr) {
       logError('social/linkedin/callback', 'Failed to save LinkedIn account', dbErr)
+      return NextResponse.redirect(new URL('/socials/connect?error=save_failed', req.url))
     }
 
-    return NextResponse.redirect(new URL('/socials/connect?success=1', req.url))
+    const res = NextResponse.redirect(new URL('/socials/connect?success=1', req.url))
+    res.cookies.delete('linkedin_oauth_state')
+    return res
   } catch (err) {
     logError('social/linkedin/callback', 'Unexpected error', err)
     return NextResponse.redirect(new URL('/socials/connect?error=unexpected', req.url))
