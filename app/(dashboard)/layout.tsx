@@ -28,11 +28,18 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, industry, plan, creator_profile')
+    .select('full_name, industry, plan, creator_profile, account_type')
     .eq('id', user.id)
     .single()
 
   const accountType = getAccountType(user)
+
+  // Keep the denormalized profiles.account_type (used by the marketplace
+  // directory) in sync with the authoritative value in auth metadata. Writes
+  // only when it drifts, so this is a no-op on the common path.
+  if (profile && profile.account_type !== accountType) {
+    await supabase.from('profiles').update({ account_type: accountType }).eq('id', user.id)
+  }
 
   // Foot identity — name + sub-line. Business shows "{industry} · {Plan} plan";
   // for creators the brand industry reads oddly, so their sub-line degrades to

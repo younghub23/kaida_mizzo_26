@@ -12,6 +12,7 @@ import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { NewsletterSignup } from '@/components/dashboard/newsletter-signup'
 import { parseCreatorProfile } from '@/lib/creator'
+import { listConversations } from '@/lib/messages'
 import { microLabel, card, cardLink, chipPalettes } from '@/app/(dashboard)/profile/ui'
 
 function getGreeting() {
@@ -33,6 +34,8 @@ export default async function CreatorDashboard({ user }: { user: User }) {
     .select('full_name, avatar_url, creator_profile')
     .eq('id', user.id)
     .single()
+
+  const conversations = (await listConversations(user.id)).slice(0, 3)
 
   const creator = parseCreatorProfile(profile?.creator_profile)
   const name = (profile?.full_name || 'there').trim().split(/\s+/)[0]
@@ -133,14 +136,51 @@ export default async function CreatorDashboard({ user }: { user: User }) {
                 View messages →
               </Link>
             </div>
-            <div className="px-5 py-10">
-              <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-background px-4 py-8 text-center">
-                <MessageSquare className="size-6 text-muted-foreground" />
-                <p className="max-w-xs text-sm text-muted-foreground">
-                  No messages yet — brands who reach out via the marketplace will appear here.
-                </p>
+            {conversations.length === 0 ? (
+              <div className="px-5 py-10">
+                <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-background px-4 py-8 text-center">
+                  <MessageSquare className="size-6 text-muted-foreground" />
+                  <p className="max-w-xs text-sm text-muted-foreground">
+                    No messages yet — brands who reach out via the marketplace will appear here.
+                  </p>
+                </div>
               </div>
-            </div>
+            ) : (
+              conversations.map((c) => (
+                <Link
+                  key={c.id}
+                  href={`/messages/${c.id}`}
+                  className="flex items-center gap-3 border-b border-border px-5 py-3.5 transition-colors last:border-b-0 hover:bg-accent/40"
+                >
+                  <span className="size-9 shrink-0 overflow-hidden rounded-full bg-accent ring-1 ring-foreground/10">
+                    {c.other.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={c.other.avatarUrl} alt={c.other.name} className="size-full object-cover" />
+                    ) : (
+                      <span className="flex size-full items-center justify-center">
+                        <UserRound className="size-4 text-muted-foreground" />
+                      </span>
+                    )}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className={`truncate text-[13.5px] ${c.unread > 0 ? 'font-bold' : 'font-semibold'}`}>
+                      {c.other.name}
+                    </p>
+                    <p className="truncate text-[12px] text-muted-foreground">
+                      {c.lastMessagePreview || 'No messages yet'}
+                    </p>
+                  </div>
+                  {c.unread > 0 && (
+                    <span
+                      className="flex min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold text-white"
+                      style={{ background: 'linear-gradient(120deg,#D6488C,#E08A3C)' }}
+                    >
+                      {c.unread}
+                    </span>
+                  )}
+                </Link>
+              ))
+            )}
           </div>
         </div>
 
