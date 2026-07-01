@@ -4,16 +4,10 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { ArrowLeft, CheckCircle2 } from 'lucide-react'
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter,
-} from '@/components/ui/card'
+import { ChevronLeft, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
+import { card, cardLink } from '@/app/(dashboard)/profile/ui'
 
 type SocialAccount = {
   platform: string
@@ -161,52 +155,87 @@ export default function ConnectAccountsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <div>
-        <Link href="/socials" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="size-4" />
+    <div className="tala-theme min-h-[calc(100vh-3.5rem)] bg-background font-sans text-foreground">
+      <div className="mx-auto w-full max-w-[1320px] px-7 pb-[72px] pt-[34px] sm:px-12 sm:pb-[90px] sm:pt-10">
+        {/* ── Back link ── */}
+        <Link
+          href="/socials"
+          className="mb-[26px] inline-flex items-center gap-[9px] font-fredoka text-[15px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ChevronLeft className="size-[18px]" />
           Back to Socials
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold">Connect Your Accounts</h1>
-        <p className="text-sm text-muted-foreground">
+
+        {/* ── Header ── */}
+        <h1 className="font-fredoka text-[32px] font-semibold leading-[1.05] tracking-[-0.02em] sm:text-[40px]">
+          Connect Your Accounts
+        </h1>
+        <p className="mt-2.5 font-dm-serif text-[19px] italic text-primary">
           Link your social profiles to schedule and publish posts from Tala.
         </p>
-      </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {PLATFORMS.map((platform) => {
-          const connected = getConnectedAccount(platform.id)
-          return (
-            <Card key={platform.id}>
-              <CardHeader>
-                <span
-                  className="flex size-9 items-center justify-center rounded-full text-sm font-bold text-white"
-                  style={{ backgroundColor: platform.color }}
-                >
-                  {platform.label[0]}
-                </span>
-                <CardTitle>{platform.label}</CardTitle>
-                <CardDescription>{platform.description}</CardDescription>
-                {connected && (
-                  <p className="flex items-center gap-1.5 text-xs text-green-600 font-medium pt-1">
-                    <CheckCircle2 className="size-3.5" />
-                    Connected as {connected.username}
+        {/* ── Grid ── */}
+        <div className="mt-[38px] grid grid-cols-1 items-stretch gap-[22px] min-[520px]:grid-cols-2 min-[880px]:grid-cols-3 min-[1180px]:grid-cols-4">
+          {PLATFORMS.map((platform) => {
+            const connected = getConnectedAccount(platform.id)
+            return (
+              <div
+                key={platform.id}
+                className={`${card} ${cardLink} flex h-full flex-col`}
+              >
+                {/* Body — flex:1 so the footer/button always aligns across cards */}
+                <div className="flex flex-1 flex-col px-6 pb-5 pt-6">
+                  <span
+                    className="mb-4 flex size-[46px] flex-none items-center justify-center rounded-full font-fredoka text-[19px] font-semibold text-white shadow-[0_3px_10px_rgba(58,46,34,.18)]"
+                    style={{ backgroundColor: platform.color }}
+                  >
+                    {platform.label[0]}
+                  </span>
+                  <h2 className="mb-2 font-fredoka text-[20px] font-semibold text-foreground">
+                    {platform.label}
+                  </h2>
+                  <p className="text-[15px] leading-[1.55] text-muted-foreground">
+                    {platform.description}
                   </p>
-                )}
-              </CardHeader>
-              <CardFooter>
-                <Button
-                  variant={connected ? 'secondary' : 'outline'}
-                  className="w-full"
-                  disabled={platform.comingSoon}
-                  onClick={() => handleConnect(platform.id)}
-                >
-                  {platform.comingSoon ? 'Coming soon' : connected ? 'Reconnect' : 'Connect'}
-                </Button>
-              </CardFooter>
-            </Card>
-          )
-        })}
+                  {connected && (
+                    <p className="mt-4 flex items-center gap-2 font-fredoka text-[13.5px] font-medium text-[#3E8E5A]">
+                      <CheckCircle2 className="size-4 flex-none" />
+                      Connected as {connected.username}
+                    </p>
+                  )}
+                </div>
+
+                {/* Footer — bottom-pinned button, identical on every card */}
+                <div className="mt-auto border-t border-border px-6 pb-[22px] pt-4">
+                  {platform.comingSoon ? (
+                    <Button
+                      variant="ghost"
+                      disabled
+                      className="h-auto w-full cursor-default rounded-[11px] border border-dashed border-input bg-transparent px-4 py-3 font-fredoka text-[15px] font-medium text-muted-foreground disabled:opacity-100"
+                    >
+                      Coming soon
+                    </Button>
+                  ) : connected ? (
+                    <Button
+                      variant="secondary"
+                      onClick={() => handleConnect(platform.id)}
+                      className="h-auto w-full rounded-[11px] border border-input bg-accent px-4 py-3 font-fredoka text-[15px] font-medium text-[#8A715C] hover:bg-[#E1D8C8] hover:text-foreground"
+                    >
+                      Reconnect
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => handleConnect(platform.id)}
+                      className="h-auto w-full rounded-[11px] px-4 py-3 font-fredoka text-[15px] font-medium shadow-[0_2px_10px_rgba(200,71,46,.22)] transition-all hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(200,71,46,.3)]"
+                    >
+                      Connect
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
