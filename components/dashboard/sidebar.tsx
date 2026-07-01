@@ -24,13 +24,16 @@ function businessInitial(name: string): string {
   return trimmed ? trimmed.charAt(0).toUpperCase() : '·'
 }
 
-// Business workspace — the full, unchanged nav.
+// Business workspace — the full marketing nav, plus the shared marketplace and
+// messages areas.
 const BUSINESS_NAV_LINKS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/socials', label: 'Socials', icon: Share2 },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/ai', label: 'AI Assistant', icon: Sparkles },
+  { href: '/marketplace', label: 'Content Marketplace', icon: Store },
+  { href: '/messages', label: 'Messages', icon: MessageSquare },
   { href: '/profile', label: 'Profile', icon: User },
   { href: '/about', label: 'About', icon: Info },
 ]

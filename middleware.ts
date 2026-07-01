@@ -2,12 +2,12 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { isCreator } from '@/lib/account'
 
-// Route access by account type. Business users own the marketing tools;
-// creators own only the marketplace experience. Keep both lists here so the
+// Route access by account type. The marketing tools below are business-only —
+// creators are redirected away from them. The marketplace and messages areas
+// are shared (both account types can reach them). Keep the list here so the
 // gating is easy to audit and extend. Each entry matches the path itself and
 // any sub-route (e.g. '/socials' also covers '/socials/connect').
 const BUSINESS_ONLY_PREFIXES = ['/calendar', '/socials', '/analytics', '/ai']
-const CREATOR_ONLY_PREFIXES = ['/marketplace', '/messages']
 
 function matchesPrefix(pathname: string, prefixes: string[]): boolean {
   return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`))
@@ -59,20 +59,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Account-type route gating: creators can't reach business-only tools, and
-  // business users can't reach the (creator-only) marketplace/messages areas.
-  // Both bounce to the shared dashboard, which renders the right experience.
-  if (user) {
-    const creator = isCreator(user)
-    const blocked = creator
-      ? matchesPrefix(pathname, BUSINESS_ONLY_PREFIXES)
-      : matchesPrefix(pathname, CREATOR_ONLY_PREFIXES)
-    if (blocked) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/dashboard'
-      url.search = ''
-      return NextResponse.redirect(url)
-    }
+  // Account-type route gating: creators can't reach the business-only marketing
+  // tools and bounce to the shared dashboard. Marketplace and messages are open
+  // to both account types.
+  if (user && isCreator(user) && matchesPrefix(pathname, BUSINESS_ONLY_PREFIXES)) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
+    url.search = ''
+    return NextResponse.redirect(url)
   }
 
   return supabaseResponse
