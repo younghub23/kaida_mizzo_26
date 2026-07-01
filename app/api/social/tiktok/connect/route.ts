@@ -8,10 +8,19 @@ import { logError } from '@/lib/log'
 //
 // Scopes:
 //  - user.info.basic  → display name + avatar (identity for the connected card)
+//  - user.info.stats  → follower/like/video counts (Analytics KPIs)
 //  - video.publish / video.upload → post videos from Tala (Content Posting API)
-// To light up TikTok analytics later, also request `user.info.stats` and
-// `video.list` here (they must be approved for the app first).
-const SCOPES = ['user.info.basic', 'video.publish', 'video.upload'].join(',')
+//  - video.list       → per-video metrics for the Analytics posts table
+// The stats/list scopes power lib/analytics/providers/tiktok.ts. All scopes
+// must be approved for the app in the TikTok developer portal, or the login
+// screen rejects the whole request.
+const SCOPES = [
+  'user.info.basic',
+  'user.info.stats',
+  'video.publish',
+  'video.upload',
+  'video.list',
+].join(',')
 
 function randomString(len: number): string {
   const bytes = new Uint8Array(len)
