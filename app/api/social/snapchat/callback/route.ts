@@ -5,10 +5,17 @@ import { logError } from '@/lib/log'
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const code = searchParams.get('code')
+  const state = searchParams.get('state')
   const error = searchParams.get('error')
+
+  const savedState = req.cookies.get('snapchat_oauth_state')?.value
 
   if (error || !code) {
     logError('social/snapchat/callback', 'OAuth error or missing code', undefined, { error })
+    return NextResponse.redirect(new URL('/socials/connect?error=oauth_denied', req.url))
+  }
+  if (!state || state !== savedState) {
+    logError('social/snapchat/callback', 'Missing/invalid OAuth state')
     return NextResponse.redirect(new URL('/socials/connect?error=oauth_denied', req.url))
   }
 
@@ -82,7 +89,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(new URL('/socials/connect?error=save_failed', req.url))
     }
 
-    return NextResponse.redirect(new URL('/socials/connect?success=1', req.url))
+    const res = NextResponse.redirect(new URL('/socials/connect?success=1', req.url))
+    res.cookies.delete('snapchat_oauth_state')
+    return res
   } catch (err) {
     logError('social/snapchat/callback', 'Unexpected error', err)
     return NextResponse.redirect(new URL('/socials/connect?error=unexpected', req.url))

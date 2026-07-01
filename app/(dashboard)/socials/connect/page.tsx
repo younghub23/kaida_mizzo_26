@@ -63,7 +63,7 @@ const PLATFORMS: Platform[] = [
     id: 'snapchat',
     label: 'Snapchat',
     color: '#C9A800',
-    description: 'Connect your Snapchat account so its analytics light up as the integration goes live.',
+    description: 'Securely link your Snapchat Business account to Tala via the Snap Marketing API.',
   },
   {
     id: 'google',
