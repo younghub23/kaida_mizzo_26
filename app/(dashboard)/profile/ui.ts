@@ -36,6 +36,7 @@ export const chipPalettes: { bg: string; border: string; text: string }[] = [
 // sky, Linked rust, Privacy soft-brown. Mirrors the static mockup's tile tints.
 export type SectionKey =
   | 'brand'
+  | 'creator'
   | 'wallet'
   | 'security'
   | 'password'
@@ -44,6 +45,7 @@ export type SectionKey =
 
 export const sectionTiles: Record<SectionKey, { bg: string; icon: string }> = {
   brand: { bg: '#F9E4EE', icon: '#D6498C' },
+  creator: { bg: '#F9E4EE', icon: '#D6498C' },
   wallet: { bg: '#FBF0D2', icon: '#D99A2E' },
   security: { bg: '#DCF1F2', icon: '#36B7C0' },
   password: { bg: '#E4F0F8', icon: '#5B9BD0' },

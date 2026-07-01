@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { logError } from '@/lib/log'
 import type { BrandFormData } from '@/lib/brand'
+import type { CreatorFormData } from '@/lib/creator'
 
 export type FormState = {
   error: string | null
@@ -46,6 +47,49 @@ export async function updateBrandProfile(
 
   revalidatePath('/profile/brand')
   revalidatePath('/profile')
+  return { error: null, success: true }
+}
+
+// ---------------------------------------------------------------------------
+// Creator info — display name + avatar (first-class columns) plus the
+// creator_profile JSONB questionnaire. Mirrors updateBrandProfile.
+// ---------------------------------------------------------------------------
+export async function updateCreatorProfile(
+  data: CreatorFormData
+): Promise<FormState> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: 'Unauthorized', success: false }
+  }
+
+  const displayName = data.displayName.trim()
+  if (!displayName) {
+    return { error: 'Display name is required.', success: false }
+  }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      full_name: displayName,
+      avatar_url: data.avatarUrl || null,
+      creator_profile: data.creator,
+    })
+    .eq('id', user.id)
+
+  if (error) {
+    logError('profile/updateCreatorProfile', 'Failed to update creator profile', error, {
+      userId: user.id,
+    })
+    return { error: error.message, success: false }
+  }
+
+  revalidatePath('/profile/creator')
+  revalidatePath('/profile')
+  revalidatePath('/dashboard')
   return { error: null, success: true }
 }
 

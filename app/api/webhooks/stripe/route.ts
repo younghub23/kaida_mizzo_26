@@ -5,15 +5,23 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { logError } from '@/lib/log'
 import type { PlanTier } from '@/lib/analytics/plan'
 
-// Map a Stripe price ID to the plan tier it represents. Unknown/active prices
-// fall back to 'growth' so a paid customer is never left on a free tier.
-function tierFromPriceId(priceId: string | undefined): PlanTier {
+// The set of values the webhook can write to profiles.plan for an active
+// subscription: the business feature tiers plus the creator base plan. 'creator'
+// is stored literally and grants no business/analytics feature.
+type ResolvedPlan = PlanTier | 'creator'
+
+// Map a Stripe price ID to the plan it represents. The creator price maps to
+// 'creator' explicitly so a creator subscription is never misresolved to a
+// business tier. Unknown/active business prices fall back to 'growth' so a
+// paying customer is never left on a free tier.
+function tierFromPriceId(priceId: string | undefined): ResolvedPlan {
   if (!priceId) return 'growth'
-  const map: Record<string, PlanTier> = {
+  const map: Record<string, ResolvedPlan> = {
     [process.env.STRIPE_STARTER_PRICE_ID || '__no_starter']: 'starter',
     [process.env.STRIPE_PRICE_ID || '__no_growth']: 'growth',
     [process.env.STRIPE_PRO_PRICE_ID || '__no_pro']: 'pro',
     [process.env.STRIPE_AGENCY_PRICE_ID || '__no_agency']: 'agency',
+    [process.env.STRIPE_CREATOR_PRICE_ID || '__no_creator']: 'creator',
   }
   return map[priceId] ?? 'growth'
 }
@@ -52,8 +60,8 @@ export async function POST(req: NextRequest) {
         const userId = session.client_reference_id
 
         if (userId) {
-          // Resolve the purchased tier from the subscription's price.
-          let plan: PlanTier = 'growth'
+          // Resolve the purchased plan from the subscription's price.
+          let plan: ResolvedPlan = 'growth'
           if (session.subscription) {
             try {
               const subscription = await stripe.subscriptions.retrieve(
@@ -83,7 +91,7 @@ export async function POST(req: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription
         const isActive =
           subscription.status === 'active' || subscription.status === 'trialing'
-        const plan: PlanTier | 'free' = isActive
+        const plan: ResolvedPlan | 'free' = isActive
           ? tierFromPriceId(priceIdFromSubscription(subscription))
           : 'free'
 

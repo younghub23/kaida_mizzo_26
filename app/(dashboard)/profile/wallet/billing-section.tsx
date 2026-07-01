@@ -24,8 +24,10 @@ export type PlanOption = {
   priceId: string
 }
 
-// Plan values persisted on profiles.plan that represent a paying tier.
-const PAID_TIERS = ['starter', 'growth', 'pro', 'agency']
+// Plan values persisted on profiles.plan that represent a paying subscription —
+// the business feature tiers plus the creator base plan. Business plan values
+// are never 'creator', so this addition is inert on the business wallet.
+const PAID_TIERS = ['starter', 'growth', 'pro', 'agency', 'creator']
 
 export function BillingSection({
   plan,

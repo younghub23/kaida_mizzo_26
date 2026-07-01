@@ -24,6 +24,8 @@ import { formatRelative } from '@/app/(dashboard)/calendar/calendar-utils'
 import { PLATFORMS, isPlatformId } from '@/lib/socials/platforms'
 import { BrandLogo } from '@/components/socials/brand-logo'
 import { microLabel, card, cardLink } from '@/app/(dashboard)/profile/ui'
+import { isCreator } from '@/lib/account'
+import CreatorDashboard from './creator-dashboard'
 
 // Status pill palette (scheduled → content / draft → work), from the category table.
 const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
@@ -79,6 +81,12 @@ export default async function DashboardPage() {
 
   if (!user) {
     redirect('/login')
+  }
+
+  // Creators get their own trimmed home; everything below is the unchanged
+  // business dashboard.
+  if (isCreator(user)) {
+    return <CreatorDashboard user={user} />
   }
 
   const { data: profile } = await supabase

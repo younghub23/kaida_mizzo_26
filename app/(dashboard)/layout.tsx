@@ -1,7 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
-import { PLAN_LABELS, isPlanTier } from '@/lib/analytics/plan'
+import { PLAN_LABELS, PLAN_DISPLAY_LABELS, isPlanTier } from '@/lib/analytics/plan'
+import { getAccountType } from '@/lib/account'
+import { parseCreatorProfile } from '@/lib/creator'
 
 // First letter of a name/email for the gradient avatar tiles. Falls back to a
 // neutral dot so the avatar is never blank.
@@ -26,28 +28,48 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, industry, plan')
+    .select('full_name, industry, plan, creator_profile')
     .eq('id', user.id)
     .single()
 
-  const businessName = profile?.full_name?.trim() || 'My Business'
+  const accountType = getAccountType(user)
 
-  // Foot sub-line "{industry} · {Plan} plan" — built from real columns. Each
-  // half is dropped when its source is missing so we never print a placeholder.
-  const subParts: string[] = []
-  const industry = profile?.industry?.trim()
-  if (industry) subParts.push(industry)
-  if (isPlanTier(profile?.plan)) subParts.push(`${PLAN_LABELS[profile.plan]} plan`)
-  const businessSub = subParts.join(' · ')
+  // Foot identity — name + sub-line. Business shows "{industry} · {Plan} plan";
+  // for creators the brand industry reads oddly, so their sub-line degrades to
+  // their marketplace handle (real, once entered) or their plan label instead.
+  let displayName: string
+  let subLine: string
+
+  if (accountType === 'creator') {
+    displayName = profile?.full_name?.trim() || 'Your profile'
+    const creator = parseCreatorProfile(profile?.creator_profile)
+    const handle = creator.handle.trim()
+    const planLabel = profile?.plan ? PLAN_DISPLAY_LABELS[profile.plan] : undefined
+    subLine = handle
+      ? handle.startsWith('@')
+        ? handle
+        : `@${handle}`
+      : planLabel
+        ? `${planLabel} plan`
+        : ''
+  } else {
+    displayName = profile?.full_name?.trim() || 'My Business'
+    const subParts: string[] = []
+    const industry = profile?.industry?.trim()
+    if (industry) subParts.push(industry)
+    if (isPlanTier(profile?.plan)) subParts.push(`${PLAN_LABELS[profile.plan]} plan`)
+    subLine = subParts.join(' · ')
+  }
 
   // Top-bar avatar initial — the real signed-in user (name, else email).
   const userInitial = initialOf(profile?.full_name || user.email)
 
   return (
     <DashboardShell
-      businessName={businessName}
-      businessSub={businessSub}
+      businessName={displayName}
+      businessSub={subLine}
       userInitial={userInitial}
+      accountType={accountType}
     >
       {children}
     </DashboardShell>

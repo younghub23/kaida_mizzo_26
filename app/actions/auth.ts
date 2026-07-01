@@ -34,6 +34,11 @@ export async function signup(
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   const businessName = formData.get('businessName') as string
+  // Account type mirrors the client AuthForm signup path so this server action
+  // yields a correctly-typed account too. Anything other than 'creator' falls
+  // through to the unchanged business signup.
+  const accountType =
+    formData.get('accountType') === 'creator' ? 'creator' : 'business'
 
   const { error } = await supabase.auth.signUp({
     email,
@@ -41,6 +46,7 @@ export async function signup(
     options: {
       data: {
         full_name: businessName,
+        account_type: accountType,
       },
     },
   })
@@ -49,7 +55,8 @@ export async function signup(
     return { error: error.message }
   }
 
-  redirect('/dashboard')
+  // New signups pick a plan first (creators get their $10/mo card there).
+  redirect('/plan')
 }
 
 export async function logout() {

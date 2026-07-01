@@ -71,8 +71,15 @@ export default function PlanCards({
           <p className="mt-2 text-[19px] text-primary">{accountType}</p>
         </header>
 
-        {/* Plans grid */}
-        <div className="grid grid-cols-4 items-stretch gap-6 max-[1000px]:grid-cols-2 max-[560px]:grid-cols-1">
+        {/* Plans grid — a lone plan (e.g. the creator base plan) is centered
+            rather than stranded in a 4-up grid. */}
+        <div
+          className={
+            plans.length === 1
+              ? 'mx-auto grid max-w-sm grid-cols-1 items-stretch gap-6'
+              : 'grid grid-cols-4 items-stretch gap-6 max-[1000px]:grid-cols-2 max-[560px]:grid-cols-1'
+          }
+        >
           {plans.map((plan, i) => {
             const isLoading = loading === plan.priceId
             return (

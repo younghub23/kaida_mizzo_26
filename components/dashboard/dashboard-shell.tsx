@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Sidebar } from '@/components/dashboard/sidebar'
 import { TopBar } from '@/components/dashboard/top-bar'
+import type { AccountType } from '@/lib/account'
 
 // Shared dashboard chrome, matching dashboard-reference.html:
 //   .app (flex) → full-height Sidebar (with its own logo head) + main column
@@ -15,11 +16,13 @@ export function DashboardShell({
   businessName,
   businessSub,
   userInitial,
+  accountType = 'business',
   children,
 }: {
   businessName: string
   businessSub: string
   userInitial: string
+  accountType?: AccountType
   children: React.ReactNode
 }) {
   const [collapsed, setCollapsed] = useState(false)
@@ -41,6 +44,7 @@ export function DashboardShell({
       <Sidebar
         businessName={businessName}
         businessSub={businessSub}
+        accountType={accountType}
         collapsed={collapsed}
         mobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}

@@ -14,6 +14,19 @@ export const PLAN_LABELS: Record<PlanTier, string> = {
   agency: 'Agency',
 }
 
+// Display label for ANY value that can land in profiles.plan: the feature tiers
+// above, the billing states the Stripe webhook writes ('free' / 'past_due'),
+// and the creator base plan ('creator'). This is presentation only — it does
+// NOT imply feature entitlement. 'creator' unlocks nothing gated by the can*
+// helpers below (those check explicit business-tier lists); creators reach only
+// their own trimmed experience. Use this map wherever a plan value is shown.
+export const PLAN_DISPLAY_LABELS: Record<string, string> = {
+  free: 'Free',
+  ...PLAN_LABELS,
+  creator: 'Creator',
+  past_due: 'Past due',
+}
+
 /**
  * Central registry of plan-gated features. Each feature lists the tiers that
  * unlock it. Add new gated features here rather than scattering tier checks

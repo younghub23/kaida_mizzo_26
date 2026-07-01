@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const SETTINGS_LINKS = [
+const BUSINESS_LINKS = [
   { href: '/profile', label: 'Home', icon: Home },
   { href: '/profile/brand', label: 'Brand Info', icon: IdCard },
   { href: '/profile/wallet', label: 'Wallet & Subscriptions', icon: Wallet },
@@ -23,12 +23,23 @@ const SETTINGS_LINKS = [
   { href: '/profile/privacy', label: 'Data & Privacy', icon: SlidersHorizontal },
 ]
 
-export function ProfileNav() {
+// Creator settings — Profile Info replaces Brand Info; no Linked Accounts.
+const CREATOR_LINKS = [
+  { href: '/profile', label: 'Home', icon: Home },
+  { href: '/profile/creator', label: 'Profile Info', icon: IdCard },
+  { href: '/profile/wallet', label: 'Wallet & Subscriptions', icon: Wallet },
+  { href: '/profile/security', label: 'Security & Sign-In', icon: ShieldCheck },
+  { href: '/profile/password', label: 'Tala Password', icon: KeyRound },
+  { href: '/profile/privacy', label: 'Data & Privacy', icon: SlidersHorizontal },
+]
+
+export function ProfileNav({ isCreator = false }: { isCreator?: boolean }) {
   const pathname = usePathname()
+  const links = isCreator ? CREATOR_LINKS : BUSINESS_LINKS
 
   return (
     <nav className="flex gap-1 overflow-x-auto md:w-64 md:shrink-0 md:flex-col md:overflow-visible">
-      {SETTINGS_LINKS.map((link) => {
+      {links.map((link) => {
         const isActive =
           link.href === '/profile'
             ? pathname === '/profile'

@@ -11,9 +11,12 @@ import {
   User,
   Info,
   LogOut,
+  Store,
+  MessageSquare,
 } from 'lucide-react'
 import { logout } from '@/app/actions/auth'
 import { cn } from '@/lib/utils'
+import type { AccountType } from '@/lib/account'
 
 // First letter of the business name for the foot avatar tile.
 function businessInitial(name: string): string {
@@ -21,12 +24,22 @@ function businessInitial(name: string): string {
   return trimmed ? trimmed.charAt(0).toUpperCase() : '·'
 }
 
-const NAV_LINKS = [
+// Business workspace — the full, unchanged nav.
+const BUSINESS_NAV_LINKS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/socials', label: 'Socials', icon: Share2 },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/ai', label: 'AI Assistant', icon: Sparkles },
+  { href: '/profile', label: 'Profile', icon: User },
+  { href: '/about', label: 'About', icon: Info },
+]
+
+// Creator workspace — the trimmed marketplace-only nav.
+const CREATOR_NAV_LINKS = [
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/marketplace', label: 'Content Marketplace', icon: Store },
+  { href: '/messages', label: 'Messages', icon: MessageSquare },
   { href: '/profile', label: 'Profile', icon: User },
   { href: '/about', label: 'About', icon: Info },
 ]
@@ -37,17 +50,21 @@ const MUTED_COLOR = '#A4977F' // --muted
 export function Sidebar({
   businessName,
   businessSub,
+  accountType = 'business',
   collapsed = false,
   mobileOpen = false,
   onCloseMobile,
 }: {
   businessName: string
   businessSub: string
+  accountType?: AccountType
   collapsed?: boolean
   mobileOpen?: boolean
   onCloseMobile?: () => void
 }) {
   const pathname = usePathname()
+  const navLinks =
+    accountType === 'creator' ? CREATOR_NAV_LINKS : BUSINESS_NAV_LINKS
 
   return (
     <aside
@@ -82,7 +99,7 @@ export function Sidebar({
           </span>
         </div>
 
-        {NAV_LINKS.map((link) => {
+        {navLinks.map((link) => {
           const isActive =
             pathname === link.href || pathname.startsWith(`${link.href}/`)
           const Icon = link.icon

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import PlanCards from '@/components/PlanCards'
+import { isCreator } from '@/lib/account'
 
 export default async function PlanPage() {
   const supabase = await createClient()
@@ -8,16 +9,22 @@ export default async function PlanPage() {
 
   if (!user) redirect('/login')
 
-  // Creators bypass this page — business-only flow
-  if (user.user_metadata?.account_type === 'creator') {
-    redirect('/dashboard')
+  // Creators subscribe to a single $10/mo base plan that unlocks the Content
+  // Marketplace. They see just that card; business users see the four business
+  // plans below, exactly as before.
+  if (isCreator(user)) {
+    const creatorPlans = [
+      {
+        name: 'Creator',
+        price: '$10/mo',
+        priceId: process.env.STRIPE_CREATOR_PRICE_ID!,
+        features: ['Access to the Content Marketplace'],
+      },
+    ]
+    return <PlanCards plans={creatorPlans} accountType="Creator" />
   }
 
-  // Account-type subtitle comes from the real user record. In practice this is
-  // always "Business" here (creators are redirected above), but we read it live
-  // rather than hard-coding it.
-  const accountType =
-    user.user_metadata?.account_type === 'creator' ? 'Creator' : 'Business'
+  const accountType = 'Business'
 
   const plans = [
     {

@@ -8,6 +8,7 @@ const VALID_PRICE_IDS = [
   process.env.STRIPE_PRICE_ID,
   process.env.STRIPE_PRO_PRICE_ID,
   process.env.STRIPE_AGENCY_PRICE_ID,
+  process.env.STRIPE_CREATOR_PRICE_ID,
 ].filter(Boolean)
 
 export async function POST(request: Request) {

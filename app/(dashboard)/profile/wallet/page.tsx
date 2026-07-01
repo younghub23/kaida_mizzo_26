@@ -4,6 +4,7 @@ import { CreditCard, MapPin, Receipt } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { stripe } from '@/lib/stripe'
 import { logError } from '@/lib/log'
+import { isCreator } from '@/lib/account'
 import {
   Card,
   CardHeader,
@@ -55,6 +56,18 @@ const PLANS: PlanOption[] = [
       'Priority support',
     ],
     priceId: process.env.STRIPE_AGENCY_PRICE_ID ?? '',
+  },
+]
+
+// The single creator base plan, shown on the creator wallet in place of the
+// four business plans.
+const CREATOR_PLANS: PlanOption[] = [
+  {
+    name: 'Creator',
+    tier: 'creator',
+    price: '$10/mo',
+    features: ['Access to the Content Marketplace'],
+    priceId: process.env.STRIPE_CREATOR_PRICE_ID ?? '',
   },
 ]
 
@@ -151,6 +164,8 @@ export default async function WalletPage() {
     redirect('/login')
   }
 
+  const plans = isCreator(user) ? CREATOR_PLANS : PLANS
+
   const { data: profile } = await supabase
     .from('profiles')
     .select('plan, stripe_customer_id')
@@ -172,7 +187,7 @@ export default async function WalletPage() {
       <BillingSection
         plan={profile?.plan ?? 'free'}
         hasCustomer={hasCustomer}
-        plans={PLANS}
+        plans={plans}
       />
 
       <div className="grid gap-4 md:grid-cols-2">
