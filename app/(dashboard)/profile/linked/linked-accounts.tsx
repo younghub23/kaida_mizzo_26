@@ -16,6 +16,7 @@ const PLATFORM_LABELS: Record<string, string> = {
   instagram: 'Instagram',
   linkedin: 'LinkedIn',
   tiktok: 'TikTok',
+  pinterest: 'Pinterest',
   google: 'Google',
 }
 
@@ -24,10 +25,11 @@ const PLATFORM_COLORS: Record<string, string> = {
   instagram: '#E1306C',
   linkedin: '#0A66C2',
   tiktok: '#000000',
+  pinterest: '#E60023',
   google: '#4285F4',
 }
 
-const ALL_PLATFORMS = ['instagram', 'facebook', 'linkedin', 'tiktok', 'google']
+const ALL_PLATFORMS = ['instagram', 'facebook', 'linkedin', 'tiktok', 'pinterest', 'google']
 
 export function LinkedAccounts({
   connected,

@@ -5,11 +5,18 @@ import { logError } from '@/lib/log'
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const code = searchParams.get('code')
+  const state = searchParams.get('state')
   const error = searchParams.get('error')
+
+  const savedState = req.cookies.get('pinterest_oauth_state')?.value
 
   if (error || !code) {
     logError('social/pinterest/callback', 'OAuth error or missing code', undefined, { error })
     return NextResponse.redirect(new URL('/socials/connect?error=oauth_denied', req.url))
+  }
+  if (!state || state !== savedState) {
+    logError('social/pinterest/callback', 'Missing/invalid OAuth state')
+    return NextResponse.redirect(new URL('/socials/connect?error=token', req.url))
   }
 
   const clientId = process.env.PINTEREST_APP_ID
@@ -22,7 +29,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const basic = Buffer.from(`${clientId}:${clientSecret}`).toString('base64')
+    const basic = btoa(`${clientId}:${clientSecret}`)
     const tokenRes = await fetch('https://api.pinterest.com/v5/oauth/token', {
       method: 'POST',
       headers: {
@@ -84,7 +91,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(new URL('/socials/connect?error=save_failed', req.url))
     }
 
-    return NextResponse.redirect(new URL('/socials/connect?success=1', req.url))
+    const res = NextResponse.redirect(new URL('/socials/connect?success=1', req.url))
+    res.cookies.delete('pinterest_oauth_state')
+    return res
   } catch (err) {
     logError('social/pinterest/callback', 'Unexpected error', err)
     return NextResponse.redirect(new URL('/socials/connect?error=unexpected', req.url))
