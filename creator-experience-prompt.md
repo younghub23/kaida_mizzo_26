@@ -19,11 +19,11 @@ Next.js 16 App Router, React 19, Tailwind v4, shadcn, `lucide-react`, Supabase, 
 
 ## Two decisions already made (don't re-litigate)
 
-1. **Billing = UI placeholder for now.** Do **not** wire real Stripe checkout for the
-   $10/mo creator plan in this pass. Represent it in the creator Wallet page as UI only
-   (plan name, `$10/mo`, status, a disabled/"Manage subscription" affordance). Leave a
-   clearly-commented `// TODO: creator billing` seam where the real price ID / checkout
-   would go. (The business Stripe flow must keep working untouched.)
+1. **Billing = fully wired Stripe checkout.** Creators must actually pay the **$10/mo**
+   base subscription through the same Stripe machinery the business plans use. This means a
+   new creator price ID, a creator checkout entry point, webhook plan mapping, and a real
+   Wallet page reflecting their live subscription. Full spec in §7 below. (The existing
+   business Stripe flow must keep working untouched.)
 2. **Role-aware shared routes**, not a separate route group. Reuse the existing
    `app/(dashboard)` group and branch on the account type. Creators already carry
    `account_type: 'creator'` in Supabase `user_metadata` (set at signup in
@@ -118,7 +118,7 @@ Profile includes these sections (and **only** these):
 
 1. **Profile Info** — name, **handle**, **media channels**, **bio**, **demographic**,
    **content**, **values**, etc. (This replaces the business "Brand Info" section.)
-2. **Wallet & Subscriptions** — the $10/mo plan (UI placeholder per decision #1).
+2. **Wallet & Subscriptions** — the live $10/mo creator plan (fully wired — see §7).
 3. **Security & Sign-In**
 4. **Tala Password**
 5. **Data & Privacy**
@@ -133,7 +133,7 @@ Implementation:
   list otherwise. Keep the same card/row visual treatment (`IconTile`, `sectionTiles`,
   `card`+`cardLink`, `ChevronRight`).
 - **Reuse as-is** for creators: `/profile/security`, `/profile/password`, `/profile/privacy`,
-  and `/profile/wallet` (with the creator plan copy/placeholder). These pages are already
+  and `/profile/wallet` (with the creator plan wired per §7). These pages are already
   account-agnostic — just make sure they're reachable in the creator nav and don't show
   business-only affordances.
 - **New: Profile Info page + form.** Add a creator profile page (e.g.
@@ -173,7 +173,49 @@ style: H1 "Messages", subtitle, and an empty state ("No messages yet — brands 
 through the Content Marketplace will show up here"). No fake threads. I'll build the real
 thing later.
 
-## 7. Route gating
+## 7. Creator billing — fully wire the $10/mo subscription
+
+Creators pay a single **$10/mo** base plan through the same Stripe subscription flow the
+business plans already use (`app/api/checkout/route.ts` + `app/api/webhooks/stripe/route.ts`
++ `lib/stripe.ts`). Follow that flow exactly — don't invent a new payment path. Steps:
+
+1. **New price ID env var.** Add `STRIPE_CREATOR_PRICE_ID` to `.env.example` (documented
+   as "Creator — $10/mo") alongside the existing `STRIPE_STARTER_PRICE_ID` etc. The real
+   value is a Stripe price I'll create; the code just references the env var.
+2. **Recognize `creator` as a plan value.** `profiles.plan` is a free-text column, so store
+   the literal `'creator'` there for subscribed creators. Add a `'Creator'` label wherever
+   plan labels are mapped — `PLAN_LABELS`/`isPlanTier` in `lib/analytics/plan.ts`, the
+   `PLAN_LABEL` map in `app/(dashboard)/profile/page.tsx`, and the sidebar/layout sub-line.
+   Do **not** grant creators any business/analytics feature via this value — the existing
+   `can*` gating in `lib/analytics/plan.ts` should treat `'creator'` as unentitled to
+   business features (creators can't reach those pages anyway; §8 enforces it).
+3. **Checkout accepts the creator price.** In `app/api/checkout/route.ts`, add
+   `process.env.STRIPE_CREATOR_PRICE_ID` to `VALID_PRICE_IDS` so a creator can start
+   checkout for it. Keep the existing 7-day trial + success/cancel URLs.
+4. **Webhook maps the price → `'creator'`.** In `app/api/webhooks/stripe/route.ts`,
+   `tierFromPriceId` must map `STRIPE_CREATOR_PRICE_ID` to `'creator'`. Critically, the
+   current fallback for unknown prices is `'growth'` — make sure a creator subscription is
+   never misresolved to a business tier. All three subscription events
+   (`checkout.session.completed`, `customer.subscription.created|updated`,
+   `deleted`, `invoice.payment_failed`) must resolve/downgrade correctly for the creator
+   price the same way they do for business prices (deleted → `'free'`, payment failed →
+   `'past_due'`).
+5. **Creator checkout entry point.** Today `app/(auth)/plan/page.tsx` redirects creators
+   straight to `/dashboard`. Change it so a creator instead sees a **single Creator plan
+   card** ($10/mo, its feature line = access to the Content Marketplace) whose "Choose
+   plan" button POSTs `{ priceId: STRIPE_CREATOR_PRICE_ID }` to `/api/checkout` and
+   redirects to the returned Stripe URL — reuse the existing `components/PlanCards.tsx`
+   pattern (or render it with a one-item plans array) rather than hand-rolling checkout.
+   Business users keep seeing the four business plans exactly as now.
+6. **Wallet reflects the live subscription.** The creator `/profile/wallet` page must show
+   the real `profiles.plan` (`Creator` / `Past due` / `Free`) and offer **Manage
+   subscription** via the existing Stripe billing portal route (`/api/billing/portal`) —
+   the same mechanism business users get. No mock plan state.
+
+Everything here reuses existing Stripe code paths; the only genuinely new pieces are the
+env var, the `'creator'` plan label, and the single-card creator checkout entry.
+
+## 8. Route gating
 
 Creators must not reach business-only areas. Add gating so a creator hitting
 `/calendar`, `/socials`, `/analytics`, or `/ai` (and their sub-routes) is redirected to
@@ -183,15 +225,16 @@ Creators must not reach business-only areas. Add gating so a creator hitting
 users hitting `/marketplace` or `/messages` should be redirected to `/dashboard` (these are
 creator-only for now). Keep the guard list in one place so it's easy to extend.
 
-## 8. Signup / entry flow
+## 9. Signup / entry flow
 
-The account-type toggle already exists in `components/AuthForm.tsx` and `/plan` already
-redirects creators to `/dashboard`. Verify the end-to-end path: sign up as a creator → land
-on the creator dashboard with the trimmed sidebar (not the business plan picker, not the
-business dashboard). Fix any spot still assuming everyone is a business (e.g. the
-`app/actions/auth.ts` `signup` server action currently only stores `full_name` and doesn't
-set `account_type` — the client `AuthForm` path does set it; make sure whichever path is
-used yields a creator account). Don't change the business signup behavior.
+The account-type toggle already exists in `components/AuthForm.tsx`, which pushes new
+signups to `/plan`. Verify the end-to-end path: sign up as a creator → hit the **Creator
+$10/mo plan card** on `/plan` (per §7) → complete Stripe checkout → return to the creator
+dashboard with the trimmed sidebar. Business signup still lands on the four business plans.
+Fix any spot still assuming everyone is a business (e.g. the `app/actions/auth.ts` `signup`
+server action only stores `full_name` and doesn't set `account_type` — the client
+`AuthForm` path does set it; make sure whichever path is used yields a creator account with
+`account_type: 'creator'`). Don't change the business signup behavior.
 
 ## Acceptance criteria
 
@@ -206,7 +249,9 @@ used yields a creator account). Don't change the business signup behavior.
   Sign-In / Tala Password / Data & Privacy; Profile Info saves name, handle, media
   channels, bio, demographic, content, values to `profiles.creator_profile`.
 - **Marketplace** and **Messages** are on-brand placeholders.
-- $10/mo creator plan shows in Wallet as UI only (no real charge wired), with a clear TODO
-  seam.
+- The **$10/mo creator plan is fully wired**: a creator can check out via Stripe on `/plan`,
+  the webhook writes `plan = 'creator'`, and `/profile/wallet` shows the live subscription
+  with a working Manage-subscription (billing portal) link. `STRIPE_CREATOR_PRICE_ID` is
+  documented in `.env.example`.
 - Visuals follow `design-language-reference.md`; `npm run lint` and `npm run build` pass;
-  no changes to business data shapes, server actions, or the Stripe business flow.
+  no changes to business data shapes, business server actions, or the Stripe business flow.
