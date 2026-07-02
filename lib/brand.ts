@@ -156,28 +156,70 @@ export const PLATFORMS = [
 
 // ---------------------------------------------------------------------------
 // Completeness — drives the Home overview progress indicator.
+//
+// The 14 fields that count toward a "100% complete" brand profile, defined
+// once so the percentage (brandCompleteness) and the "what's still missing"
+// checklist (missingBrandFields) can never disagree. Each entry carries a
+// friendly human label and the id of the matching input in the Brand form
+// (app/(dashboard)/profile/brand/brand-form.tsx) so the checklist can deep-link
+// straight to the field to fill in.
 // ---------------------------------------------------------------------------
+export type BrandFieldKey =
+  | 'tagline'
+  | 'description'
+  | 'website'
+  | 'brandType'
+  | 'teamSize'
+  | 'targetAgeRanges'
+  | 'targetGenders'
+  | 'targetLocations'
+  | 'brandVoice'
+  | 'brandValues'
+  | 'primaryGoals'
+  | 'contentTopics'
+  | 'preferredPlatforms'
+  | 'uniqueSellingPoint'
+
+export type BrandField = {
+  key: BrandFieldKey
+  /** Friendly label shown in the completeness checklist. */
+  label: string
+  /** id of the matching input in the Brand form, for `#anchor` deep-links. */
+  anchor: string
+}
+
+export const BRAND_COMPLETENESS_FIELDS: BrandField[] = [
+  { key: 'tagline', label: 'Tagline', anchor: 'tagline' },
+  { key: 'description', label: 'Description', anchor: 'description' },
+  { key: 'website', label: 'Website', anchor: 'website' },
+  { key: 'brandType', label: 'Brand type', anchor: 'brandType' },
+  { key: 'teamSize', label: 'Team size', anchor: 'teamSize' },
+  { key: 'targetAgeRanges', label: 'Target age ranges', anchor: 'targetAgeRanges' },
+  { key: 'targetGenders', label: 'Target genders', anchor: 'targetGenders' },
+  { key: 'targetLocations', label: 'Target locations', anchor: 'targetLocations' },
+  { key: 'brandVoice', label: 'Brand voice', anchor: 'brandVoice' },
+  { key: 'brandValues', label: 'Brand values', anchor: 'brandValues' },
+  { key: 'primaryGoals', label: 'Primary goals', anchor: 'primaryGoals' },
+  { key: 'contentTopics', label: 'Content topics', anchor: 'contentTopics' },
+  { key: 'preferredPlatforms', label: 'Preferred platforms', anchor: 'preferredPlatforms' },
+  { key: 'uniqueSellingPoint', label: 'Unique selling point', anchor: 'usp' },
+]
+
+function isFieldFilled(value: string | string[]): boolean {
+  return Array.isArray(value) ? value.length > 0 : value.trim().length > 0
+}
+
 export function brandCompleteness(p: BrandProfile): number {
-  const fields: (string | string[])[] = [
-    p.tagline,
-    p.description,
-    p.website,
-    p.brandType,
-    p.teamSize,
-    p.targetAgeRanges,
-    p.targetGenders,
-    p.targetLocations,
-    p.brandVoice,
-    p.brandValues,
-    p.primaryGoals,
-    p.contentTopics,
-    p.preferredPlatforms,
-    p.uniqueSellingPoint,
-  ]
-  const filled = fields.filter((f) =>
-    Array.isArray(f) ? f.length > 0 : f.trim().length > 0
-  ).length
-  return Math.round((filled / fields.length) * 100)
+  const filled = BRAND_COMPLETENESS_FIELDS.filter((f) => isFieldFilled(p[f.key])).length
+  return Math.round((filled / BRAND_COMPLETENESS_FIELDS.length) * 100)
+}
+
+// The subset of BRAND_COMPLETENESS_FIELDS the user still hasn't filled in —
+// drives the "complete your profile" checklist. Because both this and
+// brandCompleteness() read the same field list with the same emptiness rule,
+// an empty result is exactly equivalent to 100% completeness.
+export function missingBrandFields(p: BrandProfile): BrandField[] {
+  return BRAND_COMPLETENESS_FIELDS.filter((f) => !isFieldFilled(p[f.key]))
 }
 
 // ---------------------------------------------------------------------------

@@ -11,9 +11,10 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
-import { parseBrandProfile, brandCompleteness } from '@/lib/brand'
-import { card, cardLink, microLabel, brandGradient, type SectionKey } from './ui'
+import { parseBrandProfile, brandCompleteness, missingBrandFields } from '@/lib/brand'
+import { card, cardLink, microLabel, type SectionKey } from './ui'
 import { IconTile } from './icon-tile'
+import { BrandCompletenessCard } from './brand-completeness-card'
 
 const PLAN_LABEL: Record<string, string> = {
   free: 'Free',
@@ -97,7 +98,9 @@ export default async function ProfileHomePage() {
     .eq('user_id', user.id)
 
   const plan = profile?.plan ?? 'free'
-  const completeness = brandCompleteness(parseBrandProfile(profile?.brand_profile))
+  const brand = parseBrandProfile(profile?.brand_profile)
+  const completeness = brandCompleteness(brand)
+  const missing = missingBrandFields(brand)
   // Friendly first-name greeting, derived from the real profile name.
   const name = (profile?.full_name || 'there').trim().split(/\s+/)[0]
 
@@ -123,23 +126,7 @@ export default async function ProfileHomePage() {
           </Badge>
         </div>
 
-        <div className={`${card} ${cardLink} flex flex-col gap-3.5 p-6`}>
-          <span className={microLabel}>Brand profile</span>
-          <div className="flex items-center gap-3">
-            <div className="h-2 flex-1 overflow-hidden rounded-full bg-accent">
-              <div
-                className="h-full rounded-full"
-                style={{ width: `${completeness}%`, background: brandGradient }}
-              />
-            </div>
-            <span className="font-fredoka text-lg font-semibold tabular-nums">
-              {completeness}%
-            </span>
-          </div>
-          <Link href="/profile/brand" className="text-[13px] font-medium text-primary hover:underline">
-            {completeness < 100 ? 'Complete your profile' : 'View brand info'}
-          </Link>
-        </div>
+        <BrandCompletenessCard completeness={completeness} missing={missing} />
 
         <div className={`${card} ${cardLink} flex flex-col gap-1 p-6`}>
           <span className={microLabel}>Linked accounts</span>
