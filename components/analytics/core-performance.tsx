@@ -1,6 +1,7 @@
 import { TrendingUp, TrendingDown, Activity } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardDescription, CardTitle } from '@/components/ui/card'
 import { Section, EmptyState } from '@/components/analytics/data-source'
+import { SectionInfo } from '@/components/analytics/section-info'
 import { LineChart } from '@/components/analytics/charts'
 import { type Kpi, type MetricKey, type TrendPoint } from '@/app/(dashboard)/analytics/mock-data'
 import { formatCompact, formatPercent, formatDelta, sourceSuffix, type SectionSource } from '@/lib/analytics/format'
@@ -91,7 +92,14 @@ export function CorePerformance({
       {trend.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="font-fredoka font-semibold">Engagement &amp; reach</CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="font-fredoka font-semibold">Engagement &amp; reach</CardTitle>
+              <SectionInfo title="Engagement & reach trend" color="#D6498C">
+                A day-by-day line of total engagement (interactions) and reach (unique people who
+                saw your posts) over the last 30 days. Rising lines mean your content is reaching and
+                resonating with more people; dips flag quieter stretches worth a closer look.
+              </SectionInfo>
+            </div>
             <CardDescription>Last 30 days · time series {sourceSuffix(trendSource)}</CardDescription>
           </CardHeader>
           <CardContent>

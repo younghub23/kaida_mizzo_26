@@ -2,6 +2,36 @@ import Link from 'next/link'
 import { Database, TriangleAlert, PlugZap, Plug, ArrowUpRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { SectionInfo } from '@/components/analytics/section-info'
+
+/**
+ * Plain-language explanation for each analytics section, keyed by the section's
+ * title. Section looks this up automatically so every subsection gets a
+ * consistent info affordance without wiring copy through each component. (Pass
+ * an explicit `info` prop to override, e.g. for a sub-card like the trend graph.)
+ */
+export const SECTION_EXPLANATIONS: Record<string, string> = {
+  'Core performance':
+    "Your headline KPIs — engagement rate, followers, reach, impressions and clicks — totalled across every connected account. Each tile shows the current value and, where we have history, how it moved versus the previous period. It's the fastest read on whether your presence is growing, without opening each network.",
+  'Top content':
+    'Your best-performing posts across all connected networks, ranked by engagement. Use it to spot which formats and topics resonate so you can make more of what already works.',
+  'Content performance':
+    'A per-post breakdown of reach, engagement and engagement rate for your recent content. Comparing posts side by side shows what drives results beyond the top few, so you can refine your posting mix.',
+  'Audience insights':
+    "Who follows you — age, gender, location and when they're active — aggregated across networks. Knowing your real audience helps you tailor tone, topics and timing to the people actually watching.",
+  'Cross-channel followers':
+    'People who appear to follow you on more than one network, matched across platforms. It surfaces your most loyal, multi-platform fans and the true size of your combined audience instead of double-counting them.',
+  'Best time to post':
+    "The days and hours your audience has historically been most engaged, learned from your own posting history. Scheduling into these windows gives each post its best shot at reach.",
+  'Competitor benchmark':
+    "How your key metrics stack up against comparable brands. A number only tells you whether you're ahead or behind once you see it next to the rest of the field — that context is the point.",
+  'ROI & conversion attribution':
+    'Connects social activity to real outcomes — traffic, conversions and revenue — using UTM links and analytics. It answers the bottom-line question: what is your social effort actually earning?',
+  'Custom report builder':
+    'Assemble the metrics and sections you care about into a shareable report and export it. Handy for recurring updates to clients or stakeholders, or for your own records.',
+  'Social listening & sentiment':
+    'Tracks mentions of your brand and the sentiment — positive, neutral or negative — behind them across social platforms. It surfaces what people are saying so you can join conversations, catch issues early and gauge how your brand is perceived.',
+}
 
 /**
  * Append an alpha channel to a 6-digit hex colour (e.g. `#D6498C` → `#D6498C1A`).
@@ -154,6 +184,7 @@ export function Section({
   iconColor,
   eyebrow,
   action,
+  info,
   children,
 }: {
   title: string
@@ -165,8 +196,14 @@ export function Section({
   /** Short uppercase micro-label shown above the section title. */
   eyebrow?: string
   action?: React.ReactNode
+  /**
+   * Explanation shown behind the header "ⓘ" info button. Defaults to the
+   * title-keyed copy in SECTION_EXPLANATIONS; pass `null` to hide the icon.
+   */
+  info?: React.ReactNode
   children: React.ReactNode
 }) {
+  const explanation = info === undefined ? SECTION_EXPLANATIONS[title] : info
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -184,6 +221,11 @@ export function Section({
             <h2 className="font-fredoka text-lg font-semibold leading-none tracking-[-0.01em] text-foreground">
               {title}
             </h2>
+            {explanation != null && explanation !== false && (
+              <SectionInfo title={title} color={iconColor}>
+                {explanation}
+              </SectionInfo>
+            )}
             <DataSource label={source} color={iconColor} />
           </div>
           {description && (
