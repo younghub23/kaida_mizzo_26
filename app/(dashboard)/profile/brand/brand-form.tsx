@@ -174,15 +174,18 @@ function Field({
   label,
   htmlFor,
   hint,
+  id,
   children,
 }: {
   label: string
   htmlFor?: string
   hint?: string
+  /** Optional anchor id so the profile completeness checklist can deep-link here. */
+  id?: string
   children: React.ReactNode
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div id={id} className="flex scroll-mt-24 flex-col gap-1.5">
       <Label htmlFor={htmlFor}>{label}</Label>
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
       {children}
@@ -475,7 +478,7 @@ export function BrandForm({
           <CardDescription>Who are you trying to reach?</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <Field label="Target age ranges">
+          <Field label="Target age ranges" id="targetAgeRanges">
             <ChipGroup
               options={AGE_RANGES}
               selected={brand.targetAgeRanges}
@@ -483,7 +486,7 @@ export function BrandForm({
               onAdd={(v) => addToArray('targetAgeRanges', v)}
             />
           </Field>
-          <Field label="Target genders">
+          <Field label="Target genders" id="targetGenders">
             <ChipGroup
               options={GENDERS}
               selected={brand.targetGenders}
@@ -520,7 +523,7 @@ export function BrandForm({
           <CardDescription>How your brand sounds and what success looks like.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <Field label="Brand voice">
+          <Field label="Brand voice" id="brandVoice">
             <ChipGroup
               options={BRAND_VOICES}
               selected={brand.brandVoice}
@@ -528,7 +531,7 @@ export function BrandForm({
               onAdd={(v) => addToArray('brandVoice', v)}
             />
           </Field>
-          <Field label="Brand values">
+          <Field label="Brand values" id="brandValues">
             <ChipGroup
               options={BRAND_VALUES}
               selected={brand.brandValues}
@@ -536,7 +539,7 @@ export function BrandForm({
               onAdd={(v) => addToArray('brandValues', v)}
             />
           </Field>
-          <Field label="Primary goals">
+          <Field label="Primary goals" id="primaryGoals">
             <ChipGroup
               options={PRIMARY_GOALS}
               selected={brand.primaryGoals}
@@ -544,7 +547,7 @@ export function BrandForm({
               onAdd={(v) => addToArray('primaryGoals', v)}
             />
           </Field>
-          <Field label="Preferred platforms">
+          <Field label="Preferred platforms" id="preferredPlatforms">
             <ChipGroup
               options={PLATFORMS}
               selected={brand.preferredPlatforms}

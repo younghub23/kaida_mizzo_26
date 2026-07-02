@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Sidebar } from '@/components/dashboard/sidebar'
 import { TopBar } from '@/components/dashboard/top-bar'
+import { DashboardChatLauncher } from '@/components/dashboard/dashboard-chat-launcher'
 
 // Shared dashboard chrome, matching dashboard-reference.html:
 //   .app (flex) → full-height Sidebar (with its own logo head) + main column
@@ -49,6 +50,9 @@ export function DashboardShell({
         <TopBar userInitial={userInitial} onToggleSidebar={toggleSidebar} />
         <main className="min-w-0 flex-1">{children}</main>
       </div>
+
+      {/* Persistent AI assistant — trigger + popover, reachable on every route. */}
+      <DashboardChatLauncher />
     </div>
   )
 }
