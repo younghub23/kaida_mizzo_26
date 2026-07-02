@@ -39,6 +39,11 @@ const GEN_LABELS: Record<string, string> = {
   boomer: 'Boomers',
 }
 
+// Human labels for a set of generation bucket keys (used by the rail titles).
+export function generationLabels(keys: string[]): string[] {
+  return keys.map((k) => GEN_LABELS[k] ?? k)
+}
+
 // Map an age-range string ("18–24", "65+") or a generation label
 // ("Gen Z (13–24)") to one or more generation buckets.
 function ageToGenerations(value: string): string[] {

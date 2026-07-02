@@ -18,6 +18,7 @@ import {
   creatorSignals,
   scoreMatch,
   hasSignals,
+  generationLabels,
   type MatchSignals,
   type MatchResult,
 } from '@/lib/match'
@@ -220,4 +221,148 @@ export async function getMarketplaceProfile(
     brand: accountType === 'business' ? parseBrandProfile(row.brand_profile) : null,
     creator,
   }
+}
+
+// ---------------------------------------------------------------------------
+// Netflix-style rails — a recommended row plus rows grouped by genre (content),
+// audience (generation), and values.
+// ---------------------------------------------------------------------------
+
+export type MarketplaceRail = {
+  key: string
+  title: string
+  kind: 'recommended' | 'genre' | 'audience' | 'value'
+  profiles: MarketplaceProfile[]
+  seeAllTag?: string
+}
+
+type FacetedCard = {
+  card: MarketplaceProfile
+  categories: string[]
+  values: string[]
+  audiences: string[]
+}
+
+type RailParams = {
+  viewerId: string
+  viewerType: AccountType
+  viewerSignals?: MatchSignals
+}
+
+// Load the opposite side once and derive per-card grouping facets.
+async function loadFacetedCards(params: RailParams): Promise<FacetedCard[]> {
+  const admin = createAdminClient()
+  const oppositeType: AccountType =
+    params.viewerType === 'creator' ? 'business' : 'creator'
+
+  const { data } = await admin
+    .from('profiles')
+    .select(PUBLIC_COLUMNS)
+    .eq('marketplace_visible', true)
+    .eq('account_type', oppositeType)
+    .neq('id', params.viewerId)
+    .limit(200)
+  if (!data) return []
+
+  return (data as ProfileRow[])
+    .map((row): FacetedCard | null => {
+      const card = toCard(row, params.viewerSignals)
+      if (!card) return null
+      const values =
+        normalizeType(row.account_type) === 'creator'
+          ? parseCreatorProfile(row.creator_profile).values
+          : parseBrandProfile(row.brand_profile).brandValues
+      const audiences = generationLabels(signalsForRow(row).audiences)
+      return { card, categories: card.tags, values, audiences }
+    })
+    .filter((f): f is FacetedCard => f !== null)
+}
+
+const byScoreThenName = (a: MarketplaceProfile, b: MarketplaceProfile) =>
+  (b.match?.score ?? -1) - (a.match?.score ?? -1) || a.name.localeCompare(b.name)
+
+/** Top matches for the viewer — powers the recommended rails. */
+export async function getRecommendedProfiles(
+  params: RailParams & { limit?: number }
+): Promise<MarketplaceProfile[]> {
+  if (!params.viewerSignals || !hasSignals(params.viewerSignals)) return []
+  const faceted = await loadFacetedCards(params)
+  return faceted
+    .map((f) => f.card)
+    .filter((c) => c.match && c.match.score > 0)
+    .sort((a, b) => (b.match?.score ?? 0) - (a.match?.score ?? 0))
+    .slice(0, params.limit ?? 12)
+}
+
+/** Assemble the full set of marketplace rails for the directory. */
+export async function buildMarketplaceRails(params: RailParams): Promise<MarketplaceRail[]> {
+  const faceted = await loadFacetedCards(params)
+  if (faceted.length === 0) return []
+
+  const oppositeType: AccountType =
+    params.viewerType === 'creator' ? 'business' : 'creator'
+  const canMatch = Boolean(params.viewerSignals && hasSignals(params.viewerSignals))
+  const rails: MarketplaceRail[] = []
+
+  // Recommended row (best matches first).
+  if (canMatch) {
+    const recommended = faceted
+      .map((f) => f.card)
+      .filter((c) => c.match && c.match.score > 0)
+      .sort((a, b) => (b.match?.score ?? 0) - (a.match?.score ?? 0))
+      .slice(0, 12)
+    if (recommended.length > 0) {
+      rails.push({
+        key: 'recommended',
+        title: 'Recommended for you',
+        kind: 'recommended',
+        profiles: recommended,
+      })
+    }
+  }
+
+  // Frequency-ranked facet labels (case-insensitive), preserving a display label.
+  const topFacets = (get: (f: FacetedCard) => string[]) => {
+    const counts = new Map<string, { label: string; count: number }>()
+    for (const f of faceted) {
+      for (const raw of new Set(get(f).filter(Boolean))) {
+        const key = raw.toLowerCase()
+        const cur = counts.get(key)
+        if (cur) cur.count += 1
+        else counts.set(key, { label: raw, count: 1 })
+      }
+    }
+    return [...counts.values()].sort((a, b) => b.count - a.count)
+  }
+
+  const addRail = (
+    kind: MarketplaceRail['kind'],
+    key: string,
+    title: string,
+    facetLabel: string,
+    get: (f: FacetedCard) => string[],
+    seeAllTag?: string
+  ) => {
+    const profiles = faceted
+      .filter((f) => get(f).some((x) => x.toLowerCase() === facetLabel.toLowerCase()))
+      .map((f) => f.card)
+      .sort(byScoreThenName)
+    if (profiles.length >= 2) rails.push({ key, title, kind, profiles, seeAllTag })
+  }
+
+  // Genre rows (content categories / topics).
+  for (const facet of topFacets((f) => f.categories).slice(0, 5)) {
+    addRail('genre', `genre:${facet.label}`, facet.label, facet.label, (f) => f.categories, facet.label)
+  }
+  // Audience rows (generation).
+  const noun = oppositeType === 'creator' ? 'Creators' : 'Brands'
+  for (const facet of topFacets((f) => f.audiences).slice(0, 4)) {
+    addRail('audience', `audience:${facet.label}`, `${noun} for ${facet.label}`, facet.label, (f) => f.audiences)
+  }
+  // Values rows.
+  for (const facet of topFacets((f) => f.values).slice(0, 4)) {
+    addRail('value', `value:${facet.label}`, `Values: ${facet.label}`, facet.label, (f) => f.values)
+  }
+
+  return rails
 }

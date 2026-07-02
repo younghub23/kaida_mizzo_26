@@ -98,17 +98,22 @@ usable profile (otherwise the UI nudges them to complete it).
 
 | Route | What it is |
 | --- | --- |
-| `/marketplace` | Directory of the opposite side. Search box + tag chips (derived from real result tags). Cards link to the detail page. Honest empty states. |
+| `/marketplace` | **Netflix-style browse**: a "Recommended for you" rail (best matches) on top, then horizontally-scrolling rails grouped by genre (content), audience (generation), and values — built by `buildMarketplaceRails`. Typing a search / picking a tag switches to a filterable **grid** with the sort control. Honest empty states. |
 | `/marketplace/[id]` | Public profile detail. Creator view: bio, channels, demographic, content, values. Brand view: tagline/description, industry, website, audience, topics, values. "Message" CTA (hidden on your own profile). |
 | `/messages` | Inbox: conversation rows with avatar, name, headline, last-message preview, relative time, unread badge. Empty state links to the marketplace. |
-| `/messages/[id]` | Live thread. `thread-view.tsx` (client) sends/receives via the browser Supabase client and subscribes to `postgres_changes` (INSERT **and** UPDATE) on `messages`; day separators, live **Seen / Sent** read receipts, marks incoming read, keeps the conversation preview current. |
+| `/messages/[id]` | Live thread. `thread-view.tsx` (client) sends/receives via the browser Supabase client and subscribes to `postgres_changes` (INSERT **and** UPDATE) on `messages`; day separators, live **Seen / Sent** read receipts, **typing indicators** (realtime broadcast), and **image attachments** (uploaded via `/api/upload-post-image` → `messages.attachment_url`). |
 
 Both account types can reach `/marketplace` and `/messages` (middleware gates only
-the business-only marketing tools away from creators). The creator dashboard's
-"Notifications & activity" card shows up to 3 real recent conversations, and the
-sidebar **Messages** item carries a live unread badge (a dot on the collapsed
-rail). The marketplace header has a **Discoverable / Hidden** toggle
-(`marketplace_visible`, via `app/actions/marketplace.ts`).
+the business-only marketing tools away from creators). Both dashboards end with a
+**"Recommended for you"** rail (`components/marketplace/recommended-rail.tsx`).
+The creator dashboard's "Notifications & activity" card shows up to 3 real recent
+conversations, and the sidebar **Messages** item carries a live unread badge (a
+dot on the collapsed rail). The marketplace header has a **Discoverable / Hidden**
+toggle (`marketplace_visible`, via `app/actions/marketplace.ts`).
+
+**Attachments require** a public `post-images` storage bucket (already used by the
+post composer). Image attachment URLs are public/unguessable, not access-controlled
+— acceptable for v1, same model as post images.
 
 Design follows `design-language-reference.md` (tala-theme tokens, Fredoka /
 DM-Serif, `ui.ts` recipes, lucide icons).
@@ -117,12 +122,15 @@ DM-Serif, `ui.ts` recipes, lucide icons).
 
 ## 4. Deferred (not yet)
 
-- **Rich messaging.** No attachments, typing indicators, or message edit/delete
-  yet. Read receipts + a live unread badge exist; email/push notifications don't.
+- **Rich messaging.** Attachments (images), typing indicators, and read receipts
+  ship; still no message edit/delete, multi-file/non-image attachments, or
+  email/push notifications.
 - **Match tuning.** Weights are fixed; there's no per-user "looking for" intent or
   learning from who you message. Topic overlap is string-based (no embeddings).
 - **Blocking / reporting / rate-limiting** for safety.
-- **Pagination.** The directory caps at 200 results; add keyset pagination as the
+- **Pagination.** Rails + grid cap at 200 profiles; add keyset pagination as the
   user base grows.
 - **Live unread badge refresh.** The sidebar badge is computed per navigation
   (server), not pushed in real time.
+- **Attachment access control.** Files live in the public `post-images` bucket
+  (URL-addressable). Move to a private bucket with signed URLs for true privacy.

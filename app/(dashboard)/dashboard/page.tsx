@@ -25,6 +25,7 @@ import { PLATFORMS, isPlatformId } from '@/lib/socials/platforms'
 import { BrandLogo } from '@/components/socials/brand-logo'
 import { microLabel, card, cardLink } from '@/app/(dashboard)/profile/ui'
 import { isCreator } from '@/lib/account'
+import { RecommendedRail } from '@/components/marketplace/recommended-rail'
 import CreatorDashboard from './creator-dashboard'
 
 // Status pill palette (scheduled → content / draft → work), from the category table.
@@ -425,6 +426,9 @@ export default async function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* ── Recommended for you ── */}
+        <RecommendedRail user={user} />
 
         {/* ── Footer ── */}
         <DashboardFooter />

@@ -13,6 +13,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NewsletterSignup } from '@/components/dashboard/newsletter-signup'
 import { parseCreatorProfile } from '@/lib/creator'
 import { listConversations } from '@/lib/messages'
+import { RecommendedRail } from '@/components/marketplace/recommended-rail'
 import { microLabel, card, cardLink, chipPalettes } from '@/app/(dashboard)/profile/ui'
 
 function getGreeting() {
@@ -234,6 +235,9 @@ export default async function CreatorDashboard({ user }: { user: User }) {
             </p>
           </div>
         </div>
+
+        {/* ── Recommended for you ── */}
+        <RecommendedRail user={user} />
 
         {/* ── Footer ── */}
         <CreatorFooter />

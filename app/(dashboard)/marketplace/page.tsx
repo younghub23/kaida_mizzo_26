@@ -1,19 +1,20 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Search, Store, UserRound, X, Sparkles } from 'lucide-react'
+import { Search, Store, X, Sparkles } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { getAccountType } from '@/lib/account'
 import {
   listMarketplaceProfiles,
-  type MarketplaceProfile,
+  buildMarketplaceRails,
   type MarketplaceSort,
 } from '@/lib/marketplace'
 import { parseBrandProfile } from '@/lib/brand'
 import { parseCreatorProfile } from '@/lib/creator'
-import { brandSignals, creatorSignals, hasSignals, matchReasons } from '@/lib/match'
-import { MatchRing } from '@/components/marketplace/match-ring'
+import { brandSignals, creatorSignals, hasSignals } from '@/lib/match'
+import { MarketplaceCard } from '@/components/marketplace/profile-card'
+import { MarketplaceRail } from '@/components/marketplace/rail'
 import { VisibilityToggle } from '@/components/marketplace/visibility-toggle'
-import { microLabel, card, cardLink, chipPalettes } from '@/app/(dashboard)/profile/ui'
+import { microLabel, card } from '@/app/(dashboard)/profile/ui'
 
 const SORTS: { key: MarketplaceSort; label: string }[] = [
   { key: 'match', label: 'Best match' },
@@ -35,7 +36,7 @@ export default async function MarketplacePage({
 
   const viewerType = getAccountType(user)
 
-  // Build the viewer's own match signals from their real profile.
+  // Viewer's own match signals (drive match rings + recommendations).
   const { data: me } = await supabase
     .from('profiles')
     .select('industry, brand_profile, creator_profile, marketplace_visible')
@@ -47,6 +48,15 @@ export default async function MarketplacePage({
       : brandSignals(parseBrandProfile(me?.brand_profile), (me?.industry ?? '').trim())
   const canMatch = hasSignals(viewerSignals)
 
+  const audienceLabel = viewerType === 'creator' ? 'brands' : 'creators'
+  const lead =
+    viewerType === 'creator'
+      ? 'Find brands to partner with on your next deal.'
+      : 'Find creators to market your products.'
+
+  // Search / filter mode vs. browse (rails) mode.
+  const searching = Boolean(q?.trim() || tag?.trim())
+
   const sort: MarketplaceSort =
     sortParam === 'new' || sortParam === 'name' || sortParam === 'match'
       ? sortParam
@@ -54,29 +64,18 @@ export default async function MarketplacePage({
         ? 'match'
         : 'name'
 
-  const profiles = await listMarketplaceProfiles({
-    viewerId: user.id,
-    viewerType,
-    q,
-    tag,
-    sort,
-    viewerSignals,
-  })
+  const gridProfiles = searching
+    ? await listMarketplaceProfiles({ viewerId: user.id, viewerType, q, tag, sort, viewerSignals })
+    : []
+  const rails = searching
+    ? []
+    : await buildMarketplaceRails({ viewerId: user.id, viewerType, viewerSignals })
 
-  const audienceLabel = viewerType === 'creator' ? 'brands' : 'creators'
-  const lead =
-    viewerType === 'creator'
-      ? 'Find brands to partner with on your next deal.'
-      : 'Find creators to market your products.'
-
-  // Filter chips derived from tags present in the results (real data only).
+  // Tag chips (grid mode) derived from the visible results.
   const tagCounts = new Map<string, number>()
-  for (const p of profiles) for (const t of p.tags) tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1)
+  for (const p of gridProfiles) for (const t of p.tags) tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1)
   const topTags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12).map(([t]) => t)
 
-  const hasFilter = Boolean(q?.trim() || tag?.trim())
-
-  // Preserve the current query when building sort / tag links.
   function withParams(next: Record<string, string | undefined>): string {
     const p = new URLSearchParams()
     const merged = { q: q?.trim(), tag: tag?.trim(), sort, ...next }
@@ -105,7 +104,7 @@ export default async function MarketplacePage({
           <VisibilityToggle initial={me?.marketplace_visible ?? true} />
         </header>
 
-        {/* Search + tag filters */}
+        {/* Search + (grid-mode) tag filters */}
         <div className={`${card} flex flex-col gap-4 p-5`}>
           <form method="GET" className="flex gap-2">
             <div className="relative flex-1">
@@ -119,7 +118,6 @@ export default async function MarketplacePage({
               />
             </div>
             {tag && <input type="hidden" name="tag" value={tag} />}
-            {sort !== 'match' && <input type="hidden" name="sort" value={sort} />}
             <button
               type="submit"
               className="rounded-[11px] px-4 text-sm font-medium text-white transition-[filter] hover:brightness-105"
@@ -129,7 +127,7 @@ export default async function MarketplacePage({
             </button>
           </form>
 
-          {topTags.length > 0 && (
+          {searching && topTags.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
               {topTags.map((t) => {
                 const active = tag?.toLowerCase() === t.toLowerCase()
@@ -147,76 +145,73 @@ export default async function MarketplacePage({
                   </Link>
                 )
               })}
-              {hasFilter && (
-                <Link
-                  href={withParams({ tag: undefined, q: undefined })}
-                  className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[13px] font-medium text-primary hover:text-[#8A715C]"
-                >
-                  <X className="size-3.5" />
-                  Clear
-                </Link>
-              )}
+              <Link
+                href="/marketplace"
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[13px] font-medium text-primary hover:text-[#8A715C]"
+              >
+                <X className="size-3.5" />
+                Clear
+              </Link>
             </div>
           )}
         </div>
 
-        {/* Sort + match hint */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5">
-            {SORTS.map((s) => {
-              const disabled = s.key === 'match' && !canMatch
-              const active = sort === s.key
-              if (disabled) return null
-              return (
-                <Link
-                  key={s.key}
-                  href={withParams({ sort: s.key })}
-                  className={`rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors ${
-                    active
-                      ? 'bg-accent text-foreground'
-                      : 'text-muted-foreground hover:bg-accent/60'
-                  }`}
-                >
-                  {s.label}
-                </Link>
-              )
-            })}
-          </div>
-          {!canMatch && (
-            <Link
-              href={viewerType === 'creator' ? '/profile/creator' : '/profile/brand'}
-              className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-primary hover:text-[#8A715C]"
-            >
-              <Sparkles className="size-3.5" />
-              Complete your profile to unlock match scores
-            </Link>
-          )}
-        </div>
+        {!canMatch && (
+          <Link
+            href={viewerType === 'creator' ? '/profile/creator' : '/profile/brand'}
+            className="inline-flex w-fit items-center gap-1.5 text-[12.5px] font-medium text-primary hover:text-[#8A715C]"
+          >
+            <Sparkles className="size-3.5" />
+            Complete your profile to unlock match scores and recommendations
+          </Link>
+        )}
 
-        {/* Results */}
-        {profiles.length === 0 ? (
-          <div className={`${card} flex flex-col items-center gap-3 px-8 py-16 text-center`}>
-            <span className="flex size-14 items-center justify-center rounded-[16px] bg-accent text-primary">
-              <Store className="size-7" strokeWidth={1.8} />
-            </span>
-            <h2 className="font-fredoka text-xl font-semibold">
-              {hasFilter ? 'No matches yet' : `No ${audienceLabel} yet`}
-            </h2>
-            <p className="max-w-md text-sm text-muted-foreground">
-              {hasFilter
-                ? 'Try a different search or clear your filters.'
-                : `As more ${audienceLabel} join Tala and complete their profiles, they'll show up here.`}
-            </p>
-            {hasFilter && (
-              <Link href="/marketplace" className="text-sm font-semibold text-primary hover:text-[#8A715C]">
-                Clear filters
-              </Link>
+        {searching ? (
+          <>
+            {/* Sort control */}
+            <div className="flex items-center gap-1.5">
+              {SORTS.map((s) => {
+                if (s.key === 'match' && !canMatch) return null
+                const active = sort === s.key
+                return (
+                  <Link
+                    key={s.key}
+                    href={withParams({ sort: s.key })}
+                    className={`rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors ${
+                      active ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent/60'
+                    }`}
+                  >
+                    {s.label}
+                  </Link>
+                )
+              })}
+            </div>
+
+            {gridProfiles.length === 0 ? (
+              <EmptyState title="No matches yet" body="Try a different search or clear your filters." />
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {gridProfiles.map((p, i) => (
+                  <MarketplaceCard key={p.id} profile={p} paletteIndex={i} />
+                ))}
+              </div>
             )}
-          </div>
+          </>
+        ) : rails.length === 0 ? (
+          <EmptyState
+            title={`No ${audienceLabel} yet`}
+            body={`As more ${audienceLabel} join Tala and complete their profiles, they'll show up here.`}
+          />
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {profiles.map((p, i) => (
-              <MarketplaceCard key={p.id} profile={p} paletteIndex={i} />
+          <div className="flex flex-col gap-8">
+            {rails.map((rail, i) => (
+              <MarketplaceRail
+                key={rail.key}
+                title={rail.title}
+                profiles={rail.profiles}
+                seeAllHref={rail.seeAllTag ? `/marketplace?tag=${encodeURIComponent(rail.seeAllTag)}` : undefined}
+                startPalette={i}
+              />
             ))}
           </div>
         )}
@@ -225,69 +220,17 @@ export default async function MarketplacePage({
   )
 }
 
-function MarketplaceCard({
-  profile,
-  paletteIndex,
-}: {
-  profile: MarketplaceProfile
-  paletteIndex: number
-}) {
-  const palette = chipPalettes[paletteIndex % chipPalettes.length]
-  const reasons = profile.match ? matchReasons(profile.match) : []
+function EmptyState({ title, body }: { title: string; body: string }) {
   return (
-    <Link
-      href={`/marketplace/${profile.id}`}
-      className={`group flex flex-col gap-3 ${card} ${cardLink} p-5`}
-    >
-      <div className="flex items-start gap-3">
-        <span className="size-12 shrink-0 overflow-hidden rounded-full bg-accent ring-1 ring-foreground/10">
-          {profile.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={profile.avatarUrl} alt={profile.name} className="size-full object-cover" />
-          ) : (
-            <span className="flex size-full items-center justify-center">
-              <UserRound className="size-6 text-muted-foreground" />
-            </span>
-          )}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-fredoka text-[16px] font-semibold leading-tight">
-            {profile.name}
-          </p>
-          {profile.headline && (
-            <p className="truncate text-[12.5px] font-medium text-primary">{profile.headline}</p>
-          )}
-        </div>
-        {profile.match && <MatchRing score={profile.match.score} />}
-      </div>
-
-      {profile.summary ? (
-        <p className="line-clamp-2 text-[13.5px] leading-snug text-muted-foreground">
-          {profile.summary}
-        </p>
-      ) : (
-        <p className="text-[13.5px] italic text-muted-foreground/70">No bio yet.</p>
-      )}
-
-      {reasons.length > 0 ? (
-        <p className="mt-auto pt-1 text-[12px] text-muted-foreground">
-          <span className="font-medium text-[#A82C66]">Shared:</span> {reasons.join(' · ')}
-        </p>
-      ) : (
-        profile.tags.length > 0 && (
-          <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
-            {profile.tags.slice(0, 3).map((t) => (
-              <span
-                key={t}
-                className="rounded-full border px-2.5 py-0.5 text-[11.5px] font-medium"
-                style={{ background: palette.bg, borderColor: palette.border, color: palette.text }}
-              >
-                {t}
-              </span>
-            ))}
-          </div>
-        )
-      )}
-    </Link>
+    <div className={`${card} flex flex-col items-center gap-3 px-8 py-16 text-center`}>
+      <span className="flex size-14 items-center justify-center rounded-[16px] bg-accent text-primary">
+        <Store className="size-7" strokeWidth={1.8} />
+      </span>
+      <h2 className="font-fredoka text-xl font-semibold">{title}</h2>
+      <p className="max-w-md text-sm text-muted-foreground">{body}</p>
+      <Link href="/marketplace" className="text-sm font-semibold text-primary hover:text-[#8A715C]">
+        Back to marketplace
+      </Link>
+    </div>
   )
 }

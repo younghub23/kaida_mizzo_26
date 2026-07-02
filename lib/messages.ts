@@ -18,6 +18,7 @@ export type ChatMessage = {
   conversationId: string
   senderId: string
   body: string
+  attachmentUrl: string | null
   createdAt: string
   readAt: string | null
 }
@@ -191,7 +192,7 @@ export async function getConversationThread(
 
   const { data: msgs } = await supabase
     .from('messages')
-    .select('id, conversation_id, sender_id, body, created_at, read_at')
+    .select('id, conversation_id, sender_id, body, attachment_url, created_at, read_at')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: true })
 
@@ -200,6 +201,7 @@ export async function getConversationThread(
     conversationId: m.conversation_id,
     senderId: m.sender_id,
     body: m.body,
+    attachmentUrl: m.attachment_url ?? null,
     createdAt: m.created_at,
     readAt: m.read_at,
   }))
