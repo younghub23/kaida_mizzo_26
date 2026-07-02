@@ -17,12 +17,14 @@ export function DashboardShell({
   businessSub,
   userInitial,
   accountType = 'business',
+  unreadMessages = 0,
   children,
 }: {
   businessName: string
   businessSub: string
   userInitial: string
   accountType?: AccountType
+  unreadMessages?: number
   children: React.ReactNode
 }) {
   const [collapsed, setCollapsed] = useState(false)
@@ -45,6 +47,7 @@ export function DashboardShell({
         businessName={businessName}
         businessSub={businessSub}
         accountType={accountType}
+        unreadMessages={unreadMessages}
         collapsed={collapsed}
         mobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}

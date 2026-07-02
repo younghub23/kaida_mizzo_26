@@ -211,6 +211,17 @@ export async function getConversationThread(
   }
 }
 
+/** Total unread messages addressed to the viewer, across all conversations. */
+export async function countUnreadMessages(meId: string): Promise<number> {
+  const supabase = await createClient()
+  const { count } = await supabase
+    .from('messages')
+    .select('id', { count: 'exact', head: true })
+    .is('read_at', null)
+    .neq('sender_id', meId)
+  return count ?? 0
+}
+
 /** Mark every message the other participant sent in this thread as read. */
 export async function markConversationRead(
   meId: string,

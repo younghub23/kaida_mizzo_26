@@ -58,13 +58,25 @@ creator_profile`) — never `email`, `plan`, or `stripe_customer_id`.
 ## 2. Server data layer
 
 ### `lib/marketplace.ts`
-- `listMarketplaceProfiles({ viewerId, viewerType, q?, tag? })` — lists the
-  **opposite** side (businesses see creators, creators see brands), visible only,
-  excluding self. Optional name search (`ilike`) and single tag filter. Maps each
-  row to a compact `MarketplaceProfile` card (name, avatar, headline, summary,
-  tags) derived from the brand/creator profile.
+- `listMarketplaceProfiles({ viewerId, viewerType, q?, tag?, sort?, viewerSignals? })`
+  — lists the **opposite** side (businesses see creators, creators see brands),
+  visible only, excluding self. Optional name search (`ilike`), single tag filter,
+  and sort (`match` | `new` | `name`). When `viewerSignals` are supplied, each card
+  carries a `match` result and results default to best-match order.
 - `getMarketplaceProfile(id)` — full `MarketplaceDetail` for the profile page;
   returns `null` if hidden.
+
+### `lib/match.ts` — compatibility engine
+Scores a brand↔creator pair 0–100 from real profile overlap across three
+weighted dimensions: **values** (40), **content/topics** (35, fuzzy so "Beauty"
+matches "beauty tips"), and **audience generations** (25, mapping age ranges +
+demographic labels into Gen Z / Millennial / Gen X / Boomer buckets). Returns the
+concrete shared items so the UI can explain *why* two profiles match. A dimension
+only counts when both sides supplied data; empty/no-overlap → 0 (never fabricated).
+
+Surfaced as: match rings on directory cards + a "why you match" breakdown and a
+larger ring on the detail page. Match scoring is gated on the viewer having a
+usable profile (otherwise the UI nudges them to complete it).
 
 ### `lib/messages.ts`
 - `getOrCreateConversation(meId, otherId)` — canonical-ordered upsert, race-safe.
@@ -89,27 +101,28 @@ creator_profile`) — never `email`, `plan`, or `stripe_customer_id`.
 | `/marketplace` | Directory of the opposite side. Search box + tag chips (derived from real result tags). Cards link to the detail page. Honest empty states. |
 | `/marketplace/[id]` | Public profile detail. Creator view: bio, channels, demographic, content, values. Brand view: tagline/description, industry, website, audience, topics, values. "Message" CTA (hidden on your own profile). |
 | `/messages` | Inbox: conversation rows with avatar, name, headline, last-message preview, relative time, unread badge. Empty state links to the marketplace. |
-| `/messages/[id]` | Live thread. `thread-view.tsx` (client) sends/receives via the browser Supabase client and subscribes to `postgres_changes` on `messages` for real-time delivery; marks incoming read; keeps the conversation preview current. |
+| `/messages/[id]` | Live thread. `thread-view.tsx` (client) sends/receives via the browser Supabase client and subscribes to `postgres_changes` (INSERT **and** UPDATE) on `messages`; day separators, live **Seen / Sent** read receipts, marks incoming read, keeps the conversation preview current. |
 
 Both account types can reach `/marketplace` and `/messages` (middleware gates only
 the business-only marketing tools away from creators). The creator dashboard's
-"Notifications & activity" card now shows up to 3 real recent conversations.
+"Notifications & activity" card shows up to 3 real recent conversations, and the
+sidebar **Messages** item carries a live unread badge (a dot on the collapsed
+rail). The marketplace header has a **Discoverable / Hidden** toggle
+(`marketplace_visible`, via `app/actions/marketplace.ts`).
 
 Design follows `design-language-reference.md` (tala-theme tokens, Fredoka /
 DM-Serif, `ui.ts` recipes, lucide icons).
 
 ---
 
-## 4. Deferred (not in v1)
+## 4. Deferred (not yet)
 
-- **Smart matching / ranking.** v1 lists the opposite side with name search + a
-  tag filter. Audience/sector/value-based match scoring (using the fields already
-  captured in `brand_profile` / `creator_profile`) is the natural next step.
-- **Visibility controls UI.** `marketplace_visible` defaults to `true`; there's
-  no opt-out toggle in Settings yet (column + query support exist).
-- **Rich messaging.** No attachments, typing indicators, message deletion/edits,
-  or push/email notifications yet. Unread is tracked; there's no global unread
-  badge in the sidebar.
+- **Rich messaging.** No attachments, typing indicators, or message edit/delete
+  yet. Read receipts + a live unread badge exist; email/push notifications don't.
+- **Match tuning.** Weights are fixed; there's no per-user "looking for" intent or
+  learning from who you message. Topic overlap is string-based (no embeddings).
 - **Blocking / reporting / rate-limiting** for safety.
 - **Pagination.** The directory caps at 200 results; add keyset pagination as the
   user base grows.
+- **Live unread badge refresh.** The sidebar badge is computed per navigation
+  (server), not pushed in real time.

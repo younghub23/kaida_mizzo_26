@@ -13,11 +13,21 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { parseBrandProfile, type BrandProfile } from '@/lib/brand'
 import { parseCreatorProfile, type CreatorProfile } from '@/lib/creator'
+import {
+  brandSignals,
+  creatorSignals,
+  scoreMatch,
+  hasSignals,
+  type MatchSignals,
+  type MatchResult,
+} from '@/lib/match'
 import type { AccountType } from '@/lib/account'
 
 // Only these columns ever leave the database for a marketplace read.
 const PUBLIC_COLUMNS =
-  'id, full_name, avatar_url, industry, account_type, brand_profile, creator_profile'
+  'id, full_name, avatar_url, industry, account_type, brand_profile, creator_profile, created_at'
+
+export type MarketplaceSort = 'match' | 'name' | 'new'
 
 type ProfileRow = {
   id: string
@@ -27,6 +37,7 @@ type ProfileRow = {
   account_type: string | null
   brand_profile: unknown
   creator_profile: unknown
+  created_at?: string | null
   marketplace_visible?: boolean
 }
 
@@ -39,6 +50,21 @@ export type MarketplaceProfile = {
   headline: string
   summary: string
   tags: string[]
+  createdAt: string
+  match: MatchResult | null
+}
+
+// Extract the match signals for any profile row (used to score against a viewer).
+export function signalsForRow(row: {
+  account_type: string | null
+  industry: string | null
+  brand_profile: unknown
+  creator_profile: unknown
+}): MatchSignals {
+  if (normalizeType(row.account_type) === 'creator') {
+    return creatorSignals(parseCreatorProfile(row.creator_profile))
+  }
+  return brandSignals(parseBrandProfile(row.brand_profile), (row.industry ?? '').trim())
 }
 
 // The full public profile for the detail page.
@@ -63,11 +89,23 @@ function formatHandle(handle: string): string {
   return h.startsWith('@') ? h : `@${h}`
 }
 
-function toCard(row: ProfileRow): MarketplaceProfile | null {
+function toCard(row: ProfileRow, viewerSignals?: MatchSignals): MarketplaceProfile | null {
   const name = (row.full_name ?? '').trim()
   if (!name) return null
   const accountType = normalizeType(row.account_type)
   const avatarUrl = (row.avatar_url ?? '').trim()
+  const createdAt = row.created_at ?? ''
+
+  // Score against the viewer when both sides have supplied signals.
+  const match =
+    viewerSignals && hasSignals(viewerSignals)
+      ? (() => {
+          const target = signalsForRow(row)
+          if (!hasSignals(target)) return null
+          const result = scoreMatch(viewerSignals, target)
+          return result.score > 0 ? result : null
+        })()
+      : null
 
   if (accountType === 'creator') {
     const c = parseCreatorProfile(row.creator_profile)
@@ -79,6 +117,8 @@ function toCard(row: ProfileRow): MarketplaceProfile | null {
       headline: formatHandle(c.handle) || c.primaryDemographic || 'Creator',
       summary: c.bio,
       tags: c.contentCategories,
+      createdAt,
+      match,
     }
   }
 
@@ -91,6 +131,8 @@ function toCard(row: ProfileRow): MarketplaceProfile | null {
     headline: (row.industry ?? '').trim() || b.brandType || 'Brand',
     summary: b.tagline || b.description,
     tags: b.contentTopics.length ? b.contentTopics : b.brandValues,
+    createdAt,
+    match,
   }
 }
 
@@ -103,6 +145,8 @@ export async function listMarketplaceProfiles(params: {
   viewerType: AccountType
   q?: string
   tag?: string
+  sort?: MarketplaceSort
+  viewerSignals?: MatchSignals
 }): Promise<MarketplaceProfile[]> {
   const admin = createAdminClient()
   const oppositeType: AccountType =
@@ -123,7 +167,7 @@ export async function listMarketplaceProfiles(params: {
   if (error || !data) return []
 
   let cards = (data as ProfileRow[])
-    .map(toCard)
+    .map((row) => toCard(row, params.viewerSignals))
     .filter((c): c is MarketplaceProfile => c !== null)
 
   const tag = params.tag?.trim().toLowerCase()
@@ -131,7 +175,19 @@ export async function listMarketplaceProfiles(params: {
     cards = cards.filter((c) => c.tags.some((t) => t.toLowerCase() === tag))
   }
 
-  cards.sort((a, b) => a.name.localeCompare(b.name))
+  const byName = (a: MarketplaceProfile, b: MarketplaceProfile) =>
+    a.name.localeCompare(b.name)
+  const canMatch = Boolean(params.viewerSignals && hasSignals(params.viewerSignals))
+  const sort: MarketplaceSort = params.sort ?? (canMatch ? 'match' : 'name')
+
+  if (sort === 'new') {
+    cards.sort((a, b) => (b.createdAt > a.createdAt ? 1 : b.createdAt < a.createdAt ? -1 : byName(a, b)))
+  } else if (sort === 'match' && canMatch) {
+    cards.sort((a, b) => (b.match?.score ?? -1) - (a.match?.score ?? -1) || byName(a, b))
+  } else {
+    cards.sort(byName)
+  }
+
   return cards
 }
 

@@ -4,6 +4,7 @@ import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { PLAN_LABELS, PLAN_DISPLAY_LABELS, isPlanTier } from '@/lib/analytics/plan'
 import { getAccountType } from '@/lib/account'
 import { parseCreatorProfile } from '@/lib/creator'
+import { countUnreadMessages } from '@/lib/messages'
 
 // First letter of a name/email for the gradient avatar tiles. Falls back to a
 // neutral dot so the avatar is never blank.
@@ -71,12 +72,16 @@ export default async function DashboardLayout({
   // Top-bar avatar initial — the real signed-in user (name, else email).
   const userInitial = initialOf(profile?.full_name || user.email)
 
+  // Unread DM count for the sidebar Messages badge.
+  const unreadMessages = await countUnreadMessages(user.id)
+
   return (
     <DashboardShell
       businessName={displayName}
       businessSub={subLine}
       userInitial={userInitial}
       accountType={accountType}
+      unreadMessages={unreadMessages}
     >
       {children}
     </DashboardShell>

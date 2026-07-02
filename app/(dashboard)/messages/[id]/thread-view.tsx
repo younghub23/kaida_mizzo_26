@@ -30,6 +30,31 @@ function timeLabel(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
 }
 
+// "Today" / "Yesterday" / a date, for the day separators.
+function dayLabel(iso: string): string {
+  const d = new Date(iso)
+  const now = new Date()
+  const startOf = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime()
+  const diff = Math.round((startOf(now) - startOf(d)) / 86_400_000)
+  if (diff === 0) return 'Today'
+  if (diff === 1) return 'Yesterday'
+  return d.toLocaleDateString(undefined, {
+    month: 'long',
+    day: 'numeric',
+    year: d.getFullYear() === now.getFullYear() ? undefined : 'numeric',
+  })
+}
+
+function sameDay(a: string, b: string): boolean {
+  const x = new Date(a)
+  const y = new Date(b)
+  return (
+    x.getFullYear() === y.getFullYear() &&
+    x.getMonth() === y.getMonth() &&
+    x.getDate() === y.getDate()
+  )
+}
+
 // Live 1:1 chat. Messages are sent + received directly through the browser
 // Supabase client (RLS restricts everything to the two participants), so the
 // thread updates in real time via a postgres_changes subscription.
@@ -69,7 +94,7 @@ export function ThreadView({
     void markRead()
   }, [supabase, conversationId, meId, messages.length])
 
-  // Subscribe to new messages in this conversation.
+  // Subscribe to new + updated messages in this conversation.
   useEffect(() => {
     const channel = supabase
       .channel(`messages:${conversationId}`)
@@ -85,6 +110,22 @@ export function ThreadView({
           const incoming = mapRow(payload.new as Parameters<typeof mapRow>[0])
           setMessages((prev) =>
             prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming]
+          )
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          // Reflect read receipts live (Sent → Seen when the other side reads).
+          const updated = mapRow(payload.new as Parameters<typeof mapRow>[0])
+          setMessages((prev) =>
+            prev.map((m) => (m.id === updated.id ? { ...m, readAt: updated.readAt } : m))
           )
         }
       )
@@ -170,30 +211,40 @@ export function ThreadView({
             This is the start of your conversation with {other.name}. Say hello 👋
           </div>
         ) : (
-          messages.map((m) => {
+          messages.map((m, i) => {
             const mine = m.senderId === meId
+            const showDay = i === 0 || !sameDay(messages[i - 1].createdAt, m.createdAt)
+            // "Seen" / "Sent" belongs under the last message I sent.
+            const isLastMine = mine && !messages.slice(i + 1).some((n) => n.senderId === meId)
             return (
-              <div
-                key={m.id}
-                className={`flex flex-col ${mine ? 'items-end' : 'items-start'}`}
-              >
-                <div
-                  className={`max-w-[78%] rounded-[16px] px-4 py-2.5 text-[14.5px] leading-snug ${
-                    mine
-                      ? 'rounded-br-sm text-white'
-                      : 'rounded-bl-sm border border-border bg-card text-foreground'
-                  }`}
-                  style={
-                    mine
-                      ? { background: 'linear-gradient(120deg,#D6488C,#C8472E,#E08A3C)' }
-                      : undefined
-                  }
-                >
-                  <p className="whitespace-pre-wrap break-words">{m.body}</p>
+              <div key={m.id} className="flex flex-col">
+                {showDay && (
+                  <div className="my-3 flex items-center justify-center">
+                    <span className="rounded-full bg-accent px-3 py-1 text-[11px] font-medium text-muted-foreground">
+                      {dayLabel(m.createdAt)}
+                    </span>
+                  </div>
+                )}
+                <div className={`flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
+                  <div
+                    className={`max-w-[78%] rounded-[16px] px-4 py-2.5 text-[14.5px] leading-snug ${
+                      mine
+                        ? 'rounded-br-sm text-white'
+                        : 'rounded-bl-sm border border-border bg-card text-foreground'
+                    }`}
+                    style={
+                      mine
+                        ? { background: 'linear-gradient(120deg,#D6488C,#C8472E,#E08A3C)' }
+                        : undefined
+                    }
+                  >
+                    <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                  </div>
+                  <span className="mt-1 px-1 text-[10.5px] text-muted-foreground">
+                    {timeLabel(m.createdAt)}
+                    {isLastMine && (m.readAt ? ' · Seen' : ' · Sent')}
+                  </span>
                 </div>
-                <span className="mt-1 px-1 text-[10.5px] text-muted-foreground">
-                  {timeLabel(m.createdAt)}
-                </span>
               </div>
             )
           })

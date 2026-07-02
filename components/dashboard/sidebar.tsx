@@ -54,6 +54,7 @@ export function Sidebar({
   businessName,
   businessSub,
   accountType = 'business',
+  unreadMessages = 0,
   collapsed = false,
   mobileOpen = false,
   onCloseMobile,
@@ -61,6 +62,7 @@ export function Sidebar({
   businessName: string
   businessSub: string
   accountType?: AccountType
+  unreadMessages?: number
   collapsed?: boolean
   mobileOpen?: boolean
   onCloseMobile?: () => void
@@ -106,6 +108,8 @@ export function Sidebar({
           const isActive =
             pathname === link.href || pathname.startsWith(`${link.href}/`)
           const Icon = link.icon
+          const badge = link.href === '/messages' ? unreadMessages : 0
+          const badgeLabel = badge > 9 ? '9+' : `${badge}`
 
           return (
             <Link
@@ -126,12 +130,31 @@ export function Sidebar({
                   style={{ background: ACTIVE_COLOR }}
                 />
               )}
-              <Icon
-                size={20}
-                strokeWidth={1.7}
-                style={{ color: isActive ? ACTIVE_COLOR : MUTED_COLOR }}
-              />
+              <span className="relative flex shrink-0">
+                <Icon
+                  size={20}
+                  strokeWidth={1.7}
+                  style={{ color: isActive ? ACTIVE_COLOR : MUTED_COLOR }}
+                />
+                {/* Collapsed rail: a dot marks unread since the count can't fit. */}
+                {collapsed && badge > 0 && (
+                  <span
+                    aria-hidden
+                    className="absolute -right-1 -top-1 size-2.5 rounded-full ring-2 ring-card"
+                    style={{ background: 'linear-gradient(120deg,#D6488C,#E08A3C)' }}
+                  />
+                )}
+              </span>
               {!collapsed && <span>{link.label}</span>}
+              {!collapsed && badge > 0 && (
+                <span
+                  className="ml-auto flex min-w-[20px] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold text-white"
+                  style={{ background: 'linear-gradient(120deg,#D6488C,#E08A3C)' }}
+                  aria-label={`${badge} unread`}
+                >
+                  {badgeLabel}
+                </span>
+              )}
             </Link>
           )
         })}

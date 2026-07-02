@@ -1,11 +1,30 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
-import { ArrowLeft, MessageSquare, UserRound, Globe } from 'lucide-react'
+import { ArrowLeft, MessageSquare, UserRound, Globe, Sparkles } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { getMarketplaceProfile, type MarketplaceDetail } from '@/lib/marketplace'
 import { startConversation } from '@/app/actions/messages'
-import { CREATOR_CHANNELS } from '@/lib/creator'
+import { CREATOR_CHANNELS, parseCreatorProfile } from '@/lib/creator'
+import { parseBrandProfile } from '@/lib/brand'
+import { getAccountType } from '@/lib/account'
+import {
+  brandSignals,
+  creatorSignals,
+  hasSignals,
+  scoreMatch,
+  type MatchResult,
+  type MatchSignals,
+} from '@/lib/match'
+import { MatchRing } from '@/components/marketplace/match-ring'
 import { microLabel, card, chipPalettes } from '@/app/(dashboard)/profile/ui'
+
+function targetSignals(profile: MarketplaceDetail): MatchSignals {
+  if (profile.accountType === 'creator' && profile.creator) {
+    return creatorSignals(profile.creator)
+  }
+  if (profile.brand) return brandSignals(profile.brand, profile.industry)
+  return { values: [], topics: [], audiences: [] }
+}
 
 export default async function MarketplaceProfilePage({
   params,
@@ -23,6 +42,24 @@ export default async function MarketplaceProfilePage({
   if (!profile) notFound()
 
   const isSelf = profile.id === user.id
+
+  // Compatibility between the viewer and this profile (real overlap only).
+  const viewerType = getAccountType(user)
+  const { data: me } = await supabase
+    .from('profiles')
+    .select('industry, brand_profile, creator_profile')
+    .eq('id', user.id)
+    .single()
+  const viewerSignals =
+    viewerType === 'creator'
+      ? creatorSignals(parseCreatorProfile(me?.creator_profile))
+      : brandSignals(parseBrandProfile(me?.brand_profile), (me?.industry ?? '').trim())
+  const target = targetSignals(profile)
+  const match =
+    !isSelf && hasSignals(viewerSignals) && hasSignals(target)
+      ? scoreMatch(viewerSignals, target)
+      : null
+  const showMatch = match !== null && match.score > 0
 
   return (
     <div className="tala-theme min-h-[calc(100vh-3.5rem)] bg-background font-sans text-foreground">
@@ -58,6 +95,14 @@ export default async function MarketplaceProfilePage({
               <p className="mt-0.5 text-sm font-medium text-primary">{profile.headline}</p>
             )}
           </div>
+          {showMatch && (
+            <div className="flex flex-col items-center gap-1">
+              <MatchRing score={match.score} size={60} strokeWidth={5} />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Match
+              </span>
+            </div>
+          )}
           {!isSelf && (
             <form action={startConversation.bind(null, profile.id)}>
               <button
@@ -72,11 +117,68 @@ export default async function MarketplaceProfilePage({
           )}
         </div>
 
+        {showMatch && <WhyYouMatch match={match} name={profile.name} />}
+
         {profile.accountType === 'creator' ? (
           <CreatorDetail profile={profile} />
         ) : (
           <BrandDetail profile={profile} />
         )}
+      </div>
+    </div>
+  )
+}
+
+function WhyYouMatch({ match, name }: { match: MatchResult; name: string }) {
+  const groups = [
+    { label: 'Shared values', items: match.sharedValues },
+    { label: 'Audience', items: match.sharedAudiences },
+    { label: 'Content', items: match.sharedTopics },
+  ].filter((g) => g.items.length > 0)
+
+  if (groups.length === 0) return null
+
+  return (
+    <div
+      className="flex flex-col gap-4 rounded-[14px] border p-6"
+      style={{
+        borderColor: 'rgba(214,72,140,.22)',
+        background: 'linear-gradient(165deg,rgba(214,72,140,.07),rgba(224,138,60,.05))',
+      }}
+    >
+      <div className="flex items-center gap-2">
+        <Sparkles className="size-4 text-[#D6488C]" />
+        <span className={microLabel}>Why you match</span>
+      </div>
+      <p className="text-[14px] text-muted-foreground">
+        You and {name} have {match.score}% compatibility based on your profiles.
+      </p>
+      <div className="flex flex-col gap-3">
+        {groups.map((g) => (
+          <div key={g.label} className="flex flex-wrap items-center gap-2">
+            <span className="w-24 shrink-0 text-[12.5px] font-semibold text-foreground">
+              {g.label}
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {g.items.map((item, i) => {
+                const palette = chipPalettes[i % chipPalettes.length]
+                return (
+                  <span
+                    key={item}
+                    className="rounded-full border px-3 py-1 text-[13px] font-medium"
+                    style={{
+                      background: palette.bg,
+                      borderColor: palette.border,
+                      color: palette.text,
+                    }}
+                  >
+                    {item}
+                  </span>
+                )
+              })}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )
